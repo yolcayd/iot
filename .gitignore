@@ -1,0 +1,38 @@
+# Python environment and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Datasets: licensed and large, must not be redistributed
+/data/
+
+# Model weights and checkpoints under results/raw/
+results/raw/**/*.pt
+results/raw/**/*.pth
+results/raw/**/*.onnx
+results/raw/**/*.tflite
+results/raw/**/*.pkl
+results/raw/**/*.joblib
+
+# Logs
+/logs/
+
+# Original Word documents (contain personal information)
+*.docx
+~$*.docx
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# LaTeX build artifacts
+paper/**/*.aux
+paper/**/*.log
+paper/**/*.out
+paper/**/*.bbl
+paper/**/*.blg
+paper/**/*.synctex.gz
