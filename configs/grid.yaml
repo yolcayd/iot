@@ -1,1 +1,5 @@
-# Experiment grid: models x quantization levels x datasets x seeds (filled in F4).
+# Experiment grid. P3 (plan F2) uses the baseline stage only; the full grid is filled in F4.
+baseline:           # feasibility: every model on every dataset with one seed
+  models: [cnn1d, lstm_ae, rf, xgb]
+  datasets: [car_hacking, road]
+  seeds: [0]

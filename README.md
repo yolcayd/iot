@@ -90,4 +90,17 @@ On Linux/macOS activate the environment with `source .venv/bin/activate` instead
 
 ## Reproducing results
 
-<!-- To be filled in once the experiment pipeline is implemented. -->
+Baseline models (phase P3, work in progress). Hyperparameters are in `configs/models.yaml`, the run list in
+`configs/grid.yaml`. Deep models and XGBoost train on the GPU; the CPU thread budget is
+`runtime.threads` (default 4) or `--threads`.
+
+```powershell
+python -m src.train --model cnn1d --dataset road --seed 0   # one run -> results/raw/<run_id>/
+python -m src.evaluate --run <run_id> --split test          # per-attack-type metrics of one run
+python -m src.run_grid --stage baseline                     # all baseline runs (resumable) + tables
+python -m src.run_grid --stage baseline --status
+```
+
+Every run writes `run_config.json` (hyperparameters, library versions, git commit, environment), the
+training curve and, for the autoencoders, the anomaly threshold fitted on training scores only.
+<!-- Unsupervised model decision (K-030) to be added after the baseline runs. -->

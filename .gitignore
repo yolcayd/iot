@@ -15,6 +15,10 @@ results/raw/**/*.onnx
 results/raw/**/*.tflite
 results/raw/**/*.pkl
 results/raw/**/*.joblib
+results/raw/**/*.ubj
+results/raw/**/*.parquet
+results/raw/**/checkpoint.pt
+results/raw/**/*_smoke/
 
 # Logs
 /logs/

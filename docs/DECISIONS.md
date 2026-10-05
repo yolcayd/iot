@@ -343,3 +343,78 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - Bu kimlikleri taşıyan pencereler "normal" etiketli olsa da saldırıyla ilişkili trafik içerebilir. Car-Hacking fuzzy sonuçları yorumlanırken (ör. yanlış alarm incelemesinde) bu göz önünde tutulmalı.
   - LSTM otokodlayıcı alt kümesini etkilemez: Fuzzy saldırı bloğunun hiçbir penceresi ±5 s payı sağlamadığı için alt kümede yer almaz (K-022).
   - Makalede veri seti sınırlılığı olarak kısaca belirtilebilir.
+
+## K-027 — Denetimli modellerde sınıf dengesizliği: ters frekans ağırlığı, sabit 0.5 eşiği
+
+- **Faz / tarih:** P3 · 2026-10-05
+- **Durum:** Geçerli
+- **Bağlam:** Train pencerelerinde saldırı/normal oranı veri setleri arasında çok farklı: Car-Hacking ≈ 78 k saldırı / 107 k normal (≈ 1.4 normal : 1 saldırı), ROAD ≈ 7.2 k saldırı / 304 k normal (≈ 42 : 1; `split_summary.csv`). Kesin sayılar ve kullanılan ağırlık her koşunun `run_config.json`'unda.
+- **Karar:**
+  - 1D-CNN: `BCEWithLogitsLoss(pos_weight = N_neg / N_pos)`, N'ler o koşunun train pencerelerinden.
+  - Random Forest: `class_weight="balanced"`. XGBoost: `scale_pos_weight = N_neg / N_pos`.
+  - Yeniden örnekleme (over/undersampling) yok. Karar eşiği olasılık ≥ 0.5, sabit; val'de ayarlanmaz.
+  - Accuracy raporlanmaz; tür bazında precision/recall/F1/FPR raporlanır (K-029).
+- **Gerekçe:**
+  - Ağırlıklandırma örnek kümesini değiştirmez, ek rastgelelik getirmez ve tekrarlanan örnek üretmez; ROAD'da 42:1 oranında ağırlıksız kayıp saldırı sınıfını göz ardı etmeye yatkındır.
+  - Sabit eşik ek bir seçim serbestliği yaratmaz; F3'te nicemlenmiş sürümler aynı eşikle karşılaştırılır, ΔF1 eşik ayarından değil nicemlemeden gelir.
+- **Etkisi:** Erken durdurma val üzerinde aynı ağırlıklı kayıpla yapılır (`configs/models.yaml`).
+
+## K-028 — Denetimli eğitimde masquerade kayıtlarının normal pencereleri dışlanır
+
+- **Faz / tarih:** P3 · 2026-10-05
+- **Durum:** Geçerli
+- **Bağlam:** P2 açık sorunu: ROAD masquerade kayıtlarının enjeksiyon aralığı dışındaki çerçeveleri fabrication eşleriyle aynı (K-007); ikisi de train'de olduğundan denetimli model bu normal pencereleri iki kez görür.
+- **Karar:** Denetimli eğitim kümesi (`src/data/dataset.py: supervised_train`) masquerade kayıtlarının label-0 pencerelerini içermez; saldırı pencereleri korunur. Val/test değerlendirmesinde bütün pencereler kullanılır.
+- **Gerekçe:** Tekrar, sızıntı değil ama örnek ağırlığını bozar. Otokodlayıcı alt kümesindeki `exclude_masquerade` kuralıyla (K-022) tutarlı.
+- **Etkisi:** `tests/test_train.py` gerçek pencere dizininde bu kuralı doğrular.
+
+## K-029 — Değerlendirme tanımları: tür kümesi, recall, saldırısız FPR, çiftler
+
+- **Faz / tarih:** P3 · 2026-10-05
+- **Durum:** Geçerli (kullanıcı kararı)
+- **Karar:**
+  - **Tür bazında (birincil):** t türünün değerlendirme kümesi = t'nin saldırı pencereleri + t saldırı pencerelerini içeren kayıtların normal pencereleri. Metrikler: precision, recall (TPR), F1, FPR, ROC-AUC (bütün modeller; denetimsiz model için zorunlu), pencere sayıları.
+  - **Recall (TPR) ve ΔRecall:** Recall yalnızca saldırı pencerelerine bağlıdır, türler arası saldırı oranı farklarından etkilenmez. AS-1'in türler arası karşılaştırmasında F1'in yanında recall ve nicemleme kaybı ΔRecall da kullanılır (F3/F5).
+  - **Saldırısız kayıtlar:** tüm saldırısız test kayıtlarında birlikte (`ambient`) ve kayıt başına FPR (ROAD `benign_anomaly` ayrı satır).
+  - **Kayıt ve çift düzeyi:** kayıt başına metrikler; aynı `source_capture`'ın fabrication–masquerade çifti ayrı tabloda (K-013).
+  - **Coolant** (`analysis_roles.unseen_in_training`): `role = unseen`, ayrı raporlanır; birincil havuza ve toplam metriklere katılmaz (K-019).
+  - **Toplam (ikincil):** birincil havuzun bütün pencereleri.
+  - ROAD fuzzing'in val kümesi yoktur (K-018): fuzzing için val satırı üretilmez.
+- **Gerekçe:** Aynı kaydın normal pencereleri, saldırı ile aynı araç/sürüş koşulundaki yanlış alarmı ölçer (Car-Hacking literatüründeki dosya başına değerlendirmeyle uyumlu). Tüm test normallerini her türe eklemek, küçük türlerde precision'ı ortak FP sayısına bağlardı.
+- **Etkisi:** `src/evaluate.py`, `tests/test_evaluate.py`.
+
+## K-030 — Denetimsiz model: skor, eşik, val kullanımı ve fizibilite kararı
+
+- **Faz / tarih:** P3 · 2026-10-05
+- **Durum:** Geçerli (go/no-go kümesi kullanıcı kararı)
+- **Karar:**
+  - Skor = pencere yeniden oluşturma MSE'si (100 adım × 10 öznitelik ortalaması).
+  - Eşik = `normal_subset` train pencerelerinin (K-022) skorlarının 99. persentili; eğitim bittikten sonra en iyi ağırlıklarla hesaplanır, `meta.json` ve `run_config.json`'a yazılır. `fit_threshold` train dışı skorları reddeder.
+  - Val kümesinin normal pencereleri (label 0, masquerade kaydı değil, ±5 s payı sağlayan) yalnızca erken durdurma kaybı içindir.
+  - **Fizibilite (go/no-go):** veri seti başına **val** ROC-AUC (birincil havuz). < 0.6 ise bir kez ayar (gizli 128, lr 3e-4, en fazla 60 epoch; `configs/models.yaml → ae_feasibility`), yine val'de; yine < 0.6 ise 1D evrişimli otokodlayıcı eğitilir ve val'de karşılaştırılır. Test ROC-AUC yalnızca raporlanır.
+- **Gerekçe:** CLAUDE.md "test setinde model seçimi" yasağı; karar test üzerinde verilirse model ailesi seçimi teste dayanır. Val saldırı etiketleri yalnızca bu tek go/no-go kararında kullanılır, eşikte asla.
+- **Etkisi:** Görev isteminin "doğrulama yalnızca erken durdurma içindir" ifadesi bu tek karar için genişletildi.
+
+## K-031 — Hesaplama ortamı, iş parçacığı sınırı ve determinizm
+
+- **Faz / tarih:** P3 · 2026-10-05
+- **Durum:** Geçerli (iş parçacığı kuralı kullanıcı kararı)
+- **Bağlam:** Aynı makinede bir DRL projesi CPU kullanıyor.
+- **Karar:**
+  - Derin modeller ve XGBoost GPU'da (CUDA). Bir veri setinin öznitelik matrisi GPU'ya bir kez yüklenir, pencereler batch başına GPU'da toplanır (CPU yükü düşük).
+  - CPU iş parçacığı sayısı `configs/models.yaml → runtime.threads` (varsayılan 4) tek parametresidir; `--threads` ile değiştirilir (DRL çalışmazken 12). torch, sklearn, XGBoost ve BLAS ortam değişkenleri bu değeri kullanır.
+  - `run_id = <model>_<veri seti>_s<tohum>_<sha8>`; sha8 hiperparametreler + veri seti + tohum + öznitelik/ayrım config özeti + pencere boyundan türetilir. İş parçacığı, cihaz ve git commit run_id'ye girmez; `run_config.json`'a yazılır.
+  - Tohumlama: `random`, `numpy`, `torch` (CPU + CUDA), karıştırma için ayrı tohumlu `torch.Generator`, `cudnn.deterministic = True`, `benchmark = False`, `use_deterministic_algorithms(True, warn_only=True)`, `CUBLAS_WORKSPACE_CONFIG`; RF/XGBoost `random_state`.
+  - Kirli çalışma ağacında (`results/raw` hariç) eğitim `--allow-dirty` olmadan reddedilir (CLAUDE.md kural 7).
+- **Gerekçe:** İş parçacığı sayısı sonucu değil yalnızca süreyi etkiler (RF `random_state` ile n_jobs'tan bağımsızdır); bu yüzden run kimliğine girmez ama kayıt altındadır.
+- **Etkisi:** Benchmark (gecikme) iş parçacığı sayısı bundan bağımsızdır ve F3'te sabitlenecek.
+
+## K-032 — Açık sorun (F3): nicemlenmiş otokodlayıcının anomali eşiği
+
+- **Faz / tarih:** P3 · 2026-10-05
+- **Durum:** Açık sorun — F3'te karara bağlanacak (kullanıcı notu)
+- **Soru:** Otokodlayıcının eşiği nicemlenmiş sürümlerde (Q1 float16, Q2 INT8) nasıl belirlenecek?
+  - (a) float32 modelin eşiği aynen kullanılır;
+  - (b) her nicemlenmiş sürüm için eşik, o sürümün **train normal alt kümesi** skorlarından aynı persentille yeniden hesaplanır.
+- **Neden önemli:** Nicemleme yeniden oluşturma hatası dağılımını kaydırabilir. (a)'da kayma doğrudan FPR/recall değişimi olarak ΔF1'e yansır; (b)'de eşik kaymayı telafi eder ve ΔF1 yalnızca sıralama (ayırt edicilik) kaybını ölçer. Seçim ΔF1'i doğrudan etkiler ve AS-3 (denetimli vs denetimsiz dayanıklılık) karşılaştırmasının anlamını değiştirir.
+- **Kısıt:** Her iki seçenekte de eşik yalnızca train verisinden gelir (CLAUDE.md kural 3). P3 kodu bunu kısıtlamaz: eşik `meta.json`'da saklanır, `fit_threshold` yeniden kullanılabilir.
