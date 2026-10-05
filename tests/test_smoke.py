@@ -28,6 +28,7 @@ PROJECT = [
     "src.data.features",
     "src.data.windows",
     "src.data.splits",
+    "src.data.sources",
     "src.models",
     "src.models.cnn1d",
     "src.models.lstm_autoencoder",

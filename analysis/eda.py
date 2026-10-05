@@ -11,16 +11,19 @@ Outputs:
 The grouping rule and its thresholds are read from configs/eda.yaml (fixed before this script
 was first run). Only traffic statistics are used; no model output.
 
+Captures are read as views (src/data/sources.py): the attack-free tail that all four Car-Hacking
+attack files share is cut from each file and profiled once as ``car_hacking/shared_tail``
+(docs/DECISIONS.md K-016). It is not part of any attack file's normal period.
+
 Usage:
     python -m analysis.eda
 """
 
 from __future__ import annotations
 
-import csv
 import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import matplotlib
@@ -32,6 +35,7 @@ import pandas as pd
 import yaml
 
 from src.data import loaders as L
+from src.data import sources as S
 
 PROJECT_ROOT = L.PROJECT_ROOT
 TABLES = PROJECT_ROOT / "results" / "tables"
@@ -84,8 +88,9 @@ EXCLUDED = np.iinfo(np.int32).min
 ID_SPACE = 4096
 
 
-def load_capture(row: dict) -> Capture:
-    t = L.read_processed(PROJECT_ROOT / row["parquet"], columns=["timestamp", "can_id", "label", "data", "attack_type"])
+def load_capture(view: S.View) -> Capture:
+    t = S.read_view(view, columns=["timestamp", "can_id", "label", "data", "attack_type"])
+    row = asdict(view)
     types = sorted(set(t["attack_type"].unique().to_pylist()) - {L.NORMAL})
     return Capture(
         row=row,
@@ -534,14 +539,13 @@ def main() -> int:
     cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
     RECORDING_GAP_S = cfg["periods"]["recording_gap_s"]
     setup_matplotlib()
-    with (L.PROCESSED_DIR / "index.csv").open(newline="", encoding="utf-8") as f:
-        index = list(csv.DictReader(f))
+    index = S.all_views()
     road_meta = {c.name: c.meta for c in L.road_captures()}
     rng = np.random.default_rng(cfg["grouping_rule"]["C2_id_distribution_jsd"]["seed"])
 
     profile, iat_all, signatures, period_summary = [], [], [], []
     for dataset in ("car_hacking", "road"):
-        rows = [r for r in index if r["dataset"] == dataset]
+        rows = [v for v in index if v.dataset == dataset]
         caps = [load_capture(r) for r in rows]
         profile += [profile_row(c) for c in caps]
         print(f"{dataset}: loaded {len(caps)} captures", flush=True)

@@ -1,0 +1,60 @@
+{
+  "created_utc": "2026-10-05T12:52:39+00:00",
+  "config_sha256_16": "b72e8e55d6cf6a59",
+  "feature_names": [
+    "can_id",
+    "byte_0",
+    "byte_1",
+    "byte_2",
+    "byte_3",
+    "byte_4",
+    "byte_5",
+    "byte_6",
+    "byte_7",
+    "iat"
+  ],
+  "datasets": {
+    "car_hacking": {
+      "id_space": 2047,
+      "iat_cap_s": 0.9991109371185303,
+      "iat_cap_quantile": 0.999,
+      "n_iat_samples": 7844332,
+      "fitted_on_splits": [
+        "train"
+      ],
+      "fitted_on_segments": [
+        "car_hacking/DoS_dataset[0:1591698]",
+        "car_hacking/Fuzzy_dataset[0:1921710]",
+        "car_hacking/gear_dataset[0:2099924]",
+        "car_hacking/RPM_dataset[0:2171670]",
+        "car_hacking/normal_run_data[0:593326]",
+        "car_hacking/shared_tail[2774703:3665771]"
+      ]
+    },
+    "road": {
+      "id_space": 4095,
+      "iat_cap_s": 1.0072270755767825,
+      "iat_cap_quantile": 0.999,
+      "n_iat_samples": 15559432,
+      "fitted_on_splits": [
+        "train"
+      ],
+      "fitted_on_segments": [
+        "road/ambient_dyno_drive_basic_short[0:1063624]",
+        "road/ambient_dyno_drive_winter[0:114148]",
+        "road/ambient_dyno_exercise_all_bits[0:4419422]",
+        "road/ambient_dyno_reverse[0:123047]",
+        "road/ambient_highway_street_driving_long[0:8821916]",
+        "road/correlated_signal_attack_1[0:81262]",
+        "road/correlated_signal_attack_1_masquerade[0:79176]",
+        "road/fuzzing_attack_1[0:49342]",
+        "road/max_speedometer_attack_1[0:213397]",
+        "road/max_speedometer_attack_1_masquerade[0:210953]",
+        "road/reverse_light_off_attack_1[0:67902]",
+        "road/reverse_light_off_attack_1_masquerade[0:67230]",
+        "road/reverse_light_on_attack_1[0:133237]",
+        "road/reverse_light_on_attack_1_masquerade[0:131246]"
+      ]
+    }
+  }
+}

@@ -1,6 +1,7 @@
-# Dataset paths. The explicit file-level train/validation/test split is added in F1.
-# Split unit is source_capture (see docs/DECISIONS.md): captures derived from the same source
-# capture (ROAD *_masquerade logs) must always land in the same split.
+# Dataset paths, feature/window settings and the fixed train/validation/test split (P2, plan F1).
+# Nothing here is drawn at random. Decisions and their rationale: docs/DECISIONS.md K-016...K-022.
+# Split unit is source_capture (K-007, K-015c): captures derived from the same source capture
+# (ROAD *_masquerade logs) always land in the same split.
 
 raw_dir: data/raw
 processed_dir: data/processed
@@ -14,8 +15,125 @@ datasets:
   road:
     raw: data/raw/road/road
     processed: data/processed/road
-    excluded_captures:   # no frame-level labels (injection happened before the capture started)
+    excluded_captures:   # no frame-level labels (injection happened before the capture started), K-008
       - road/accelerator_attack_drive_1
       - road/accelerator_attack_drive_2
       - road/accelerator_attack_reverse_1
       - road/accelerator_attack_reverse_2
+
+# Recordings that a dataset publishes more than once (K-016). The four Car-Hacking attack files all
+# end, after their long recording gap, with the same 891,068-frame attack-free recording (identical
+# absolute timestamps 1478200727.419470 .. 1478201209.058944, IDs and payloads). It is cut from every
+# file and exposed once as its own view (src/data/sources.py). It follows the DoS recording session
+# (22 s after the last DoS frame), so it is read from the DoS file.
+shared_segments:
+  car_hacking/shared_tail:
+    read_from: car_hacking/DoS_dataset
+    start_timestamp: 1478200727.41947
+    contained_in:
+      - car_hacking/DoS_dataset
+      - car_hacking/Fuzzy_dataset
+      - car_hacking/gear_dataset
+      - car_hacking/RPM_dataset
+
+features:            # src/data/features.py (K-020, K-021)
+  id_space:          # fixed ID-space size per dataset, not learned from data
+    car_hacking: 0x7FF   # 11-bit IDs, max observed 0x7FF
+    road: 0xFFF          # 3-hex-digit (12-bit) anonymised ID field; 0xFFF is the only ID > 0x7FF
+  iat_cap_quantile: 0.999  # IAT cap = this quantile of benign per-ID IATs in the TRAINING segments
+
+windows:             # src/data/windows.py (K-002)
+  size: 100
+  stride:
+    train: 50
+    val: 100         # non-overlapping
+    test: 100        # non-overlapping
+
+normal_subset:       # attack-free training windows for the LSTM autoencoder (K-022)
+  margin_s: 5.0      # no frame of the window within this many seconds of any injected frame
+  exclude_masquerade: true   # attack-free parts of masquerade logs duplicate their source capture
+
+splits:
+  min_test_attack_windows: 30   # every attack type needs at least this many test windows
+  min_block_gap_s: 10.0         # Car-Hacking blocks: >= 10 x IAT cap (cap ~1 s); checked in tests
+
+  # Car-Hacking temporal block rule (K-017). The row ranges below were produced by
+  # `python -m src.data.splits --propose-blocks`; tests/test_no_leakage.py checks they still agree.
+  temporal_block_rule:
+    burst_gap_s: 1.0        # injected frames closer than this belong to one burst (as in configs/eda.yaml)
+    train_bursts: 180       # of 300 bursts per attack file
+    val_bursts: 58
+    gap_bursts: 2           # whole bursts discarded at each cut (gap 12.9-16.5 s)
+    normal_fractions: [0.6, 0.2, 0.2]   # attack-free file, by time
+    normal_gap_s: 15.0
+
+  car_hacking:
+    whole:
+      car_hacking/shared_tail: train
+    blocks:      # absolute parquet row ranges [start, stop); rows between blocks are discarded
+      car_hacking/DoS_dataset:        # 300 bursts: train 1-180, val 183-240, test 243-300
+        train: [[0, 1591698]]
+        val: [[1616036, 2135567]]
+        test: [[2154166, 2774703]]    # ends where the shared tail starts
+      car_hacking/Fuzzy_dataset:
+        train: [[0, 1921710]]
+        val: [[1937803, 2419832]]
+        test: [[2433218, 2947792]]
+      car_hacking/gear_dataset:
+        train: [[0, 2099924]]
+        val: [[2121207, 2809271]]
+        test: [[2834660, 3552074]]
+      car_hacking/RPM_dataset:
+        train: [[0, 2171670]]
+        val: [[2190404, 2939500]]
+        test: [[2966515, 3730634]]
+      car_hacking/normal_run_data:    # attack-free, 506 s: 60/20/20 by time, 15 s gaps
+        train: [[0, 593326]]
+        val: [[622615, 791099]]
+        test: [[820388, 988871]]
+
+  road:          # by source_capture (K-018, K-019)
+    train:
+      - road/ambient_highway_street_driving_long
+      - road/ambient_dyno_exercise_all_bits
+      - road/ambient_dyno_drive_basic_short
+      - road/ambient_dyno_reverse
+      - road/ambient_dyno_drive_winter
+      - road/correlated_signal_attack_1
+      - road/fuzzing_attack_1
+      - road/max_speedometer_attack_1
+      - road/reverse_light_off_attack_1
+      - road/reverse_light_on_attack_1
+    val:
+      - road/ambient_dyno_drive_basic_long
+      - road/ambient_dyno_drive_extended_short
+      - road/ambient_highway_street_driving_diagnostics
+      - road/correlated_signal_attack_2
+      - road/max_speedometer_attack_2
+      - road/reverse_light_off_attack_2
+      - road/reverse_light_on_attack_2
+    test:
+      - road/ambient_dyno_idle_radio_infotainment
+      - road/ambient_dyno_drive_extended_long
+      - road/ambient_dyno_drive_radio_infotainment
+      - road/ambient_dyno_drive_benign_anomaly
+      - road/correlated_signal_attack_3
+      - road/max_speedometer_attack_3
+      - road/reverse_light_off_attack_3
+      - road/reverse_light_on_attack_3
+      - road/fuzzing_attack_2          # exception to the _1/_2/_3 rule, K-018
+      - road/fuzzing_attack_3
+      - road/max_engine_coolant_temp_attack   # single source capture, test only, K-019
+
+  # How attack types enter the analysis (K-018, K-019).
+  analysis_roles:
+    unseen_in_training:           # reported separately as an "attack type not seen in training" case
+      - road/max_engine_coolant_temp
+      - road/max_engine_coolant_temp_masquerade
+    no_validation_windows:        # early stopping/model selection runs on the other types
+      - road/fuzzing
+      - road/max_engine_coolant_temp
+      - road/max_engine_coolant_temp_masquerade
+    excluded_from_primary_as1:    # primary AS-1 = paired fabrication-masquerade design (K-013)
+      - road/max_engine_coolant_temp
+      - road/max_engine_coolant_temp_masquerade

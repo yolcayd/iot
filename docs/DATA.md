@@ -60,6 +60,16 @@ dosya formatını ve bütünlük özetlerini kaydeder. Ham veri depoya eklenmez 
 HCRL sayfası mesaj sayısı tablosunu metin olarak yayımlamıyor; tutarlılık testi ham dosyadan bağımsız
 yeniden sayıma dayanır.
 
+### Ortak kuyruk (P2'de bulundu, K-016)
+
+Dört saldırı dosyası (DoS, Fuzzy, gear, RPM), uzun kayıt boşluğundan sonra **aynı** 891,068 çerçevelik
+saldırısız kayıtla bitiyor. Mutlak zaman damgaları (1478200727.419470 … 1478201209.058944, 481.6 s),
+ID'ler ve yükler dört dosyada birebir aynı. Kuyruk zamanda DoS kaydının devamı: son DoS çerçevesinden
+22 s sonra başlıyor. Normal dosyada bu kuyruk yok. Kuyruk her dosyadan kesilir ve bir kez,
+`car_hacking/shared_tail` görünümü olarak kullanılır (`configs/data.yaml` → `shared_segments`,
+`src/data/sources.py`). Kuyruk çıkarıldıktan sonraki saldırı dosyası boyutları: DoS 2,774,703;
+Fuzzy 2,947,792; gear 3,552,074; RPM 3,730,634 çerçeve.
+
 ## 2. ROAD — Real ORNL Automotive Dynamometer CAN Intrusion Dataset
 
 - **Sayfa:** https://0xsam.com/road/ · Zenodo: https://zenodo.org/records/10462796 (DOI 10.5281/zenodo.10462796)

@@ -30,6 +30,8 @@ and SHA-256 checksums are documented in [`docs/DATA.md`](docs/DATA.md).
 python -m src.data.download all   # download, verify and extract into data/raw/ (resumable)
 python -m src.data.loaders        # convert every capture to the common parquet schema in data/processed/
 python -m analysis.eda            # exploratory analysis -> results/tables/, results/figures/
+python -m src.data.features       # fit feature normalisation on training segments only
+python -m src.data.splits         # window index + results/tables/split_summary.csv
 ```
 
 All three commands are idempotent: finished downloads and converted captures are skipped on a re-run.
@@ -39,6 +41,15 @@ data (uint8[8]), label, attack_type, source_file, source_capture`. ROAD `*_masqu
 derived from the matching fabrication logs by removing the conflicting legitimate frames, so they carry
 the fabrication capture as their `source_capture`. Captures sharing a `source_capture` must always end
 up in the same train/validation/test split.
+
+The split is fixed in [`configs/data.yaml`](configs/data.yaml); nothing is drawn at random. ROAD is
+split by `source_capture`. Car-Hacking has one file per attack type, so each file is split into
+time-ordered train/validation/test blocks cut between attack bursts, with whole bursts discarded at
+every cut. The four Car-Hacking attack files end with the same attack-free recording; it is used once,
+as `car_hacking/shared_tail` (`src/data/sources.py`). Each message becomes a 10-dimensional vector
+(ID / ID-space size, 8 payload bytes / 255, per-ID inter-arrival time clipped at a cap fitted on training
+data). Windows are 100 messages long, with stride 50 in training and 100 (no overlap) in validation and
+test. `tests/test_no_leakage.py` checks the split.
 
 Attacks are grouped by mechanism in [`configs/attack_groups.yaml`](configs/attack_groups.yaml):
 *coarse* attacks change the timing or the ID distribution of the bus (DoS, fuzzing, and also the

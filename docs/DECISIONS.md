@@ -149,9 +149,131 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-015 — F1'e devredilen açık sorunlar
 
 - **Faz / tarih:** P1 · 2026-10-05
-- **Durum:** Açık (F1'de karara bağlanacak)
+- **Durum:** Kapandı (P2): (a) K-020, (b) K-017 ve K-019, (c) K-018 ile karara bağlandı
 - **Sorunlar:**
   - **(a)** ROAD'da 0xFFF kimliği var (çerçevelerin %6.3'ü; ID'ler 3 hex hane, muhtemelen anonimleştirilmiş). Plan Bölüm 2.2'deki ID/0x7FF normalizasyonu ROAD için 1'i aşar; normalizasyon yöntemi F1'de belirlenecek.
   - **(b)** Car-Hacking'de her saldırı türü tek dosyada; ROAD'da max_engine_coolant_temp (ve masquerade sürümü) tek kaynak kayıtta. Dosya/kaynak düzeyinde ayrım bu türleri test kümesinden düşürebilir; F1'de çözülecek.
   - **(c)** Ayrım birimi `source_capture`'dır; aynı kaynaktan türeyen fabrication ve masquerade kayıtları her zaman aynı kümede (eğitim, doğrulama veya test) kalır.
 - **Etkisi:** F1'de `tests/test_no_leakage.py` (c)'yi doğrulayacak.
+
+## K-016 — Car-Hacking saldırı dosyalarının ortak kuyruğu tek kaynak olarak sayılır
+
+- **Faz / tarih:** P2 · 2026-10-05
+- **Durum:** Geçerli (kullanıcı onayı)
+- **Bağlam:** Zamansal blok ayrımı hazırlanırken dört Car-Hacking saldırı dosyasının kuyruğu incelendi. Her dosya uzun kayıt boşluğundan sonra aynı 891,068 çerçevelik saldırısız kayıtla bitiyor: mutlak zaman damgaları (1478200727.419470 … 1478201209.058944), ID'ler ve yükler birebir aynı. Kuyruk zamanda DoS kaydının devamı (son DoS çerçevesinden 22 s sonra); normal dosyada yok.
+- **Karar:**
+  - Kuyruk `configs/data.yaml` → `shared_segments` altında tanımlanır, dört dosyanın her birinden kesilir ve tek bir görünüm (`car_hacking/shared_tail`, `src/data/sources.py`) olarak yalnızca bir kez kullanılır. Bu görünüm train kümesindedir.
+  - P1 keşifsel analiz tabloları ve şekilleri (`data_profile.csv`, `attack_signatures.csv`, imza şekilleri, özet şekli) aynı görünüm katmanıyla yeniden üretildi. Car-Hacking saldırı dosyalarının normal dönemi artık kuyruğu içermiyor.
+- **Gerekçe:** Kuyruk dosyalarla birlikte farklı kümelere giderse aynı mesajlar hem eğitimde hem testte bulunur (sızıntı). Keşifsel analizde aynı kayıt dört kez sayılıyor ve dört saldırı dosyasının normal dönemine karışıyordu; tehdit modeli ve Şekil 2 sayıları doğru olmalı.
+- **Etkisi:**
+  - Gruplama değişmedi: 15 türün hepsinde tetiklenen ölçütler aynı; `tests/test_attack_groups.py` geçiyor.
+  - Car-Hacking imza sayıları küçük oranda değişti (P2.md'de eski/yeni tablo). Car-Hacking null q99: 0.00053 → 0.00059.
+  - Saldırı oranları %12.8–16.0 → %16.7–21.2; dosya süreleri artık kayıt boşluğunu içermiyor.
+  - ROAD tabloları değişmedi.
+  - `tests/test_no_leakage.py` kuyruğun dört dosyada aynı olduğunu ve tek bir segmentte kullanıldığını doğrular.
+
+## K-017 — Car-Hacking: zamansal blok ayrımı
+
+- **Faz / tarih:** P2 · 2026-10-05
+- **Durum:** Geçerli (kullanıcı onayı)
+- **Bağlam:** Car-Hacking'de her saldırı türü tek dosyada, normal trafik de tek dosyada (K-015b). Dosya düzeyinde ayrım, türleri ya eğitimden ya testten tamamen düşürür. Her saldırı dosyasında 300 patlama var (DoS ~4.6 s, Fuzzy ~5.2 s, gear/RPM ~3.4 s); patlamalar arası aralık 3.0 s.
+- **Karar:**
+  - Saldırı dosyası (kuyruk çıkarılmış) zaman sırasıyla bölünür: train = 1–180. patlamalar, val = 183–240, test = 243–300.
+  - Her kesimde 2 tam patlama atılır. Kesimler patlama arası saldırısız aralığın zaman orta noktasına düşer.
+  - Normal dosya zamana göre %60/20/20 bölünür, kesimlerde 15 s atılır.
+  - Satır aralıkları `configs/data.yaml`'a açıkça yazıldı (`splits.car_hacking.blocks`). `python -m src.data.splits --propose-blocks` kuraldan aynı aralıkları yeniden üretir; testler ikisinin eşit olduğunu doğrular.
+- **Gerekçe (boşluk süresi):**
+  - 100 çerçevelik bir pencere medyanda 51–55 ms, p99'da en fazla 0.45 s sürer.
+  - IAT özniteliği her segmentin içinde sıfırdan hesaplanır (K-021); öznitelik sınırın ötesine bakmaz.
+  - Boşluk, zamansal bağımlılığa (sürüş durumu, otokorelasyon) karşı güvenlik payıdır. Kural: boşluk ≥ `min_block_gap_s` = 10 s ≥ 10 × IAT tavanı (0.999 s).
+  - Gerçekleşen boşluklar: DoS 15.1–15.3 s, Fuzzy 16.3–16.5 s, gear/RPM 12.9–13.0 s, normal dosya 15 s.
+  - Kesim çerçevelerinin en yakın enjekte çerçeveye uzaklığı > 1 s.
+- **Etkisi:**
+  - Test pencereleri dosyanın son bölümünden gelir. Train, val ve test aynı sürüş oturumunun farklı zaman dilimleridir; bu, dosya düzeyinde ayrımdan zayıf bir bağımsızlıktır ve makalede Sınırlılıklar bölümünde belirtilecek.
+  - Plandan (dosya düzeyinde ayrım) bilinçli bir sapmadır; danışmana bildirilecek.
+
+## K-018 — ROAD: source_capture düzeyinde ayrım ve fuzzing istisnası
+
+- **Faz / tarih:** P2 · 2026-10-05
+- **Durum:** Geçerli (kullanıcı kararı)
+- **Bağlam:** ROAD'da hedefli fabrication türlerinin (correlated_signal, max_speedometer, reverse_light_off/on) ve fuzzing'in her birinde 3 kaynak kayıt var. Ambient kayıt sayısı 12.
+- **Karar:**
+  - Ayrım birimi `source_capture`'dır (K-015c); masquerade kaydı her zaman fabrication kaynağıyla aynı kümeye düşer.
+  - Önceden belirlenmiş kural: `_1` train, `_2` val, `_3` test.
+  - Ambient kayıtlar çerçeve sayısına göre ~%60/20/20 dağıtıldı (train 14.54 M, val 4.91 M, test 4.70 M çerçeve). `highway_street_driving_long` ve `exercise_all_bits` train'de; `benign_anomaly` gerçekçi yanlış alarm ölçümü için test'te.
+  - **Fuzzing istisnası:** `fuzzing_attack_1` train'de; `fuzzing_attack_2` ve `fuzzing_attack_3` birlikte test'te (68 test saldırı penceresi). Fuzzing için val kümesi yoktur; erken durdurma diğer türlerle yürür.
+- **Gerekçe:**
+  - Önceden belirlenmiş kuralla `fuzzing_attack_3` (116 enjekte çerçeve) testte yalnızca 17 saldırı penceresi bırakıyordu; bu sayıyla F1 çok gürültülü olur.
+  - İstisna model sonuçlarına değil, yalnızca pozitif örnek sayısına dayanır; model çıktısı veya test skoru kullanılmadı.
+  - Fuzzing, birincil AS-1 analizinin (eşleştirilmiş fabrication–masquerade, K-013) parçası değildir.
+- **Etkisi:** `min_test_attack_windows` = 30 (her tür bu eşiğin üstünde; en küçükleri coolant 43, fuzzing 68). `configs/data.yaml` → `analysis_roles.no_validation_windows` fuzzing'i listeler.
+
+## K-019 — ROAD max_engine_coolant_temp çifti yalnızca testte
+
+- **Faz / tarih:** P2 · 2026-10-05
+- **Durum:** Geçerli (kullanıcı kararı)
+- **Bağlam:** Coolant fabrication ve masquerade kayıtları tek kaynak kayıttan geliyor. Enjeksiyon kaydın 19.98–24.17 s aralığında (4.2 s, 43 enjekte çerçeve).
+- **Karar:**
+  - Çiftin tamamı test kümesine konur; tür eğitimde ve doğrulamada görülmez.
+  - Sonuçlar AS-1 birincil analizine katılmaz; ayrı bir "eğitimde görülmemiş saldırı türü" vakası olarak raporlanır (`analysis_roles.unseen_in_training`, `excluded_from_primary_as1`).
+- **Gerekçe:** Enjeksiyon aralığı içinde zamansal blok, testte yalnızca 8 saldırı penceresi bırakıyordu. Tüm çift testte olunca 43 saldırı penceresi var. Aynı mekanizma (hedef ID hızının iki katına çıkması) diğer 4 fabrication türünde eğitimde bulunuyor; LSTM otokodlayıcı zaten denetimsiz.
+- **Etkisi:** 13 fabrication–masquerade çiftinin 12'si birincil AS-1 analizinde kalır; testte 4 çift (her tür için `_3`) bulunur.
+
+## K-020 — ID normalizasyonu: veri setine özgü sabit ID uzayı
+
+- **Faz / tarih:** P2 · 2026-10-05
+- **Durum:** Geçerli (kullanıcı onayı)
+- **Bağlam:** Plan Bölüm 2.2 ID/0x7FF diyor. ROAD'da 0x7FF'i aşan tek ID 0xFFF (çerçevelerin %6.3'ü); Car-Hacking'de en büyük ID 0x7FF (K-015a).
+- **Karar:** Car-Hacking ID/0x7FF, ROAD ID/0xFFF. Sabitler `configs/data.yaml` → `features.id_space` altındadır, veriden öğrenilmez. ID uzayını aşan bir ID hata verir.
+- **Gerekçe:**
+  - Vektör 10 boyutta kalır.
+  - Her iki veri seti [0, 1] aralığını tam kullanır; bu, INT8 girdi nicemlemesinde ID çözünürlüğü için önemlidir. Ortak /0xFFF, Car-Hacking ID'lerini [0, 0.5]'e sıkıştırırdı.
+  - Ayrı bir ikili 0xFFF bayrağı 11 boyuta çıkarırdı ve plandan sapardı.
+  - ROAD'un ID alanı 3 hex hanedir (12 bit, anonimleştirilmiş).
+- **Etkisi:** İki veri setindeki ID değerleri aynı ölçekte değildir; veri setleri arası genelleme deneyinde (F4) ID özniteliği zaten anonimleştirme nedeniyle karşılaştırılamaz.
+
+## K-021 — IAT özniteliği: tanım ve tavan
+
+- **Faz / tarih:** P2 · 2026-10-05
+- **Durum:** Geçerli
+- **Karar:**
+  - IAT = aynı ID'li bir önceki çerçeveden bu yana geçen süre. Hesap segment içinde yapılır; bir ID'nin segmentteki ilk çerçevesi tavan değerini (1.0) alır.
+  - Öznitelik min(IAT, tavan) / tavan.
+  - Tavan, veri setinin **train segmentlerindeki normal (label 0) çerçevelerin** ID başına IAT'sinin 0.999 kantilidir. Car-Hacking 0.999111 s (7.84 M örnek), ROAD 1.007227 s (15.56 M örnek).
+  - Parametreler, uydurulduğu segment listesi ve yapılandırma özetiyle `results/tables/normalization_params.json`'a yazılır.
+  - `fit_iat_cap` train dışı segment verilirse hata verir.
+- **Gerekçe:**
+  - Segment içi hesap, bir segmentin özniteliğinin başka bir kümenin çerçevelerine bakmasını önler.
+  - Saldırı çerçeveleri tavan hesabından çıkarıldı: Fuzzy'nin rastgele ID'leri p99.9'u ~60 s'ye çıkarıyordu.
+- **Etkisi:** Açık sorun (P2.md): tavan ≈ 1 s olduğundan tipik IAT değerleri (10–100 ms) özniteliğin 0.01–0.1 aralığına düşer. [0, 1] aralığında 1/255 adımlı INT8 girdi nicemlemesi 10 ms'yi ≈ 2.5 adıma, 1 ms'yi < 1 adıma indirir. Bu, F3'ten önce karara bağlanmalı.
+
+## K-022 — LSTM otokodlayıcının normal eğitim alt kümesi
+
+- **Faz / tarih:** P2 · 2026-10-05
+- **Durum:** Geçerli (kullanıcı onayı)
+- **Karar:**
+  - Alt küme yalnızca train kümesinden, label 0 olan ve hiçbir çerçevesi kaydın herhangi bir enjekte çerçevesine 5 s'den yakın olmayan pencerelerden oluşur.
+  - Kaynaklar: ROAD ambient (train), ROAD train fabrication kayıtlarının saldırısız dönemleri, Car-Hacking normal dosyasının train bloğu, Car-Hacking ortak kuyruğu.
+  - Masquerade kayıtlarının saldırısız dönemleri, fabrication kaynağındaki çerçevelerle aynı olduğu için dahil edilmez.
+  - Car-Hacking train saldırı bloklarının 3 s'lik patlama arası aralıkları ±5 s payın içinde kaldığından alt kümeye girmez.
+- **Gerekçe:** Saldırıya yakın normal pencereler, saldırının hemen öncesi veya sonrasındaki geçiş etkilerini içerebilir. Kenar payı bu etkileri eğitimden uzak tutar.
+- **Etkisi:**
+  - Car-Hacking alt kümesi 29,685 pencere (normal dosya 11,865 + kuyruk 17,820).
+  - ROAD alt kümesi 295,689 pencere (ambient 290,835 + saldırısız dönemler 4,854).
+  - Anomali eşiği F2'de yalnızca bu alt kümenin skor dağılımından belirlenecek.
+
+## K-023 — Sızıntı testinde mesaj kimliği: zaman kaymasından bağımsız 32 çerçevelik dizi
+
+- **Faz / tarih:** P2 · 2026-10-05
+- **Durum:** Geçerli
+- **Bağlam:**
+  - Plan F1 testi 1 "eğitim ve test pencereleri ortak mesaj (timestamp) içermiyor" diyor. ROAD zaman damgaları kayıt başına anonimleştirilmiş ve birçok kayıt aynı yuvarlak değerden başlıyor (ör. üç kayıt 1110000000.0'dan).
+  - (zaman damgası, ID, yük) anahtarı ilişkisiz kayıtlar arasında tek tek, ardışık olmayan 54 tesadüfi eşleşme verdi.
+  - Yeniden zaman damgalanmış kopyalar (masquerade kayıtları) mutlak zaman anahtarıyla hiç yakalanamaz.
+- **Karar:**
+  - Mesaj kimliği, başlattığı 32 çerçevelik dizidir: ID'ler, yükler ve çerçeveler arası µs farkları.
+  - Test, hiçbir dizinin iki kümede bulunmadığını doğrular ve eşleşmeyi ham çerçevelerle teyit eder.
+  - Pozitif kontrol: dedektör masquerade–fabrication çiftini ve ortak kuyruk kopyasını yakalar.
+  - Ayrıca aynı dosyanın segmentleri çakışmaz.
+- **Gerekçe:** Kopya bir kayıt binlerce ortak dizi üretir. Tüm kayıtlarda 8 çerçevelik dizilerle yapılan tarama, yalnızca bilinen 13 soy çiftinde (%75–99) ve DoS ile kuyruk arasında tek bir dizide eşleşme buldu; başka bir kopya kayıt yok.
+- **Etkisi:** Test 1, planın ifadesinden daha sıkı bir biçimde uygulanır.

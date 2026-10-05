@@ -1,9 +1,10 @@
 dataset,capture,source_capture,kind,attack_type,n_messages,n_normal,n_attack,attack_ratio,n_unique_ids,duration_s,msg_rate_per_s,excluded
-car_hacking,car_hacking/DoS_dataset,car_hacking/DoS_dataset,attack,dos,3665771,3078250,587521,0.160272,27,2832.67,1294.1,False
-car_hacking,car_hacking/Fuzzy_dataset,car_hacking/Fuzzy_dataset,attack,fuzzy,3838860,3347013,491847,0.128123,2048,5487.16,699.608,False
-car_hacking,car_hacking/gear_dataset,car_hacking/gear_dataset,attack,gear_spoofing,4443142,3845890,597252,0.134421,26,8019,554.077,False
-car_hacking,car_hacking/RPM_dataset,car_hacking/RPM_dataset,attack,rpm_spoofing,4621702,3966805,654897,0.1417,26,10179,454.042,False
+car_hacking,car_hacking/DoS_dataset,car_hacking/DoS_dataset,attack,dos,2774703,2187182,587521,0.211742,27,2328.67,1191.54,False
+car_hacking,car_hacking/Fuzzy_dataset,car_hacking/Fuzzy_dataset,attack,fuzzy,2947792,2455945,491847,0.166853,2048,2466.03,1195.36,False
+car_hacking,car_hacking/gear_dataset,car_hacking/gear_dataset,attack,gear_spoofing,3552074,2954822,597252,0.168142,26,1949.24,1822.29,False
+car_hacking,car_hacking/RPM_dataset,car_hacking/RPM_dataset,attack,rpm_spoofing,3730634,3075737,654897,0.175546,26,1952.44,1910.76,False
 car_hacking,car_hacking/normal_run_data,car_hacking/normal_run_data,ambient,none,988871,988871,0,0,27,506.437,1952.61,False
+car_hacking,car_hacking/shared_tail,car_hacking/shared_tail,ambient,none,891068,891068,0,0,26,481.639,1850.07,False
 road,road/ambient_dyno_drive_basic_long,road/ambient_dyno_drive_basic_long,ambient,none,2991272,2991272,0,0,106,1250.94,2391.21,False
 road,road/ambient_dyno_drive_basic_short,road/ambient_dyno_drive_basic_short,ambient,none,1063624,1063624,0,0,106,444.751,2391.51,False
 road,road/ambient_dyno_drive_benign_anomaly,road/ambient_dyno_drive_benign_anomaly,ambient,none,771519,771519,0,0,106,456.456,1690.24,False
