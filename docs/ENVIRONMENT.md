@@ -5,7 +5,7 @@ Detected on 2026-10-05 (phase P0).
 | Component | Value |
 |---|---|
 | OS | Microsoft Windows 11 Pro, 10.0.26200, 64-bit |
-| Python (system / venv) | 3.13.15 (MSC v.1944, AMD64) — the plan specifies 3.11; 3.13 is the only interpreter installed (see P0 log) |
+| Python (system / venv) | 3.13.15 (MSC v.1944, AMD64) — project Python version (the plan said 3.11; see `docs/DECISIONS.md` K-001) |
 | CPU | 12th Gen Intel Core i7-12650H — 10 cores (6P + 4E), 16 threads, base 2.3 GHz |
 | RAM | 15.7 GB |
 | GPU | NVIDIA GeForce RTX 4050 Laptop GPU, 6 GB VRAM (6141 MiB), compute capability 8.9 |

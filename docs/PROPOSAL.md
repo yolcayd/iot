@@ -14,7 +14,7 @@
 | **Öğrenci Numarası** | [gizli] |
 | **Program / Bölüm** | Yapay Zekâ ve Makine Öğrenmesi Yüksek Lisans Programı |
 
-**NOT:** Hazırladığınız bu dökümanı muhammed.kucuk@btu.edu.tr adresinden email olarak gönderiniz.
+**NOT:** Hazırladığınız bu dökümanı [danışman e-postası] adresinden email olarak gönderiniz.
 
 | Konu seçimi: Öğrenci, ders kapsamında ele alınan genel IoT konu alanlarından birini seçmeli; bu alanı belirli, uygulanabilir ve ölçülebilir bir araştırma problemine dönüştürmelidir. Yalnızca geniş alan adı yazılması yeterli değildir. |
 |---|

@@ -37,7 +37,7 @@ docs/       project plan, proposal, environment notes, phase logs
 
 ## Setup
 
-Requirements: Python 3.11+ (developed with 3.13 on Windows 11), optionally an NVIDIA GPU.
+Requirements: Python 3.13 (developed with 3.13.15 on Windows 11), optionally an NVIDIA GPU.
 
 ```powershell
 python -m venv .venv

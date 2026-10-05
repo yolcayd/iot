@@ -4,6 +4,10 @@
 
 Araç içi CAN saldırı tespit modellerinde nicemlemenin (float32 → float16 → INT8) başarım kaybını saldırı türü bazında ölçmek. Çıktı: bir konferans bildirisi.
 
+## Ortam
+
+Python 3.13 (proje `.venv`'i, sabit sürümler `requirements.txt`'te). Gerekçe: docs/DECISIONS.md K-001.
+
 ## Değişmez kurallar
 
 1. **Veri sızıntısı yasaktır.** Eğitim/doğrulama/test ayrımı DOSYA düzeyinde yapılır. Aynı kayıt dosyasından hem eğitim hem test penceresi üretilmez.
@@ -33,6 +37,10 @@ Danışman (Dr. Muhammed Furkan Küçük) iki yöntemi onayladı: (i) denetimli 
 ## Faz kapanış kuralı
 
 Her fazın sonunda docs/phase-logs/<faz>.md yazılır: yapılanlar, oluşturulan/değiştirilen dosyalar, elde edilen sayısal sonuçlar, plandan sapmalar ve gerekçeleri, açık sorunlar, kabul kriterlerinin tek tek durumu (✔/✘). Faz bitince DUR ve onay bekle. Sonraki faza kendiliğinden geçme.
+
+## Karar kaydı kuralı
+
+Her fazda alınan metodolojik kararlar (plandan veya öneri formundan sapmalar dahil) gerekçeleriyle birlikte docs/DECISIONS.md'ye yeni bir girdi olarak eklenir. Mevcut girdiler silinmez; bir karar değişirse yeni girdi eski girdiye atıf yaparak onu geçersiz kılar. Faz günlüğü ilgili karar numaralarına atıf yapar.
 
 ## Uzun işler kuralı
 
