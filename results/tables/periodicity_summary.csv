@@ -1,0 +1,3 @@
+dataset,n_ids,n_periodic,share_ids_periodic,share_frames_periodic,median_cv,n_periodic_raw_cv,median_cv_raw,n_robust_spread_lt_threshold,share_frames_robust_spread_lt_threshold
+car_hacking,27,27,1,1,0.0431061,27,0.0431061,20,0.641398
+road,106,18,0.169811,0.0473635,1.2982,0,3.20491,81,0.586002

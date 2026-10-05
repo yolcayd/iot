@@ -59,4 +59,4 @@ Serbest olanlar: faz sonunda commit ve normal (force olmayan) push; proje `.venv
 
 ## Dil
 
-Kod, yorum, docstring ve README İngilizce. docs/phase-logs ve docs/reports Türkçe.
+Kod, yorum, docstring ve README İngilizce. docs/phase-logs ve docs/reports Türkçe. Kullanıcıyla sohbet yanıtları Türkçe.

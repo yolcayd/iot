@@ -1,0 +1,59 @@
+# Exploratory analysis settings and the a-priori attack grouping rule (P1).
+#
+# The rule below was fixed on 2026-10-05 BEFORE any attack-signature metric was computed.
+# It uses traffic statistics only (ID distribution, message rate, inter-arrival time, unseen IDs);
+# no model output or F1 value is ever used. See docs/DECISIONS.md.
+#
+# Definitions (mechanism, not attack name):
+#   coarse   - the attack visibly changes the timing or the ID distribution of the bus
+#              (injection/fabrication of extra frames included).
+#   stealthy - the attack preserves timing and ID distribution; its signature is only in the payload
+#              (e.g. masquerade).
+# An attack type is "coarse" if ANY of C1..C4 holds, otherwise "stealthy".
+
+periods:
+  # Car-Hacking: injected (T) frames closer than this gap belong to the same attack burst;
+  # attack period = union of [first T, last T] of each burst.
+  car_hacking_burst_gap_s: 1.0
+  # Normal period = rest of the same file, excluding this margin around each attack burst.
+  car_hacking_margin_s: 1.0
+  # ROAD: attack period = metadata injection_interval; normal period = rest of the same capture.
+  # Added 2026-10-05 after the first EDA run (see docs/DECISIONS.md): intervals longer than this
+  # with no frame on the bus are recording gaps; they are excluded from period durations (rates)
+  # and from per-ID IAT statistics. This does not change any grouping threshold.
+  recording_gap_s: 1.0
+
+grouping_rule:
+  C1_unseen_id_share:
+    description: share of attack-period frames whose ID never occurs in the dataset's attack-free reference traffic
+    threshold: 0.01          # coarse if share > threshold
+  C2_id_distribution_jsd:
+    description: >-
+      Jensen-Shannon divergence (log2) between the ID frequencies of a window of `window_frames`
+      consecutive attack-period frames and the ID frequencies of the normal period of the same
+      capture. The attack-type statistic is the median over all such windows (a period shorter
+      than one window counts as a single window).
+    window_frames: 1000
+    null_draws: 200          # random contiguous segment pairs from attack-free reference traffic:
+                             # one window of `window_frames` frames vs a disjoint contiguous segment
+                             # whose length is the median normal-period frame count of the
+                             # dataset's attack captures (capped by the reference capture length)
+    null_quantile: 0.99      # coarse if median window JSD > this quantile of the null distribution
+    seed: 0
+  C3_target_rate_ratio:
+    description: frames/s of the target ID, attack period / normal period
+    band: [0.6666667, 1.5]   # coarse if ratio outside the band
+  C4_target_median_iat_ratio:
+    description: median inter-arrival time of the target ID, attack period / normal period
+    band: [0.6666667, 1.5]   # coarse if ratio outside the band
+  # Target ID: Car-Hacking = ID(s) of T frames; ROAD = metadata injection_id.
+  # Attacks without a single target ID (fuzzing) are judged on C1 and C2 only.
+
+reference_traffic:
+  car_hacking: [car_hacking/normal_run_data]
+  road: ambient            # all ROAD ambient captures
+
+periodicity:
+  # An ID counts as periodic when the coefficient of variation of its IAT is below this value.
+  cv_threshold: 0.2
+  min_frames: 100

@@ -1,1 +1,21 @@
-# Dataset paths and the explicit file-level train/validation/test split (filled in F1).
+# Dataset paths. The explicit file-level train/validation/test split is added in F1.
+# Split unit is source_capture (see docs/DECISIONS.md): captures derived from the same source
+# capture (ROAD *_masquerade logs) must always land in the same split.
+
+raw_dir: data/raw
+processed_dir: data/processed
+index: data/processed/index.csv              # one row per converted capture (see src/data/loaders.py)
+lineage: results/tables/capture_lineage.csv  # derived capture -> source capture, verified
+
+datasets:
+  car_hacking:
+    raw: data/raw/car_hacking
+    processed: data/processed/car_hacking
+  road:
+    raw: data/raw/road/road
+    processed: data/processed/road
+    excluded_captures:   # no frame-level labels (injection happened before the capture started)
+      - road/accelerator_attack_drive_1
+      - road/accelerator_attack_drive_2
+      - road/accelerator_attack_reverse_1
+      - road/accelerator_attack_reverse_2

@@ -5,9 +5,9 @@ Course project for YZM5015 *Artificial Intelligence and the Internet of Things* 
 Deep-learning intrusion detection systems (IDS) for the in-vehicle Controller Area Network (CAN) are
 typically quantized (float32 → float16 → INT8) before being deployed on resource-constrained edge
 devices. Prior work reports the cost of quantization only as a change in *overall* accuracy. CAN
-attacks, however, are not equally hard to detect: *coarse* attacks (DoS, fuzzing) visibly disturb the
-ID distribution and message timing, while *stealthy* attacks (spoofing, malfunction, masquerade) reuse
-valid IDs and only perturb payload bytes. This project measures the detection loss caused by
+attacks, however, are not equally hard to detect: *coarse* attacks visibly disturb the ID distribution
+or message timing, while *stealthy* attacks (e.g. masquerade) keep both intact and only perturb payload
+bytes. This project measures the detection loss caused by
 quantization **per attack type**, together with inference latency, model size and memory usage.
 
 ## Research questions
@@ -19,9 +19,32 @@ quantization **per attack type**, together with inference latency, model size an
 - **RQ3:** Do supervised (1D-CNN) and unsupervised (LSTM autoencoder) detectors differ in their
   robustness to quantization?
 
+## Data
+
 Datasets: [Car-Hacking (HCRL)](https://ocslab.hksecurity.net/Datasets/car-hacking-dataset) and
-ROAD (Oak Ridge National Laboratory; Verma et al., 2024). The datasets are licensed and are **not**
-included in this repository; place them under `data/raw/`.
+[ROAD](https://zenodo.org/records/10462796) (Oak Ridge National Laboratory; Verma et al., 2024).
+The datasets are **not** included in this repository. Sources, terms of use, citations, file formats
+and SHA-256 checksums are documented in [`docs/DATA.md`](docs/DATA.md).
+
+```powershell
+python -m src.data.download all   # download, verify and extract into data/raw/ (resumable)
+python -m src.data.loaders        # convert every capture to the common parquet schema in data/processed/
+python -m analysis.eda            # exploratory analysis -> results/tables/, results/figures/
+```
+
+All three commands are idempotent: finished downloads and converted captures are skipped on a re-run.
+
+Every capture is stored as one parquet file with the common schema `timestamp, can_id, dlc,
+data (uint8[8]), label, attack_type, source_file, source_capture`. ROAD `*_masquerade` logs are
+derived from the matching fabrication logs by removing the conflicting legitimate frames, so they carry
+the fabrication capture as their `source_capture`. Captures sharing a `source_capture` must always end
+up in the same train/validation/test split.
+
+Attacks are grouped by mechanism in [`configs/attack_groups.yaml`](configs/attack_groups.yaml):
+*coarse* attacks change the timing or the ID distribution of the bus (DoS, fuzzing, and also the
+spoofing/fabrication attacks, which raise the target ID's rate); *stealthy* attacks keep both intact
+and only alter the payload (the ROAD masquerade attacks). The grouping rule uses traffic statistics only
+and was fixed before any metric was computed (see `configs/eda.yaml` and `docs/DECISIONS.md`).
 
 ## Repository layout
 

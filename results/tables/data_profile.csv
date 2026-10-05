@@ -1,0 +1,51 @@
+dataset,capture,source_capture,kind,attack_type,n_messages,n_normal,n_attack,attack_ratio,n_unique_ids,duration_s,msg_rate_per_s,excluded
+car_hacking,car_hacking/DoS_dataset,car_hacking/DoS_dataset,attack,dos,3665771,3078250,587521,0.160272,27,2832.67,1294.1,False
+car_hacking,car_hacking/Fuzzy_dataset,car_hacking/Fuzzy_dataset,attack,fuzzy,3838860,3347013,491847,0.128123,2048,5487.16,699.608,False
+car_hacking,car_hacking/gear_dataset,car_hacking/gear_dataset,attack,gear_spoofing,4443142,3845890,597252,0.134421,26,8019,554.077,False
+car_hacking,car_hacking/RPM_dataset,car_hacking/RPM_dataset,attack,rpm_spoofing,4621702,3966805,654897,0.1417,26,10179,454.042,False
+car_hacking,car_hacking/normal_run_data,car_hacking/normal_run_data,ambient,none,988871,988871,0,0,27,506.437,1952.61,False
+road,road/ambient_dyno_drive_basic_long,road/ambient_dyno_drive_basic_long,ambient,none,2991272,2991272,0,0,106,1250.94,2391.21,False
+road,road/ambient_dyno_drive_basic_short,road/ambient_dyno_drive_basic_short,ambient,none,1063624,1063624,0,0,106,444.751,2391.51,False
+road,road/ambient_dyno_drive_benign_anomaly,road/ambient_dyno_drive_benign_anomaly,ambient,none,771519,771519,0,0,106,456.456,1690.24,False
+road,road/ambient_dyno_drive_extended_long,road/ambient_dyno_drive_extended_long,ambient,none,1424208,1424208,0,0,106,657.876,2164.86,False
+road,road/ambient_dyno_drive_extended_short,road/ambient_dyno_drive_extended_short,ambient,none,790442,790442,0,0,106,359.81,2196.83,False
+road,road/ambient_dyno_drive_radio_infotainment,road/ambient_dyno_drive_radio_infotainment,ambient,none,932852,932852,0,0,106,390.456,2389.14,False
+road,road/ambient_dyno_drive_winter,road/ambient_dyno_drive_winter,ambient,none,114148,114148,0,0,106,47.7305,2391.51,False
+road,road/ambient_dyno_exercise_all_bits,road/ambient_dyno_exercise_all_bits,ambient,none,4419422,4419422,0,0,106,2172.8,2033.97,False
+road,road/ambient_dyno_idle_radio_infotainment,road/ambient_dyno_idle_radio_infotainment,ambient,none,1572318,1572318,0,0,106,660.784,2379.47,False
+road,road/ambient_dyno_reverse,road/ambient_dyno_reverse,ambient,none,123047,123047,0,0,106,51.4341,2392.32,False
+road,road/ambient_highway_street_driving_diagnostics,road/ambient_highway_street_driving_diagnostics,ambient,none,1124751,1124751,0,0,106,469.942,2393.38,False
+road,road/ambient_highway_street_driving_long,road/ambient_highway_street_driving_long,ambient,none,8821916,8821916,0,0,106,3764.32,2343.56,False
+road,road/accelerator_attack_drive_1,road/accelerator_attack_drive_1,unlabeled,unlabeled (accelerator),204760,204760,0,0,106,86.4629,2368.18,True
+road,road/accelerator_attack_drive_2,road/accelerator_attack_drive_2,unlabeled,unlabeled (accelerator),171936,171936,0,0,106,72.8683,2359.55,True
+road,road/accelerator_attack_reverse_1,road/accelerator_attack_reverse_1,unlabeled,unlabeled (accelerator),202447,202447,0,0,106,86.1345,2350.36,True
+road,road/accelerator_attack_reverse_2,road/accelerator_attack_reverse_2,unlabeled,unlabeled (accelerator),249413,249413,0,0,106,105.438,2365.49,True
+road,road/correlated_signal_attack_1,road/correlated_signal_attack_1,targeted,correlated_signal,81262,79175,2087,0.0256824,106,33.1019,2454.91,False
+road,road/correlated_signal_attack_1_masquerade,road/correlated_signal_attack_1,targeted,correlated_signal_masquerade,79176,77089,2087,0.026359,106,33.1019,2391.89,False
+road,road/correlated_signal_attack_2,road/correlated_signal_attack_2,targeted,correlated_signal,69657,67516,2141,0.0307363,106,28.2269,2467.75,False
+road,road/correlated_signal_attack_2_masquerade,road/correlated_signal_attack_2,targeted,correlated_signal_masquerade,67517,65376,2141,0.0317105,106,28.2269,2391.94,False
+road,road/correlated_signal_attack_3,road/correlated_signal_attack_3,targeted,correlated_signal,41829,40564,1265,0.0302422,105,16.9639,2465.76,False
+road,road/correlated_signal_attack_3_masquerade,road/correlated_signal_attack_3,targeted,correlated_signal_masquerade,40565,39300,1265,0.0311845,105,16.9639,2391.25,False
+road,road/fuzzing_attack_1,road/fuzzing_attack_1,fuzzing,fuzzing,49342,48750,592,0.0119979,662,20.3389,2425.99,False
+road,road/fuzzing_attack_2,road/fuzzing_attack_2,fuzzing,fuzzing,32351,31998,353,0.0109116,443,13.3653,2420.52,False
+road,road/fuzzing_attack_3,road/fuzzing_attack_3,fuzzing,fuzzing,13238,13122,116,0.00876265,217,5.48284,2414.44,False
+road,road/max_engine_coolant_temp_attack,road/max_engine_coolant_temp_attack,targeted,max_engine_coolant_temp,61923,61880,43,0.000694411,106,25.8755,2393.11,False
+road,road/max_engine_coolant_temp_attack_masquerade,road/max_engine_coolant_temp_attack,targeted,max_engine_coolant_temp_masquerade,61881,61838,43,0.000694882,106,25.8755,2391.49,False
+road,road/max_speedometer_attack_1,road/max_speedometer_attack_1,targeted,max_speedometer,213397,210952,2445,0.0114575,106,88.0216,2424.37,False
+road,road/max_speedometer_attack_1_masquerade,road/max_speedometer_attack_1,targeted,max_speedometer_masquerade,210953,208508,2445,0.0115903,106,88.0216,2396.61,False
+road,road/max_speedometer_attack_2,road/max_speedometer_attack_2,targeted,max_speedometer,145894,142753,3141,0.0215293,106,59.697,2443.91,False
+road,road/max_speedometer_attack_2_masquerade,road/max_speedometer_attack_2,targeted,max_speedometer_masquerade,142754,139613,3141,0.0220029,106,59.697,2391.31,False
+road,road/max_speedometer_attack_3,road/max_speedometer_attack_3,targeted,max_speedometer,213551,207443,6108,0.0286021,106,86.7667,2461.21,False
+road,road/max_speedometer_attack_3_masquerade,road/max_speedometer_attack_3,targeted,max_speedometer_masquerade,207444,201336,6108,0.0294441,106,86.7667,2390.83,False
+road,road/reverse_light_off_attack_1,road/reverse_light_off_attack_1,targeted,reverse_light_off,67902,67229,673,0.00991134,106,28.1099,2415.59,False
+road,road/reverse_light_off_attack_1_masquerade,road/reverse_light_off_attack_1,targeted,reverse_light_off_masquerade,67230,66557,673,0.0100104,106,28.1099,2391.69,False
+road,road/reverse_light_off_attack_2,road/reverse_light_off_attack_2,targeted,reverse_light_off,99628,97256,2372,0.0238086,106,40.6653,2449.95,False
+road,road/reverse_light_off_attack_2_masquerade,road/reverse_light_off_attack_2,targeted,reverse_light_off_masquerade,97257,94885,2372,0.024389,106,40.6653,2391.65,False
+road,road/reverse_light_off_attack_3,road/reverse_light_off_attack_3,targeted,reverse_light_off,140855,138420,2435,0.0172873,106,57.8849,2433.36,False
+road,road/reverse_light_off_attack_3_masquerade,road/reverse_light_off_attack_3,targeted,reverse_light_off_masquerade,138421,135986,2435,0.0175913,106,57.8849,2391.32,False
+road,road/reverse_light_on_attack_1,road/reverse_light_on_attack_1,targeted,reverse_light_on,133237,131245,1992,0.0149508,106,54.8502,2429.11,False
+road,road/reverse_light_on_attack_1_masquerade,road/reverse_light_on_attack_1,targeted,reverse_light_on_masquerade,131246,129254,1992,0.0151776,106,54.8502,2392.81,False
+road,road/reverse_light_on_attack_2,road/reverse_light_on_attack_2,targeted,reverse_light_on,175945,172255,3690,0.0209725,106,72.0209,2442.97,False
+road,road/reverse_light_on_attack_2_masquerade,road/reverse_light_on_attack_2,targeted,reverse_light_on_masquerade,172256,168566,3690,0.0214216,106,72.0209,2391.75,False
+road,road/reverse_light_on_attack_3,road/reverse_light_on_attack_3,targeted,reverse_light_on,156052,153700,2352,0.0150719,106,64.2588,2428.49,False
+road,road/reverse_light_on_attack_3_masquerade,road/reverse_light_on_attack_3,targeted,reverse_light_on_masquerade,153701,151349,2352,0.0153024,106,64.2588,2391.91,False

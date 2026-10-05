@@ -1,0 +1,93 @@
+# Attack type -> group mapping used by the AS-1 analysis. Finalized 2026-10-05 (P1), approved by the user.
+#
+# Groups are defined by MECHANISM, not by attack name (docs/DECISIONS.md K-009, K-012):
+#   coarse   - the attack visibly changes the timing or the ID distribution of the bus
+#              (injection/fabrication of extra frames included).
+#   stealthy - the attack preserves timing and ID distribution; its signature is only in the
+#              payload (e.g. masquerade).
+#
+# Rule (fixed in configs/eda.yaml before any metric was computed; traffic statistics only, no model
+# output or F1 value is used). An attack type is "coarse" if ANY of the following holds, else "stealthy":
+#   C1  share of attack-period frames whose ID never occurs in attack-free reference traffic > 0.01
+#   C2  median JSD (log2) of ID frequencies, 1000-frame attack windows vs the capture's normal period,
+#       > 99th percentile of a null distribution from attack-free traffic
+#       (null q99: car_hacking 0.0005, road 0.0769)
+#   C3  target-ID rate ratio (attack/normal period, frames per active second) outside [1/1.5, 1.5]
+#   C4  target-ID median inter-arrival-time ratio (attack/normal) outside [1/1.5, 1.5]
+# Attacks without a single target ID (fuzzing) are judged on C1 and C2 only.
+#
+# Fields: group = rule result (used by the analysis); plan_group = a-priori group from docs/PLAN.md
+# section 1.2 (DoS/fuzzing coarse; spoofing, malfunction, masquerade stealthy), kept for traceability.
+# Numbers in the comments come from results/tables/attack_signatures.csv.
+
+car_hacking:
+  dos:
+    group: coarse
+    plan_group: coarse
+    # Injected ID 0x000 never occurs in normal traffic: 54.5% of attack-period frames carry an unseen ID
+    # (C1); window JSD 0.349 vs null 0.0005 (C2); target ID absent in normal periods (C3, C4 = inf).
+  fuzzy:
+    group: coarse
+    plan_group: coarse
+    # Random IDs: 37.9% of attack-period frames carry an ID unseen in normal traffic (C1);
+    # window JSD 0.228 vs null 0.0005 (C2). No single target ID.
+  gear_spoofing:
+    group: coarse
+    plan_group: stealthy   # contradicts the plan
+    # Valid ID 0x43F, but injected about every 1.2 ms: target-ID rate x6.45 (C3), median IAT x0.11
+    # (C4); its share of the bus jumps to ~35% (window JSD 0.111 vs null 0.0005, C2). No unseen IDs.
+  rpm_spoofing:
+    group: coarse
+    plan_group: stealthy   # contradicts the plan
+    # Valid ID 0x316 injected at high rate: target-ID rate x7.05 (C3), median IAT x0.11 (C4),
+    # window JSD 0.112 vs null 0.0005 (C2). No unseen IDs.
+
+road:
+  fuzzing:
+    group: coarse
+    plan_group: coarse
+    # FF*8 payloads on many IDs: 6.6% of attack-period frames carry an ID unseen in ambient traffic
+    # (C1). Window JSD 0.040 stays below the ROAD null q99 0.077, so C2 does not fire.
+  correlated_signal:
+    group: coarse
+    plan_group: stealthy   # contradicts the plan
+    # Fabrication on valid ID 0x6E0 alongside the legitimate sender: target-ID rate x2.00 (C3),
+    # median IAT x0.41 (C4). ID distribution change below the noise floor (JSD 0.010 < 0.077).
+  max_engine_coolant_temp:
+    group: coarse
+    plan_group: stealthy   # contradicts the plan
+    # Fabrication on 0x4E7: rate x2.03 (C3), median IAT x0.50 (C4); JSD 0.006 < 0.077. Single capture.
+  max_speedometer:
+    group: coarse
+    plan_group: stealthy   # contradicts the plan
+    # Fabrication on 0x0D0: rate x2.00 (C3), median IAT x0.36 (C4); JSD 0.011 < 0.077.
+  reverse_light_off:
+    group: coarse
+    plan_group: stealthy   # contradicts the plan
+    # Fabrication on 0x0D0: rate x2.00 (C3), median IAT x0.40 (C4); JSD 0.010 < 0.077.
+  reverse_light_on:
+    group: coarse
+    plan_group: stealthy   # contradicts the plan
+    # Fabrication on 0x0D0: rate x2.00 (C3), median IAT x0.39 (C4); JSD 0.010 < 0.077.
+  correlated_signal_masquerade:
+    group: stealthy
+    plan_group: stealthy
+    # Legitimate conflicting 0x6E0 frames removed (synthetic derivation): rate x1.00, IAT x1.02,
+    # JSD 0.006, no unseen IDs. Payload only: 0x6E0 becomes constant (bit-flip rate 0.10 -> 0.00,
+    # max byte-median shift 252).
+  max_engine_coolant_temp_masquerade:
+    group: stealthy
+    plan_group: stealthy
+    # rate x1.03, IAT x1.14, JSD 0.006. Payload only: byte 5 of 0x4E7 set to 0xFF (median shift 118).
+  max_speedometer_masquerade:
+    group: stealthy
+    plan_group: stealthy
+    # rate x1.00, IAT x1.00, JSD 0.006. Payload only: byte 5 of 0x0D0 set to 0xFF (median shift 254).
+  reverse_light_off_masquerade:
+    group: stealthy
+    plan_group: stealthy
+    # rate x1.00, IAT x1.00, JSD 0.006. Payload only: byte 2 of 0x0D0 set to 0x04 (median shift 8).
+  reverse_light_on_masquerade:
+    group: stealthy
+    plan_group: stealthy
+    # rate x1.00, IAT x1.00, JSD 0.005. Payload only: byte 2 of 0x0D0 set to 0x0C (median shift 68).
