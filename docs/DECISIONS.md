@@ -326,3 +326,20 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 - **Etkisi:**
   - ROAD tabanı 1 µs'dir: train normal IAT'lerinin 791'i tam olarak 0, 0.01 ve 0.1 kantilleri 1 µs, 1 kantili 1.02 ms. Ölçek bu yüzden 6 mertebeye yayılır. Asimetrik INT8'in 128 seviyesi (0–128) IAT'lerin ≈ %1'ini oluşturan 1 ms altı bölüme ayrılır; yine de 1 ms–10 ms arası 42 seviyedir.
   - Car-Hacking blok boşluğu kuralı (≥ 10 × tavan, K-017) değişmez; tavan aynıdır.
+
+## K-026 — Gözlem: Car-Hacking Fuzzy dosyasında normal etiketli tanı yanıtı kimlikleri
+
+- **Faz / tarih:** P2 (ek) · 2026-10-05
+- **Durum:** Gözlem (karar değil; etiketler değiştirilmedi)
+- **Bağlam:**
+  - K-024'teki Car-Hacking sözlüğü, normal dosyada bulunmayan 11 kimlik içeriyor. Train kümesinde bu kimlikler yalnızca Fuzzy dosyasının train bloğundaki normal (R) etiketli çerçevelerde görülüyor (toplam 385 çerçeve).
+  - Bunların ikisi OBD-II tanı yanıtı aralığında: 0x7E8 (13 çerçeve) ve 0x7E9 (16 çerçeve).
+  - K-024 ve buradaki üç sapma (geçersiz kılınan kararlar K-020/K-021, sözlüğün normal çerçevelerden çıkarılması, K = 38) kullanıcı tarafından onaylandı.
+- **Gözlem:**
+  - 0x7E8/0x7E9 kimlikleri muhtemelen ECU'ların, fuzzing saldırısının rastgele kimliklerle gönderdiği tanı isteklerine verdiği yanıtlardır. Yani saldırının dolaylı bir sonucu olabilirler: çerçeveyi saldırgan enjekte etmemiş, ama çerçeve saldırı olmasaydı da oluşmayacaktı.
+  - Bu bir varsayımdır; istek–yanıt zamanlaması incelenerek doğrulanmadı.
+- **Karar:** Etiketlere dokunulmaz; veri setinin kendi etiketleri (R = normal) korunur. Bu çerçeveler normal kalır ve sözlükte yer alır.
+- **Etkisi:**
+  - Bu kimlikleri taşıyan pencereler "normal" etiketli olsa da saldırıyla ilişkili trafik içerebilir. Car-Hacking fuzzy sonuçları yorumlanırken (ör. yanlış alarm incelemesinde) bu göz önünde tutulmalı.
+  - LSTM otokodlayıcı alt kümesini etkilemez: Fuzzy saldırı bloğunun hiçbir penceresi ±5 s payı sağlamadığı için alt kümede yer almaz (K-022).
+  - Makalede veri seti sınırlılığı olarak kısaca belirtilebilir.
