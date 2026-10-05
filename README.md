@@ -47,9 +47,12 @@ split by `source_capture`. Car-Hacking has one file per attack type, so each fil
 time-ordered train/validation/test blocks cut between attack bursts, with whole bursts discarded at
 every cut. The four Car-Hacking attack files end with the same attack-free recording; it is used once,
 as `car_hacking/shared_tail` (`src/data/sources.py`). Each message becomes a 10-dimensional vector
-(ID / ID-space size, 8 payload bytes / 255, per-ID inter-arrival time clipped at a cap fitted on training
-data). Windows are 100 messages long, with stride 50 in training and 100 (no overlap) in validation and
-test. `tests/test_no_leakage.py` checks the split.
+in [0, 1]: the ID as its rank in the vocabulary of IDs seen in benign training frames (unseen IDs share a
+reserved code), the 8 payload bytes / 255, and the per-ID inter-arrival time on a log scale between a floor
+and a cap fitted on benign training frames. The encoding is chosen so that per-tensor INT8 quantisation of
+the input keeps every ID and byte value apart (`results/tables/feature_int8_levels.csv`). Windows are 100
+messages long, with stride 50 in training and 100 (no overlap) in validation and test.
+`tests/test_no_leakage.py` checks the split.
 
 Attacks are grouped by mechanism in [`configs/attack_groups.yaml`](configs/attack_groups.yaml):
 *coarse* attacks change the timing or the ID distribution of the bus (DoS, fuzzing, and also the

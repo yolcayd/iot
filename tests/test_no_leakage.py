@@ -172,11 +172,27 @@ def test_normalisation_fitted_on_training_segments_only(cfg, segs, params, datas
     assert set(p["fitted_on_segments"]) == {s.id for s in train}
     held_out = {s.id for s in segs if s.dataset == dataset and s.split != "train"}
     assert not held_out & set(p["fitted_on_segments"])
-    cap, n = F.fit_iat_cap(train, p["iat_cap_quantile"])
-    assert cap == pytest.approx(p["iat_cap_s"], rel=0, abs=1e-12) and n == p["n_iat_samples"]
-    assert p["id_space"] == cfg["features"]["id_space"][dataset]
+    fit = F.fit_normalization(train, p["iat_floor_quantile"], p["iat_cap_quantile"])
+    assert fit["iat_cap_s"] == pytest.approx(p["iat_cap_s"], rel=0, abs=1e-12)
+    assert fit["iat_floor_s"] == pytest.approx(p["iat_floor_s"], rel=0, abs=1e-12)
+    assert fit["n_iat_samples"] == p["n_iat_samples"]
+    assert fit["id_vocab"] == p["id_vocab"] and p["n_ids"] == len(p["id_vocab"])
+    assert p["iat_floor_quantile"] == cfg["features"]["iat"]["floor_quantile"]
+    assert p["iat_cap_quantile"] == cfg["features"]["iat"]["cap_quantile"]
     with pytest.raises(ValueError):
-        F.fit_iat_cap(train + [next(s for s in segs if s.dataset == dataset and s.split == "test")], 0.999)
+        F.fit_normalization(train + [next(s for s in segs if s.dataset == dataset and s.split == "test")], 0.001, 0.999)
+
+
+@pytest.mark.parametrize("dataset", ["car_hacking", "road"])
+def test_id_vocabulary_from_benign_training_frames_only(segs, params, dataset):
+    """No ID that appears only in validation/test (or only in injected frames) enters the vocabulary."""
+    vocab = set(params["datasets"][dataset]["id_vocab"])
+    benign_train = set()
+    for s in segs:
+        if s.dataset == dataset and s.split == "train":
+            t = s.read(["can_id", "label"])
+            benign_train |= set(np.unique(t["can_id"].to_numpy()[t["label"].to_numpy() == 0]).tolist())
+    assert vocab == benign_train
 
 
 def test_normalisation_params_match_config(cfg, params):

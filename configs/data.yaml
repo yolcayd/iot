@@ -1,5 +1,5 @@
 # Dataset paths, feature/window settings and the fixed train/validation/test split (P2, plan F1).
-# Nothing here is drawn at random. Decisions and their rationale: docs/DECISIONS.md K-016...K-022.
+# Nothing here is drawn at random. Decisions and their rationale: docs/DECISIONS.md K-016...K-025.
 # Split unit is source_capture (K-007, K-015c): captures derived from the same source capture
 # (ROAD *_masquerade logs) always land in the same split.
 
@@ -36,11 +36,14 @@ shared_segments:
       - car_hacking/gear_dataset
       - car_hacking/RPM_dataset
 
-features:            # src/data/features.py (K-020, K-021)
-  id_space:          # fixed ID-space size per dataset, not learned from data
-    car_hacking: 0x7FF   # 11-bit IDs, max observed 0x7FF
-    road: 0xFFF          # 3-hex-digit (12-bit) anonymised ID field; 0xFFF is the only ID > 0x7FF
-  iat_cap_quantile: 0.999  # IAT cap = this quantile of benign per-ID IATs in the TRAINING segments
+features:            # src/data/features.py (K-024, K-025; supersede K-020, K-021)
+  # ID -> rank in the sorted vocabulary of IDs seen in benign (label 0) TRAINING frames, divided by
+  # the vocabulary size K; IDs outside the vocabulary map to the reserved code 0.
+  id_encoding: train_benign_vocabulary
+  iat:               # log10(clip(iat, floor, cap)) scaled to [0, 1]
+    scale: log10
+    floor_quantile: 0.001  # floor = this quantile of benign per-ID IATs in the TRAINING segments
+    cap_quantile: 0.999    # cap   = this quantile (same data)
 
 windows:             # src/data/windows.py (K-002)
   size: 100

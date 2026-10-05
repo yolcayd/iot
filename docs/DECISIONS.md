@@ -222,7 +222,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-020 — ID normalizasyonu: veri setine özgü sabit ID uzayı
 
 - **Faz / tarih:** P2 · 2026-10-05
-- **Durum:** Geçerli (kullanıcı onayı)
+- **Durum:** Geçersiz (K-024 ile)
 - **Bağlam:** Plan Bölüm 2.2 ID/0x7FF diyor. ROAD'da 0x7FF'i aşan tek ID 0xFFF (çerçevelerin %6.3'ü); Car-Hacking'de en büyük ID 0x7FF (K-015a).
 - **Karar:** Car-Hacking ID/0x7FF, ROAD ID/0xFFF. Sabitler `configs/data.yaml` → `features.id_space` altındadır, veriden öğrenilmez. ID uzayını aşan bir ID hata verir.
 - **Gerekçe:**
@@ -235,7 +235,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-021 — IAT özniteliği: tanım ve tavan
 
 - **Faz / tarih:** P2 · 2026-10-05
-- **Durum:** Geçerli
+- **Durum:** Geçersiz (K-025 ile)
 - **Karar:**
   - IAT = aynı ID'li bir önceki çerçeveden bu yana geçen süre. Hesap segment içinde yapılır; bir ID'nin segmentteki ilk çerçevesi tavan değerini (1.0) alır.
   - Öznitelik min(IAT, tavan) / tavan.
@@ -277,3 +277,52 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - Ayrıca aynı dosyanın segmentleri çakışmaz.
 - **Gerekçe:** Kopya bir kayıt binlerce ortak dizi üretir. Tüm kayıtlarda 8 çerçevelik dizilerle yapılan tarama, yalnızca bilinen 13 soy çiftinde (%75–99) ve DoS ile kuyruk arasında tek bir dizide eşleşme buldu; başka bir kopya kayıt yok.
 - **Etkisi:** Test 1, planın ifadesinden daha sıkı bir biçimde uygulanır.
+
+## K-024 — ID kodlaması: train sözlüğüne göre yoğun indeks
+
+- **Faz / tarih:** P2 (ek) · 2026-10-05
+- **Durum:** Geçerli (kullanıcı kararı). K-020'yi geçersiz kılar.
+- **Bağlam:**
+  - K-020'deki ID / ID uzayı ölçeklemesinde, tek ölçekli (per-tensor) INT8 girdi nicemlemesi bir seviyeye ≈ 8 (0x7FF/255) veya ≈ 16 (0xFFF/255) ardışık kimlik düşürür; komşu kimlikler birleşebilir.
+  - Bu, yükün hangi kimlikte değiştiğini ayırt etmeyi zorlaştırır ve masquerade tespitini yapay olarak bozabilir. Ölçülen ΔF1 o zaman modelin iç nicemlemesinden değil girdi ölçeklemesinden gelir; araştırma sorusu ise birincisidir.
+  - Karar model eğitiminden önce, hiçbir model sonucu görülmeden alındı.
+- **Karar:**
+  - Kimlik, train kümesindeki **normal (label 0) çerçevelerde** görülen kimliklerin sıralı sözlüğüne göre yoğun indekse çevrilir: sözlükteki kimlik sıra numarası 1..K'yi, sözlük dışı her kimlik ayrılmış 0 kodunu alır. Öznitelik = kod / K.
+  - Sözlük yalnızca train segmentlerinden çıkarılır ve `results/tables/normalization_params.json`'a kaydedilir.
+  - Sözlük: Car-Hacking K = 38, ROAD K = 106.
+- **Gerekçe:**
+  - K + 1 değer (CH 39, ROAD 107), asimetrik INT8'in 256 seviyesine de simetrik INT8'in [0, 1]'deki 128 seviyesine de çakışmasız sığar; testle doğrulandı.
+  - 0xFFF sorunu kendiliğinden ortadan kalkar.
+  - Sözlük normal çerçevelerden çıkarılır, çünkü train'in tüm çerçevelerinde Car-Hacking'de 2,048 kimlik var (Fuzzy rastgele kimlik enjekte ediyor); bu 256 seviyeye sığmaz ve saldırı çerçevelerinin temsil kuralını belirlemesine izin verir.
+  - Enjeksiyonla gelen sözlük dışı kimlikler (DoS 0x000, fuzzing kimliklerinin çoğu) 0 koduna düşer; "görülmemiş kimlik" bilgisi korunur.
+- **Etkisi:**
+  - Car-Hacking sözlüğü normal dosyadaki 27 kimliğin yanında, Fuzzy dosyasında normal etiketli 3–149 çerçeveyle görülen 11 kimliği (0x105, 0x608, 0x6A1, 0x6AA, 0x71B, 0x7CF, 0x7D9, 0x7DA, 0x7DE, 0x7E8, 0x7E9; toplam 385 çerçeve) içerir. Bunlar veri setindeki etiketlerdir, değiştirilmedi.
+  - Val/test normal çerçevelerinde train sözlüğü dışında kimlik yoktur.
+  - Kimlik değerleri iki veri seti arasında karşılaştırılamaz (sözlükler farklı).
+
+## K-025 — IAT özniteliği: log ölçeği
+
+- **Faz / tarih:** P2 (ek) · 2026-10-05
+- **Durum:** Geçerli (kullanıcı kararı). K-021'i geçersiz kılar (segment içi hesap ve yalnızca train'den uydurma kuralları korunur).
+- **Bağlam:**
+  - K-021'deki doğrusal min(IAT, tavan)/tavan ölçeklemesinde tavan ≈ 1 s'dir. Asimetrik INT8'de 1 ms seviye 0'a, 10 ms seviye 3'e düşer. Tipik periyotlar (10–100 ms) 3–26 seviyeye sıkışır.
+  - Bu, ölçülen nicemleme kaybını girdi ölçeklemesine bağlar (K-024'teki gerekçe). Karar model eğitiminden önce alındı.
+- **Karar:**
+  - Öznitelik (log10(clip(IAT, taban, tavan)) − log10(taban)) / (log10(tavan) − log10(taban)), [0, 1] aralığında.
+  - Taban ve tavan, train segmentlerindeki normal çerçevelerin ID başına IAT dağılımının (tüm ID'ler birlikte) 0.001 ve 0.999 kantilleridir:
+    - Car-Hacking: taban 0.2382 ms, tavan 0.999111 s.
+    - ROAD: taban 0.0010 ms (1 µs), tavan 1.007227 s.
+  - IAT segment içinde hesaplanır; bir ID'nin segmentteki ilk çerçevesi 1.0 alır.
+- **Gerekçe:** Log ölçeği, IAT'nin birkaç büyüklük mertebesine yayılan dağılımında her mertebeye eşit çözünürlük verir (`results/tables/feature_int8_levels.csv`):
+
+  | Veri seti | Şema | Seviye/mertebe | 1 ms seviyesi | 10 ms seviyesi | 1 ms ile 10 ms arası |
+  |---|---|---:|---:|---:|---:|
+  | Car-Hacking | asimetrik | 70.4 | 44 | 114 | 70 seviye |
+  | Car-Hacking | simetrik | 35.1 | 22 | 57 | 35 seviye |
+  | ROAD | asimetrik | 42.3 | 128 | 170 | 42 seviye |
+  | ROAD | simetrik | 21.1 | 64 | 85 | 21 seviye |
+
+  Doğrusal ölçekte bu fark asimetrikte 3 seviyeydi.
+- **Etkisi:**
+  - ROAD tabanı 1 µs'dir: train normal IAT'lerinin 791'i tam olarak 0, 0.01 ve 0.1 kantilleri 1 µs, 1 kantili 1.02 ms. Ölçek bu yüzden 6 mertebeye yayılır. Asimetrik INT8'in 128 seviyesi (0–128) IAT'lerin ≈ %1'ini oluşturan 1 ms altı bölüme ayrılır; yine de 1 ms–10 ms arası 42 seviyedir.
+  - Car-Hacking blok boşluğu kuralı (≥ 10 × tavan, K-017) değişmez; tavan aynıdır.

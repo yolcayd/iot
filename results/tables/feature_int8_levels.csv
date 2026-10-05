@@ -1,0 +1,13 @@
+dataset,scheme,feature,n_values,n_levels,iat_level_1ms,iat_level_10ms,iat_levels_per_decade
+car_hacking,asymmetric,can_id,39,39,,,
+car_hacking,asymmetric,byte (each of 8),256,256,,,
+car_hacking,asymmetric,iat,,256,44,114,70.39
+car_hacking,symmetric,can_id,39,39,,,
+car_hacking,symmetric,byte (each of 8),256,128,,,
+car_hacking,symmetric,iat,,128,22,57,35.06
+road,asymmetric,can_id,107,107,,,
+road,asymmetric,byte (each of 8),256,256,,,
+road,asymmetric,iat,,256,128,170,42.33
+road,symmetric,can_id,107,107,,,
+road,symmetric,byte (each of 8),256,128,,,
+road,symmetric,iat,,128,64,85,21.08
