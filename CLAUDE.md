@@ -46,6 +46,17 @@ Her fazda alınan metodolojik kararlar (plandan veya öneri formundan sapmalar d
 
 5 dakikadan uzun sürecek eğitim/deney komutlarını kendin çalıştırma. Arka planda çalışacak, kesintiye dayanıklı bir komut hazırla; işletim sistemine uygun çalıştırma talimatını (ayrı terminal, log dosyası, ilerleme izleme, kesinti sonrası devam) bana ver.
 
+## Onay gerektiren işlemler
+
+Aşağıdaki işlemlerden önce ne yapılacağını ve nedenini açıklayıp kullanıcıdan açık onay al; onay gelmeden çalıştırma:
+
+- Dosya veya klasör silme (yer tutucular, üretilmiş çıktılar ve `results/` altındakiler dahil).
+- Git geçmişini değiştiren her işlem: force-push, rebase, `reset --hard`, commit amend, geçmişten dosya temizleme.
+- Sistem çapında kurulum veya yapılandırma değişikliği (proje `.venv`'i dışına paket kurulumu, global git ayarı, sürücü/CUDA/Docker kurulumu vb.).
+- 5 dakikadan uzun sürecek komutlar (bkz. "Uzun işler kuralı": bu komutlar kendin çalıştırılmaz, çalıştırma talimatı verilir).
+
+Serbest olanlar: faz sonunda commit ve normal (force olmayan) push; proje `.venv`'i içine paket kurulumu.
+
 ## Dil
 
 Kod, yorum, docstring ve README İngilizce. docs/phase-logs ve docs/reports Türkçe.
