@@ -11,7 +11,11 @@ Protocol (configs/quantization.yaml ``benchmark``):
 * the RF/XGBoost time includes the window summary features (the deep models take the raw window).
 * every target runs in its own subprocess: peak memory = peak resident set of that process (Windows peak working
   set, Linux ru_maxrss), reported absolute and above the level measured right before the model is loaded.
-* threads fixed: ONNX Runtime intra-op = T, inter-op = 1, sequential; OMP/MKL/OpenBLAS = T; XGBoost and RF use T.
+* threads fixed: ONNX Runtime intra-op = T, inter-op = 1, sequential; OMP/MKL/OpenBLAS = T; XGBoost uses T; the
+  random forest predicts single-threaded (n_jobs = 1, K-048: sklearn's threaded prediction races on the
+  process-wide warning filters and then prints a warning per tree inside the timed loop).
+* a measurement is rejected if any warning is shown during the timed inferences or the warning filters change;
+  results marked invalid (``--invalidate``) are kept, ignored by every reader and archived before re-measuring.
 * the measurement environment (CPU, cores, affinity, memory, cgroup limits, ONNX Runtime provider, threads, power
   state, git commit, library versions) is stored with every result.
 * ``--compare``: two sessions of a profile are consistent if every target's median and p95 latency differ by at
@@ -23,6 +27,7 @@ Usage:
     python -m src.benchmark --profile host --status
     python -m src.benchmark --profile host --compare            # results/tables/benchmark_repeatability_host.csv
     python -m src.benchmark --profile host --table              # results/tables/benchmark_host.csv
+    python -m src.benchmark --profile host --session 1 --only rf_ --invalidate "<reason>" --decision K-048
     python -m src.benchmark --smoke --out <dir outside results/>    # 20 timed runs, not a measurement
 """
 
@@ -35,6 +40,7 @@ import platform
 import subprocess
 import sys
 import time
+import warnings
 from datetime import datetime, timezone
 from importlib import metadata
 from pathlib import Path
@@ -55,6 +61,18 @@ GENERATED_OUTPUTS = ("results/raw", "results/tables/quant_*.csv", "results/table
                      "results/tables/benchmark_manifest.json")
 SUMMARY_COLUMNS = ["latency_mean_ms", "latency_median_ms", "latency_p95_ms", "latency_p99_ms", "latency_std_ms",
                    "peak_rss_mb", "peak_rss_delta_mb", "bench_threads", "bench_session"]
+# K-048: scikit-learn's threaded prediction (n_jobs > 1, threading backend) enters warnings.catch_warnings() in several
+# worker threads at once. catch_warnings is not thread-safe, so the process-wide filter list can be swapped for another
+# list (observed: emptied); from then on sklearn prints "`sklearn.utils.parallel.delayed` should be used with ..." for
+# every tree task, inside the timed loop (host session 1, RF on ROAD: median 23 ms -> 578 ms). The random forest
+# therefore predicts with n_jobs=1 (no worker threads, no race), this one message is ignored, and a measurement is
+# rejected if any warning is shown during the timed inferences or the warning filters change.
+RF_N_JOBS = 1
+SKLEARN_DELAYED_WARNING = r"`sklearn\.utils\.parallel\.delayed` should be used with `sklearn\.utils\.parallel\.Parallel`"
+
+
+class MeasurementInvalid(RuntimeError):
+    """Something other than the inference ran inside the timed loop (warning output, changed warning filters)."""
 
 
 def load_qconfig(path: Path = QCONFIG) -> dict:
@@ -80,8 +98,30 @@ def result_path(out_dir: Path, profile: str, session: int, quant: str) -> Path:
 
 
 def load_result(out_dir: Path, profile: str, session: int, quant: str) -> dict | None:
+    """The result of a target, or None if it is missing or marked invalid."""
     p = result_path(out_dir, profile, session, quant)
-    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    if not p.exists():
+        return None
+    r = json.loads(p.read_text(encoding="utf-8"))
+    return None if r.get("invalid") else r
+
+
+def invalidate(path: Path, reason: str, decision: str) -> None:
+    """Mark a result invalid in place (kept, never deleted; ignored by compare, table and the pilot table)."""
+    r = json.loads(path.read_text(encoding="utf-8"))
+    r["invalid"] = {"reason": reason, "decision": decision, "marked_utc": _now()}
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(r, indent=1) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def archive_invalid(path: Path) -> Path | None:
+    """Before re-measuring: keep an invalid result under a new name instead of overwriting it."""
+    if path.exists() and json.loads(path.read_text(encoding="utf-8")).get("invalid"):
+        dst = path.with_name(f"{path.stem}.invalid-{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}.json")
+        os.replace(path, dst)
+        return dst
+    return None
 
 
 # --------------------------------------------------------------------------------------------
@@ -273,12 +313,15 @@ def measure(target: dict, threads: int, warmup: int, repeats: int, min_repeats: 
                                 "intra_op_threads": threads, "inter_op_threads": 1, "execution_mode": "sequential",
                                 "graph_optimization": "ORT_ENABLE_ALL"}
     elif target["kind"] == "rf":
+        # only this message, and only for the random forest (K-048); n_jobs=1 removes its cause
+        warnings.filterwarnings("ignore", message=SKLEARN_DELAYED_WARNING, category=UserWarning)
         clf = joblib.load(model_path)
-        clf.set_params(n_jobs=threads)
+        clf.set_params(n_jobs=RF_N_JOBS)
 
         def fn(xi):
             return clf.predict_proba(summary_features(xi))[:, 1]
-        extra["runtime"] = {"library": "scikit-learn", "n_jobs": threads}
+        extra["runtime"] = {"library": "scikit-learn", "n_jobs": RF_N_JOBS,
+                            "note": "single-threaded prediction: threaded prediction races on warning filters (K-048)"}
     else:
         clf = XGBClassifier()
         clf.load_model(model_path)
@@ -290,14 +333,30 @@ def measure(target: dict, threads: int, warmup: int, repeats: int, min_repeats: 
         extra["runtime"] = {"library": "xgboost", "device": "cpu", "n_jobs": threads, "iteration_range": list(rng)}
     rss1 = proc.memory_info().rss
     n = len(x)
-    lat = []
-    for i in range(warmup + repeats):
-        xi = x[i % n: i % n + 1]
-        t0 = time.perf_counter_ns()
-        fn(xi)
-        lat.append(time.perf_counter_ns() - t0)
+    lat, shown, at = [], [], [0]
+    show_orig, filters0 = warnings.showwarning, list(warnings.filters)
+
+    def record(message, category, filename, lineno, file=None, line=None):    # still printed, but counted
+        shown.append({"inference": at[0], "category": category.__name__, "message": str(message)[:200]})
+        show_orig(message, category, filename, lineno, file, line)
+
+    warnings.showwarning = record
+    try:
+        for i in range(warmup + repeats):
+            at[0] = i
+            xi = x[i % n: i % n + 1]
+            t0 = time.perf_counter_ns()
+            fn(xi)
+            lat.append(time.perf_counter_ns() - t0)
+    finally:
+        warnings.showwarning = show_orig
+    guard = {"warning_filters_intact": list(warnings.filters) == filters0, "n_warnings_shown": len(shown),
+             "n_warnings_shown_timed": sum(w["inference"] >= warmup for w in shown), "warnings": shown[:20]}
+    if not guard["warning_filters_intact"] or guard["n_warnings_shown_timed"]:
+        raise MeasurementInvalid(f"{target['id']}: output or warning-filter change inside the timed loop: {guard}")
     peak, method = peak_rss_bytes(proc)
     return {"latency": latency_stats(lat, warmup, min_repeats), "latencies_us": [round(v / 1e3, 1) for v in lat],
+            "warnings_guard": guard,
             "memory": {"rss_before_load_mb": rss0 / 2**20, "rss_after_load_mb": rss1 / 2**20,
                        "peak_rss_mb": peak / 2**20, "peak_rss_delta_mb": (peak - rss0) / 2**20, "peak_method": method},
             "model_size_bytes": model_path.stat().st_size, "model_size_mb": model_path.stat().st_size / 2**20,
@@ -352,6 +411,9 @@ def run_all(profile: str, session: int, threads: int, qcfg: dict, force: bool = 
         out = result_path(out_dir, profile, session, t["quant"])
         if smoke_out is not None:
             out = out.with_name(f"{t['run_id']}_{out.name}")
+        kept = archive_invalid(out)
+        if kept:
+            log(f"{t['id']}: previous result is marked invalid, kept as {kept.name}")
         if out.exists() and not force:
             log(f"skip {t['id']}: already measured ({out.name})")
             done.append((t["id"], "exists"))
@@ -377,7 +439,9 @@ def status(profile: str, manifest: Path = MANIFEST) -> list[dict]:
     for t in load_manifest(manifest):
         row = {"target": t["id"], "status": t["status"]}
         for s in (1, 2):
-            row[f"session{s}"] = result_path(PROJECT_ROOT / t["out_dir"], profile, s, t["quant"]).exists()
+            p = result_path(PROJECT_ROOT / t["out_dir"], profile, s, t["quant"])
+            row[f"session{s}"] = ("invalid" if json.loads(p.read_text(encoding="utf-8")).get("invalid") else "done") \
+                if p.exists() else "missing"
         rows.append(row)
     return rows
 
@@ -441,6 +505,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path)
     ap.add_argument("--allow-dirty", action="store_true")
     ap.add_argument("--manifest", type=Path, default=MANIFEST)
+    ap.add_argument("--invalidate", metavar="REASON",
+                    help="mark the results of --profile/--session (filtered by --only) invalid; they are kept")
+    ap.add_argument("--decision", default="", help="decision id recorded with --invalidate (e.g. K-048)")
     ap.add_argument("--worker", help=argparse.SUPPRESS)
     ap.add_argument("--warmup", type=int, help=argparse.SUPPRESS)
     ap.add_argument("--repeats", type=int, help=argparse.SUPPRESS)
@@ -452,6 +519,13 @@ def main(argv: list[str] | None = None) -> int:
     threads = a.threads or qcfg["benchmark"]["profiles"][a.profile]["threads"]
     if a.worker:
         worker(a.worker, a.profile, a.session, threads, a.warmup, a.repeats, a.min_repeats, a.out, a.manifest)
+        return 0
+    if a.invalidate:
+        for t in load_manifest(a.manifest):
+            p = result_path(PROJECT_ROOT / t["out_dir"], a.profile, a.session, t["quant"])
+            if (not a.only or a.only in t["id"]) and p.exists():
+                invalidate(p, a.invalidate, a.decision)
+                print(f"marked invalid: {p.relative_to(PROJECT_ROOT)}")
         return 0
     if a.status:
         for r in status(a.profile, a.manifest):

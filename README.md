@@ -155,3 +155,6 @@ python -m src.benchmark --profile host --compare     # repeatability: median wit
 - The `host` profile fixes the thread count at 4 but sets no CPU or memory quota, so it only approximates a
   constrained device.
 - The `container` profile (2 threads) needs Docker Desktop to be running.
+- The random forest predicts single-threaded (`n_jobs=1`): scikit-learn's threaded prediction races on the
+  process-wide warning filters and then prints a warning per tree inside the timed loop (K-048). A measurement is
+  rejected if any warning is shown during the timed inferences.

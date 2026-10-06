@@ -73,6 +73,101 @@ def test_smoke_run_outside_results(tmp_path):
         assert r["environment"]["thread_env"]["OMP_NUM_THREADS"] == "2"
     onnx_res = next(r for r in res if r["target"]["kind"] == "onnx")
     assert onnx_res["onnxruntime"]["providers_used"] == ["CPUExecutionProvider"]
+    rf_res = next(r for r in res if r["target"]["kind"] == "rf")
+    assert rf_res["runtime"]["n_jobs"] == B.RF_N_JOBS == 1                         # K-048
+    for r in res:
+        assert r["warnings_guard"]["warning_filters_intact"] and r["warnings_guard"]["n_warnings_shown_timed"] == 0
+
+
+@pytest.fixture
+def rf_target(tmp_path):
+    from sklearn.ensemble import RandomForestClassifier
+
+    x = np.random.default_rng(0).random((10, 100, 10)).astype(np.float32)
+    np.save(tmp_path / "in.npy", x)
+    joblib.dump(RandomForestClassifier(n_estimators=8, random_state=0).fit(summary_features(x), np.arange(10) % 2),
+                tmp_path / "rf.joblib")
+    return {"id": "r:native", "kind": "rf", "model_path": str(tmp_path / "rf.joblib"),
+            "input_path": str(tmp_path / "in.npy")}
+
+
+def _patched_features(monkeypatch, action, from_call):
+    """summary_features that runs ``action`` from the ``from_call``-th call on (0-based)."""
+    import src.models.classical as C
+
+    calls = [0]
+    orig = C.summary_features
+
+    def f(x):
+        if calls[0] >= from_call:
+            action()
+        calls[0] += 1
+        return orig(x)
+    monkeypatch.setattr(C, "summary_features", f)
+
+
+def test_guard_rejects_a_warning_inside_the_timed_loop(monkeypatch, rf_target):
+    import warnings
+
+    _patched_features(monkeypatch, lambda: warnings.warn("noise", RuntimeWarning), from_call=3)
+    with warnings.catch_warnings():
+        warnings.simplefilter("always")
+        with pytest.raises(B.MeasurementInvalid):
+            B.measure(rf_target, 1, warmup=2, repeats=4, min_repeats=4)
+
+
+def test_guard_accepts_a_warning_during_warmup(monkeypatch, rf_target):
+    import warnings
+
+    calls = [0]
+
+    def once():
+        if calls[0] == 0:
+            warnings.warn("first call only", RuntimeWarning)
+        calls[0] += 1
+    _patched_features(monkeypatch, once, from_call=0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("always")
+        r = B.measure(rf_target, 1, warmup=2, repeats=4, min_repeats=4)
+    assert r["warnings_guard"]["n_warnings_shown"] == 1 and r["warnings_guard"]["n_warnings_shown_timed"] == 0
+
+
+def test_guard_rejects_changed_warning_filters(monkeypatch, rf_target):
+    import warnings
+
+    # what the scikit-learn race did in host session 1: the process-wide filter list ends up replaced / emptied
+    _patched_features(monkeypatch, warnings.resetwarnings, from_call=3)
+    with warnings.catch_warnings():
+        with pytest.raises(B.MeasurementInvalid):
+            B.measure(rf_target, 1, warmup=2, repeats=4, min_repeats=4)
+
+
+def test_only_the_sklearn_delayed_message_is_ignored(rf_target):
+    import re
+    import warnings
+
+    with warnings.catch_warnings():
+        B.measure(rf_target, 1, warmup=2, repeats=4, min_repeats=4)
+        added = [f for f in warnings.filters if f[0] == "ignore" and f[1] is not None
+                 and f[1].pattern == B.SKLEARN_DELAYED_WARNING]
+        assert len(added) == 1 and added[0][2] is UserWarning
+        msg = ("`sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it "
+               "possible to propagate the scikit-learn configuration of the current thread to the joblib workers.")
+        assert re.match(B.SKLEARN_DELAYED_WARNING, msg)
+        assert not any(f[0] == "ignore" and f[1] is None and f[2] in (UserWarning, Warning) for f in warnings.filters)
+
+
+def test_invalid_results_are_kept_ignored_and_archived(tmp_path):
+    p = B.result_path(tmp_path, "host", 1, "native")
+    p.write_text(json.dumps({"latency": {"median_ms": 1.0}}))
+    assert B.load_result(tmp_path, "host", 1, "native") is not None
+    B.invalidate(p, "warning output inside the timed loop", "K-048")
+    assert B.load_result(tmp_path, "host", 1, "native") is None
+    assert json.loads(p.read_text())["invalid"]["decision"] == "K-048"
+    kept = B.archive_invalid(p)
+    assert kept.exists() and not p.exists() and ".invalid-" in kept.name
+    assert json.loads(kept.read_text())["latency"]["median_ms"] == 1.0            # data preserved
+    assert B.archive_invalid(p) is None
 
 
 def test_smoke_must_not_write_under_results():

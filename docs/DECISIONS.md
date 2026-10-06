@@ -626,7 +626,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-046 — Benchmark protokolü ve tekrarlanabilirlik ölçütü
 
 - **Faz / tarih:** P4 · 2026-10-06
-- **Durum:** Geçerli (tolerans ölçümden önce sabitlendi)
+- **Durum:** Kısmen geçersiz: RF iş parçacığı maddesi K-048 ile (RF artık n_jobs = 1); geri kalanı geçerli (tolerans ölçümden önce sabitlendi)
 - **Karar:**
   - **Gecikme:** batch = 1, pencere başına. 100 ısınma koşusu atılır, ardından 1000 ölçüm yapılır (`perf_counter_ns`). Raporlananlar: ortalama, medyan, p95, p99, std. 1000'den az tekrar reddedilir.
   - **Girdi:** sabit tohumla seçilmiş 1100 val penceresi (`data/processed/bench/<veri seti>.npy`); etiket kullanılmaz, test kümesine dokunulmaz.
@@ -659,3 +659,35 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - **Ana makine profili:** 4 iş parçacığı; CPU kotası ya da bellek sınırı yok. Bu bir **yaklaşımdır** ve her sonuçta `profile_note` alanıyla belirtilir.
   - Plan F4'e uygun olarak, iki profilde de birincil raporlama Q0'a göre oranlardır.
 - **Gerekçe:** Plan F3/F4'ün kısıtlı ortam yönergesi. Kullanıcı, iş parçacığı sayısının 4 ile sınırlanmasını istedi (ana makine profili).
+
+## K-048 — Benchmark: RF tek iş parçacığıyla tahmin; sklearn uyarı yarışı ve zamanlanan döngü koruması
+
+- **Faz / tarih:** P4 · 2026-10-06
+- **Durum:** Geçerli. K-046'nın RF iş parçacığı maddesini (`n_jobs = T`) geçersiz kılar; K-046'nın geri kalanı geçerli.
+- **Bağlam** (ana makine profili, session 1, kullanıcı tarafından çalıştırıldı):
+  - RF ROAD ölçümü sırasında scikit-learn şu uyarıyı 164,442 kez bastı: "`sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` …" (`sklearn/utils/parallel.py:144`).
+  - Uyarı, zamanlanan döngünün içinde, `predict_proba` çağrısında basıldı.
+  - Gecikme serisi: ilk 506 çıkarım ≈ 23 ms; 507. çıkarımdan sonra 590–1250 ms, kalan ≈ 594 çıkarımın her birinde ≈ 277 uyarı. Medyan 577.8 ms, p95 1268.7 ms. Sonuç kirli.
+  - Diğer 14 hedef ayrı alt süreçlerde koştu. Loglarında hiç uyarı satırı yok ve gecikme serileri temiz (RF CH dahil, medyan 23.1 ms).
+- **Kök neden:**
+  - sklearn'ün `_FuncWrapper.__call__` fonksiyonu, `Parallel.__call__` sırasında yakalanan uyarı filtre listesi boşsa uyarı basar ve her görevde `warnings.catch_warnings()` + `resetwarnings()` çağırır.
+  - RF tahmini `n_jobs > 1` iken threading backend'iyle birden fazla işçi iş parçacığında koşar. `catch_warnings` iş parçacığı güvenli değildir: eşzamanlı giriş ve çıkışlar süreç çapındaki `warnings.filters` listesini başka (boşaltılmış) bir listeyle kalıcı olarak değiştirebilir.
+  - Bundan sonra her ağaç görevi uyarı basar. Filtre listesi boş olduğu için uyarı her seferinde yeniden gösterilir.
+  - **Yeniden üretme** (ayrı süreç, RF ROAD, `n_jobs = 4`, 1100 çıkarım): bir koşuda filtre listesi 11 girdiden 3'e değişti, diğerinde değişmedi. Yarış olasılıksal ve ağaç işinin uzunluğuyla artıyor. Session 1'deki boşalma bunun bir örneği.
+  - Yalnızca mesaja özgü bir filtre yeterli değil, çünkü yarış o filtreyi de siliyor (testle gösterildi).
+- **Karar:**
+  - Benchmark'ta RF tahmini **`n_jobs = 1`** ile yapılır. İşçi iş parçacığı olmadığı için yarış oluşamaz. Bu, iki profilde de (ana makine ve konteyner) geçerlidir.
+  - Diğer modellerin iş parçacığı ayarları değişmez: ORT intra-op = T, XGBoost `n_jobs = T`.
+  - Yalnızca bu mesaja özgü ve yalnızca RF ölçümünde bir `ignore` filtresi eklenir: `UserWarning`, mesaj düzenli ifadesi `SKLEARN_DELAYED_WARNING`. Genel bir uyarı bastırması yapılmaz.
+  - **Zamanlanan döngü koruması (bütün hedefler):** ısınma sonrası ölçülen çıkarımlarda herhangi bir uyarı gösterilirse ya da süreç çapındaki uyarı filtreleri döngü boyunca değişirse ölçüm `MeasurementInvalid` ile reddedilir ve sonuç yazılmaz. Uyarılar yine de basılır ve sayılır; sayılar sonuçta `warnings_guard` alanında kayıtlıdır.
+  - **Session 1'in RF sonuçları geçersiz sayılır** (`invalid` alanıyla işaretlendi; dosyalar silinmedi):
+    - RF ROAD: kirli.
+    - RF CH: kirli değil, ancak `n_jobs = 4` ile ölçüldüğü için yeni protokolle karşılaştırılamaz.
+  - Geçersiz sonuçlar bütün okuyucularca (`--compare`, `--table`, pilot tablosu) yok sayılır. Yeniden ölçümden önce `.invalid-<zaman>.json` adıyla arşivlenir.
+  - Session 1'in diğer 10 sonucu geçerli kalır.
+- **Gerekçe:**
+  - Kök nedeni (iş parçacıklarının eşzamanlı `catch_warnings` çağrısı) ortadan kaldıran tek ayar, RF'nin tek iş parçacığıyla çalışmasıdır. sklearn sürümü sabit olduğu (K-001) ve RF modelleri bu sürümle kaydedildiği için sürüm yükseltme seçenek değil.
+  - Batch = 1'de RF'nin ağaçlar arası paralelliği zaten joblib dağıtım ek yükü taşıyordu (K-046, deneme koşusunda ≈ 36 ms). Tek iş parçacığı, 4 iş parçacığı bütçesinin içinde kalır.
+- **Etkisi:**
+  - RF gecikmesi artık tek iş parçacıklı tahmini ölçer. Karşılaştırmalarda RF'nin 4 değil 1 iş parçacığı kullandığı belirtilir.
+  - Session 1'de iki RF hedefi yeniden ölçülmelidir (`--only rf_ --force`).
