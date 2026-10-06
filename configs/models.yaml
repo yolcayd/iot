@@ -8,7 +8,8 @@ runtime:            # not part of the run id; recorded in run_config.json (K-031
 
 decision:           # every model (K-035); applied after training, not part of the run id
   rule: val_normal_fpr
-  target_fpr: 0.01  # threshold = 0.99 quantile of the scores of all label-0 VALIDATION windows; attack = score > threshold
+  target_fpr: 0.01  # threshold = 0.99 quantile of the scores of the CLEAN validation normals (K-038: label 0,
+                    # no masquerade capture, +/-5 s from any injection); attack = score > threshold
 
 common:             # deep models
   batch_size: 512

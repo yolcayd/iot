@@ -189,3 +189,33 @@ def test_overrides_and_planned_run_id():
 def test_git_info_fields():
     g = T.git_info()
     assert len(g["commit"]) == 40 and isinstance(g["dirty"], bool)
+
+
+@pytest.mark.skipif(not SP.WINDOW_INDEX.exists(), reason="window index not built")
+@pytest.mark.parametrize("dataset", ["car_hacking", "road"])
+def test_calibration_windows_are_clean_validation_normals(dataset):
+    from src.data import sources as S
+    from src.data import windows as W
+
+    cfg = S.load_config()
+    win = D.load_window_index()
+    segs = {s.id: s for s in SP.segments(cfg) if s.dataset == dataset}
+    cal = D.calibration_windows(win, dataset, segs, cfg)
+    assert cal.equals(D.ae_val(win, dataset, segs, cfg))                  # K-038: same subset as AE early stopping
+    assert set(cal["split"].astype(str)) == {"val"} and (cal["label"] == 0).all()
+    assert not cal["segment"].astype(str).map(lambda s: segs[s].is_masquerade).any()
+    size, margin = cfg["windows"]["size"], cfg["normal_subset"]["margin_s"]
+    for seg_id, g in cal.groupby(cal["segment"].astype(str), observed=True):   # +/-5 s from any injection
+        seg = segs[seg_id]
+        ts = seg.read(["timestamp"])["timestamp"].to_numpy()
+        rel = g["start"].to_numpy() - seg.start
+        assert W.margin_clean(ts, rel, size, SP.injected_timestamps(seg.parquet), margin).all()
+    allnorm = win[(win["dataset"] == dataset) & (win["split"] == "val") & (win["label"] == 0)]
+    assert 0 < len(cal) < len(allnorm)
+
+
+def test_training_calibrates_on_calibration_windows():
+    import inspect
+
+    src = inspect.getsource(T.train)
+    assert "D.calibration_windows(" in src and 'eval_windows(win, dataset, "val")' not in src

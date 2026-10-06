@@ -1,9 +1,10 @@
-"""Decision threshold calibrated on validation normals (docs/DECISIONS.md K-035, K-036).
+"""Decision threshold calibrated on validation normals (docs/DECISIONS.md K-035, K-036, K-038).
 
-threshold = the (1 - target_fpr) quantile ("higher" method) of the scores of ALL label-0 validation
-windows; a window is flagged as an attack when score > threshold, so the realised false-positive rate
-on the validation normals is at most ``target_fpr`` (lower when scores tie at the threshold). Attack
-labels are never used, and scores from any split other than validation are refused.
+threshold = the (1 - target_fpr) quantile ("higher" method) of the scores of the label-0 windows passed in;
+a window is flagged as an attack when score > threshold, so the realised false-positive rate on those
+normals is at most ``target_fpr`` (lower when scores tie at the threshold). Attack labels are never used,
+and scores from any split other than validation are refused. The windows passed in by ``src.train`` are
+the clean validation normals (``src.data.dataset.calibration_windows``, K-038).
 """
 
 from __future__ import annotations

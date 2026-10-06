@@ -450,7 +450,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-035 — Karar eşiği: val normal pencerelerinde FPR = %1 (tüm modeller)
 
 - **Faz / tarih:** P3 · 2026-10-06
-- **Durum:** Geçerli (kullanıcı kararı). K-027'nin sabit 0.5 eşiğini ve K-030'daki train p99 eşiğini geçersiz kılar.
+- **Durum:** Kısmen geçersiz: kalibrasyon kümesi K-038 ile değişti (kural, FPR hedefi ve skorlar geçerli). K-027'nin sabit 0.5 eşiğini ve K-030'daki train p99 eşiğini geçersiz kılar.
 - **Karar:**
   - Her model için (CNN, RF, XGB, otokodlayıcılar) karar eşiği, **val kümesinin bütün label-0 pencerelerinin** skor dağılımından belirlenir.
   - Eşik = bu skorların 0.99 kantili (`numpy.quantile(..., method="higher")`); karar kuralı skor > eşik. Böylece val normal pencerelerinde gerçekleşen FPR ≤ %1 olur; bağlarda daha düşük olabilir.
@@ -481,3 +481,19 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - Recall yalnızca saldırı pencerelerine bağlıdır; türler arasındaki saldırı oranı farklarından etkilenmez (ROAD tür kümelerinde 103–973 normal pencere).
   - Eşikler sabit bir yanlış alarm oranına kalibre edildiği için recall modeller arasında adil karşılaştırılır.
 - **Etkisi:** Plan Bölüm 2.6/2.7'den (ΔF1 ana değişken) sapmadır; danışmana **haftalık raporda** bildirilecek. F5 istatistiksel testleri ΔRecall üzerinde birincil, ΔF1 üzerinde ikincil olarak yürütülür.
+
+## K-038 — K-035'e ek: kalibrasyon kümesi temiz val normal alt kümesidir
+
+- **Faz / tarih:** P3 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı; v2 koşularından ve hiçbir eşik sonucundan önce). K-035'in "val'deki bütün label-0 pencereleri" maddesini geçersiz kılar; K-035'in geri kalanı geçerli.
+- **Karar:** Bütün modellerin (CNN, RF, XGB, otokodlayıcılar) karar eşiği, otokodlayıcının erken durdurmada kullandığı temiz val normal alt kümesinden belirlenir (`src/data/dataset.py: calibration_windows` = `ae_val`):
+  - label 0;
+  - masquerade kayıtlarının pencereleri hariç;
+  - kaydın herhangi bir enjekte çerçevesine ±5 s'den yakın çerçeve içeren pencereler hariç (K-022 ile aynı pay).
+
+  Eşik bu pencerelerin skorlarının 0.99 kantilidir, FPR hedefi %1, kural skor > eşik.
+- **Gerekçe:**
+  - Masquerade kayıtlarının normal pencereleri fabrication kayıtlarının kopyasıdır; dahil edilirse aynı trafik iki kez sayılır.
+  - Saldırıya yakın normal etiketli pencereler saldırının etkisini (geçiş, gecikme, yanıt trafiği) taşıyabilir; eşik "temiz" normal trafiğe kalibre edilmelidir.
+- **Yapısal sonuç** (sonuç değil, ayrım tanımından): Car-Hacking'de patlamalar arası aralık 3 s < ±5 s olduğundan saldırı dosyalarının val normal pencerelerinin hiçbiri bu kümeye girmez. Car-Hacking kalibrasyon kümesi yalnızca normal dosyanın val bloğudur (1,684 pencere; ROAD 50,337). %1 FPR eşiği CH'de ≈ 17 pencerelik kuyruğa dayanır. Saldırı dosyalarının normal pencerelerindeki FPR testte ayrıca raporlanır.
+- **Etkisi:** Val ve testte raporlanan FPR, kalibrasyon kümesinden farklı pencerelerde ölçülür; %1'den sapabilir ve sapma raporlanır.

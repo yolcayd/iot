@@ -474,10 +474,10 @@ def train(model: str, dataset: str, seed: int, threads: int | None = None, devic
               duration_s=round((finished - started).total_seconds(), 1), meta=res["meta"])
     (out / "run_config.json").write_text(json.dumps(rc, indent=2) + "\n", encoding="utf-8")
 
-    # decision threshold from ALL label-0 validation windows at the target FPR (K-035); attack labels unused
+    # decision threshold at the target FPR on the clean validation normals (K-035, K-038); attack labels unused
     from src.calibration import calibrate_threshold
 
-    cal = D.eval_windows(win, dataset, "val")
+    cal = D.calibration_windows(win, dataset, store.segments, cfg)
     if smoke:
         cal = _subsample(cal, SMOKE["max_windows"], seed)
     scores = score_windows(out, store, cal, device)

@@ -104,8 +104,9 @@ python -m src.sanity                                        # leakage suspicion 
 ```
 
 Every run writes `run_config.json` (hyperparameters, library versions, git commit, environment) and the
-training curve. After training, the decision threshold of every model is calibrated on the label-0
-validation windows to a false-positive rate of 1% (attack labels are not used). The primary per-attack-type
+training curve. After training, the decision threshold of every model is calibrated to a false-positive
+rate of 1% on clean validation normals (label 0, no masquerade capture, at least 5 s from any injected
+frame; attack labels are not used). The primary per-attack-type
 measure is the recall at that threshold; F1, ROC-AUC and average precision are secondary
 (`docs/DECISIONS.md` K-035, K-037). The 1D-CNN stops early on validation average precision (K-034).
 <!-- Unsupervised model decision (K-030) to be added after the baseline runs. -->

@@ -11,8 +11,9 @@ Window selectors (each checks the split it may draw from):
     supervised_train  training windows, minus the label-0 windows of masquerade captures, which duplicate
                       the attack-free part of their source capture (docs/DECISIONS.md K-028)
     ae_train          ``normal_subset`` windows (train only, label 0, +/-5 s margin, no masquerade; K-022)
-    ae_val            validation windows with label 0, no masquerade capture, same +/-5 s margin; used only
-                      for early stopping of the autoencoders (K-030)
+    ae_val            validation windows with label 0, no masquerade capture, same +/-5 s margin; early
+                      stopping of the autoencoders (K-030) and, as ``calibration_windows``, the decision
+                      threshold of every model (K-038)
     eval_windows      every window of the validation or test split
 """
 
@@ -133,6 +134,15 @@ def ae_val(win: pd.DataFrame, dataset: str, segs: dict[str, SP.Segment], cfg: di
         rel = w["start"].to_numpy()[idx] - seg.start
         keep[pos[idx]] = W.margin_clean(ts, rel, size, SP.injected_timestamps(seg.parquet), margin)
     return _require_split(w[keep].reset_index(drop=True), "val")
+
+
+def calibration_windows(win: pd.DataFrame, dataset: str, segs: dict[str, SP.Segment], cfg: dict) -> pd.DataFrame:
+    """Clean validation normals for the decision threshold of every model (docs/DECISIONS.md K-038).
+
+    The same windows as ``ae_val``: label 0, not from a masquerade capture (they duplicate the attack-free part
+    of their fabrication source) and no frame within +/-5 s of an injected frame (attack after-effects).
+    """
+    return ae_val(win, dataset, segs, cfg)
 
 
 def eval_windows(win: pd.DataFrame, dataset: str, split: str) -> pd.DataFrame:
