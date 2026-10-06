@@ -89,13 +89,26 @@ def run_id(model: str, dataset: str, seed: int, hparams: dict, data_hash: str, w
 
 
 def _git(*args: str) -> str:
-    return subprocess.run(["git", *args], cwd=S.PROJECT_ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    out = subprocess.run(["git", *args], cwd=S.PROJECT_ROOT, capture_output=True, text=True, check=True).stdout
+    return out.rstrip("\n")    # keep leading blanks: they are part of `git status --porcelain` lines
+
+
+# Files that the pipeline itself WRITES as results (never read by training). They are excluded from the
+# dirty check, so that a grid stage that rewrites a tracked result table does not block the next stage.
+# Inputs of training (e.g. results/tables/normalization_params.json) stay in the check (CLAUDE.md rule 7).
+GENERATED_OUTPUTS = (
+    "results/raw",
+    "results/tables/baseline_*.csv",           # src/evaluate.py baseline_table, src/sanity.py
+    "results/tables/ae_feasibility.csv",       # src/run_grid.py --ae-check
+    "results/tables/road_cnn_gap_*.csv",       # analysis/road_cnn_gap.py
+)
 
 
 def git_info() -> dict:
-    # run outputs under results/raw do not make the tree dirty for the next run of a grid
-    status = _git("status", "--porcelain", "--", ".", ":(exclude)results/raw")
-    return {"commit": _git("rev-parse", "HEAD"), "dirty": bool(status), "dirty_files": status.splitlines()[:50]}
+    excludes = [f":(exclude,glob){p}" if "*" in p else f":(exclude){p}" for p in GENERATED_OUTPUTS]
+    status = _git("status", "--porcelain", "--", ".", *excludes)
+    return {"commit": _git("rev-parse", "HEAD"), "dirty": bool(status), "dirty_files": status.splitlines()[:50],
+            "excluded_from_dirty_check": list(GENERATED_OUTPUTS)}
 
 
 def environment(device: str, threads: int) -> dict:

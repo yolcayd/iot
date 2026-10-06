@@ -1,0 +1,103 @@
+{
+  "run_id": "rf_car_hacking_s0_670afc2e",
+  "model": "rf",
+  "dataset": "car_hacking",
+  "seed": 0,
+  "smoke": false,
+  "hparams": {
+    "family": "classical",
+    "n_estimators": 300,
+    "max_depth": null,
+    "min_samples_leaf": 1,
+    "class_weight": "balanced"
+  },
+  "overrides": {},
+  "decision_config": {
+    "rule": "val_normal_fpr",
+    "target_fpr": 0.01
+  },
+  "window_size": 100,
+  "data_hash": "8e302d6edf1553e2",
+  "train_windows": {
+    "n_windows": 185379,
+    "n_attack": 78441,
+    "n_normal": 106938,
+    "n_captures": 6,
+    "digest": "f37b468453258acc"
+  },
+  "val_windows": {
+    "n_windows": 26069,
+    "n_attack": 11922,
+    "n_normal": 14147,
+    "n_captures": 5,
+    "digest": "4b23cc4979d67e02"
+  },
+  "git": {
+    "commit": "30d976289aa3d7cc9e772added92a760a388fde4",
+    "dirty": false,
+    "dirty_files": []
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_count": 16,
+    "threads": 4,
+    "device": "cuda",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "versions": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "pyarrow": "25.0.1",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.4.1",
+      "torch": "2.14.1+cu130",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "started_utc": "2026-10-06T07:44:49+00:00",
+  "finished_utc": "2026-10-06T07:46:07+00:00",
+  "duration_s": 78.0,
+  "meta": {
+    "summary_features": [
+      "id_entropy",
+      "n_unique_ids",
+      "unseen_id_share",
+      "iat_mean",
+      "iat_std",
+      "iat_min",
+      "iat_q10",
+      "byte0_mean",
+      "byte1_mean",
+      "byte2_mean",
+      "byte3_mean",
+      "byte4_mean",
+      "byte5_mean",
+      "byte6_mean",
+      "byte7_mean",
+      "byte0_var",
+      "byte1_var",
+      "byte2_var",
+      "byte3_var",
+      "byte4_var",
+      "byte5_var",
+      "byte6_var",
+      "byte7_var",
+      "payload_change_rate"
+    ],
+    "decision": {
+      "rule": "score > threshold",
+      "method": "val_normal_fpr",
+      "threshold": 0.02,
+      "target_fpr": 0.01,
+      "realized_val_fpr": 0.008907363420427554,
+      "n_val_normal": 1684,
+      "fitted_on_split": "val",
+      "calibration_windows_digest": "99ad2568e341f351"
+    }
+  }
+}

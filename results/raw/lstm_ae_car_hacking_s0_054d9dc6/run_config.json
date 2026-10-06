@@ -1,0 +1,93 @@
+{
+  "run_id": "lstm_ae_car_hacking_s0_054d9dc6",
+  "model": "lstm_ae",
+  "dataset": "car_hacking",
+  "seed": 0,
+  "smoke": false,
+  "hparams": {
+    "batch_size": 256,
+    "lr": 0.001,
+    "weight_decay": 0.0,
+    "max_epochs": 30,
+    "patience": 5,
+    "eval_batch_size": 2048,
+    "family": "autoencoder",
+    "hidden": 64,
+    "latent": 32
+  },
+  "overrides": {},
+  "decision_config": {
+    "rule": "val_normal_fpr",
+    "target_fpr": 0.01
+  },
+  "window_size": 100,
+  "data_hash": "8e302d6edf1553e2",
+  "train_windows": {
+    "n_windows": 29685,
+    "n_attack": 0,
+    "n_normal": 29685,
+    "n_captures": 2,
+    "digest": "f3b461e5396073d9"
+  },
+  "val_windows": {
+    "n_windows": 1684,
+    "n_attack": 0,
+    "n_normal": 1684,
+    "n_captures": 1,
+    "digest": "99ad2568e341f351"
+  },
+  "git": {
+    "commit": "30d976289aa3d7cc9e772added92a760a388fde4",
+    "dirty": false,
+    "dirty_files": []
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_count": 16,
+    "threads": 4,
+    "device": "cuda",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "versions": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "pyarrow": "25.0.1",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.4.1",
+      "torch": "2.14.1+cu130",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "started_utc": "2026-10-06T07:44:32+00:00",
+  "finished_utc": "2026-10-06T07:44:46+00:00",
+  "duration_s": 13.8,
+  "meta": {
+    "best_epoch": 5,
+    "early_stopping": "val_loss",
+    "best_monitor_value": 0.07724156975746155,
+    "epochs_run": 10,
+    "stopped_early": true,
+    "resumed_at_epochs": [],
+    "train_score_quantiles": {
+      "0.5": 0.07199667394161224,
+      "0.9": 0.0807575210928917,
+      "0.99": 0.08627047389745712,
+      "0.999": 0.08963490277528763
+    },
+    "decision": {
+      "rule": "score > threshold",
+      "method": "val_normal_fpr",
+      "threshold": 0.08656024932861328,
+      "target_fpr": 0.01,
+      "realized_val_fpr": 0.009501187648456057,
+      "n_val_normal": 1684,
+      "fitted_on_split": "val",
+      "calibration_windows_digest": "99ad2568e341f351"
+    }
+  }
+}

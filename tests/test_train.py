@@ -219,3 +219,54 @@ def test_training_calibrates_on_calibration_windows():
 
     src = inspect.getsource(T.train)
     assert "D.calibration_windows(" in src and 'eval_windows(win, dataset, "val")' not in src
+
+
+def _git_repo(root):
+    import subprocess
+
+    def git(*a):
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=root, check=True,
+                       capture_output=True)
+    git("init", "-q")
+    for rel in ("src/a.py", "results/tables/baseline_f1.csv", "results/tables/normalization_params.json",
+                "results/tables/ae_feasibility.csv"):
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text("v1\n")
+    git("add", "-A")
+    git("commit", "-q", "-m", "init")
+
+
+@pytest.mark.parametrize("rel, dirty", [
+    ("results/tables/baseline_f1.csv", False),          # result table rewritten by the grid
+    ("results/tables/ae_feasibility.csv", False),
+    ("results/raw/run_x/run_config.json", False),       # new run output (untracked)
+    ("results/tables/normalization_params.json", True), # training input
+    ("src/a.py", True),                                 # code
+    ("configs/models.yaml", True),                      # new config file (untracked)
+])
+def test_dirty_check_ignores_generated_outputs_only(tmp_path, monkeypatch, rel, dirty):
+    _git_repo(tmp_path)
+    monkeypatch.setattr(T.S, "PROJECT_ROOT", tmp_path)
+    assert T.git_info()["dirty"] is False
+    (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / rel).write_text("v2\n")
+    assert T.git_info()["dirty"] is dirty
+
+
+def test_every_table_the_pipeline_writes_is_a_generated_output():
+    from fnmatch import fnmatch
+
+    from src import evaluate as E
+    from src import run_grid as G
+    from src import sanity as SA
+
+    def generated(path):
+        rel = path.relative_to(T.S.PROJECT_ROOT).as_posix()
+        return any(rel == p or rel.startswith(p + "/") or fnmatch(rel, p) for p in T.GENERATED_OUTPUTS)
+
+    written = [E.TABLES / "baseline_f1.csv", E.TABLES / "baseline_pairs.csv", SA.TABLES / "baseline_sanity.csv",
+               SA.TABLES / "baseline_origins.csv", G.AE_TABLE, E.TABLES / "road_cnn_gap_by_epoch.csv",
+               E.TABLES / "road_cnn_gap_val_loss.csv", E.TABLES / "road_cnn_gap_selected.csv", T.RAW_DIR / "x" / "meta.json"]
+    assert all(generated(p) for p in written)
+    inputs = ["normalization_params.json", "split_summary.csv", "feature_int8_levels.csv", "capture_lineage.csv"]
+    assert not any(generated(E.TABLES / n) for n in inputs)
