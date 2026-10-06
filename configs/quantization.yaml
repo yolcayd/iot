@@ -39,22 +39,29 @@ q2:                               # INT8 post-training static quantization (onnx
 evaluation:
   batch_size: 2048                # ONNX Runtime CPU scoring; threads = configs/models.yaml runtime.threads
 
-benchmark:
-  warmup: 100                     # excluded from the statistics (CLAUDE.md rule 8)
-  repeats: 1000                   # measured inferences, batch = 1
-  min_repeats: 1000
+benchmark:                        # protocol K-049 (supersedes the run length and warm-up of K-046)
+  protocol: K-049                 # stored in every result; results of another protocol are ignored
+  warmup: 100                     # at least this many warm-up inferences ...
+  warmup_min_seconds: 1.0         # ... and at least this long; warm-up is excluded from the statistics (rule 8)
+  repeats: 10000                  # measured inferences, batch = 1
+  min_repeats: 1000               # CLAUDE.md rule 8 floor (smoke runs below it are refused outside --smoke)
   input_split: val                # benchmark inputs: fixed sample of validation windows (labels unused)
-  n_inputs: 1100                  # = warmup + repeats, one distinct window per inference
+  n_inputs: 1100                  # cycled: inference i uses window i mod 1100
   input_seed: 0
   profiles:
     host:
       threads: 4
+      pin_performance_cores: 4    # pin the process to one logical CPU of each of 4 performance cores (K-049)
+      skip_core0: true            # core 0 handles most OS interrupts
+      required_power_mode: best_performance   # Windows power mode overlay; the run is refused otherwise
       note: >-
-        Approximation of a constrained device: ONNX Runtime/BLAS threads fixed, no CPU quota and no memory
-        limit; other processes may share the machine.
+        Approximation of a constrained device: ONNX Runtime/BLAS threads fixed and the process pinned to 4
+        performance cores, but no CPU quota and no memory limit; other processes may share the machine.
     container:
       threads: 2
       note: Docker container limited with --cpus=2 --memory=2g --memory-swap=2g (docker/run_benchmark.ps1).
   repeatability:                  # two sessions of the same profile are consistent if, for every target,
     median_rel_tol: 0.05          # |a - b| / mean(a, b) of the median latency <= 5 %
     p95_rel_tol: 0.10             # and of the p95 latency <= 10 %
+    # Pre-registered (K-049): no re-measurement after the two K-049 sessions. Inconsistent targets are reported
+    # with both sessions' values and flagged; latency comparisons then rest on within-session ratios (Qk/Q0).

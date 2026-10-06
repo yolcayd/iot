@@ -1244,5 +1244,10 @@
    0,
    108
   ]
+ },
+ "invalid": {
+  "reason": "measured under the K-046/K-048 protocol (1000 timed inferences, 100-inference warm-up, no core pinning, balanced power mode); host session 1 vs 2 inconsistent in 8 of 12 targets; superseded by protocol K-049",
+  "decision": "K-049",
+  "marked_utc": "2026-10-06T16:17:06+00:00"
  }
 }

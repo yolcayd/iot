@@ -5,21 +5,26 @@ Q0/Q1/Q2 ONNX files of the deep models and the native RF (joblib) / XGBoost (ubj
 ``cpu_unsupported`` (no float16 kernels on the CPU execution provider, K-043) are not timed. This module needs
 neither PyTorch nor the data pipeline, so it also runs in the constrained Docker container (docker/).
 
-Protocol (configs/quantization.yaml ``benchmark``):
-* batch = 1, one window per inference; ``warmup`` (100) inferences excluded, then ``repeats`` (>= 1000) timed
-  with ``time.perf_counter_ns``; inputs are a fixed sample of validation windows (data/processed/bench/).
+Protocol K-049 (configs/quantization.yaml ``benchmark``; supersedes the run length and warm-up of K-046):
+* batch = 1, one window per inference; warm-up of at least ``warmup`` (100) inferences AND at least
+  ``warmup_min_seconds`` (1 s), excluded; then ``repeats`` (10,000) timed with ``time.perf_counter_ns``. Inputs are
+  a fixed sample of validation windows (data/processed/bench/), cycled.
 * the RF/XGBoost time includes the window summary features (the deep models take the raw window).
 * every target runs in its own subprocess: peak memory = peak resident set of that process (Windows peak working
   set, Linux ru_maxrss), reported absolute and above the level measured right before the model is loaded.
 * threads fixed: ONNX Runtime intra-op = T, inter-op = 1, sequential; OMP/MKL/OpenBLAS = T; XGBoost uses T; the
   random forest predicts single-threaded (n_jobs = 1, K-048: sklearn's threaded prediction races on the
   process-wide warning filters and then prints a warning per tree inside the timed loop).
+* host profile: the process is pinned to one logical CPU of each of 4 performance cores (core 0 skipped) and the
+  run is refused unless the Windows power mode is "Best performance" (K-049).
 * a measurement is rejected if any warning is shown during the timed inferences or the warning filters change;
-  results marked invalid (``--invalidate``) are kept, ignored by every reader and archived before re-measuring.
+  results marked invalid (``--invalidate``) or measured under another protocol are kept, ignored by every reader and
+  archived before re-measuring.
 * the measurement environment (CPU, cores, affinity, memory, cgroup limits, ONNX Runtime provider, threads, power
-  state, git commit, library versions) is stored with every result.
+  plan and mode, git commit, library versions) is stored with every result.
 * ``--compare``: two sessions of a profile are consistent if every target's median and p95 latency differ by at
-  most the pre-registered relative tolerances.
+  most the pre-registered relative tolerances. Pre-registered: no re-measurement after the two K-049 sessions;
+  inconsistent targets are reported with both values and flagged, comparisons rest on within-session ratios.
 
 Usage:
     python -m src.benchmark --profile host --session 1          # resumable: finished targets are skipped
@@ -75,6 +80,13 @@ class MeasurementInvalid(RuntimeError):
     """Something other than the inference ran inside the timed loop (warning output, changed warning filters)."""
 
 
+# Windows 11 power mode overlays (PowerGetEffectiveOverlayScheme)
+POWER_MODES = {"00000000-0000-0000-0000-000000000000": "balanced",
+               "ded574b5-45a0-4f42-8737-46345c09c238": "best_performance",
+               "961cc777-2547-4f9d-8174-7d86181b8a7a": "best_power_efficiency",
+               "3af9b8d9-7c97-431d-ad78-34a8bfea439f": "better_battery"}
+
+
 def load_qconfig(path: Path = QCONFIG) -> dict:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
@@ -97,13 +109,19 @@ def result_path(out_dir: Path, profile: str, session: int, quant: str) -> Path:
     return Path(out_dir) / f"benchmark_{profile}_s{session}_{quant}.json"
 
 
-def load_result(out_dir: Path, profile: str, session: int, quant: str) -> dict | None:
-    """The result of a target, or None if it is missing or marked invalid."""
+def current_protocol() -> str:
+    return load_qconfig()["benchmark"]["protocol"]
+
+
+def load_result(out_dir: Path, profile: str, session: int, quant: str, protocol: str | None = None) -> dict | None:
+    """The result of a target, or None if it is missing, marked invalid or measured under another protocol."""
     p = result_path(out_dir, profile, session, quant)
     if not p.exists():
         return None
     r = json.loads(p.read_text(encoding="utf-8"))
-    return None if r.get("invalid") else r
+    if r.get("invalid") or r.get("protocol") != (protocol or current_protocol()):
+        return None
+    return r
 
 
 def invalidate(path: Path, reason: str, decision: str) -> None:
@@ -115,9 +133,13 @@ def invalidate(path: Path, reason: str, decision: str) -> None:
     os.replace(tmp, path)
 
 
-def archive_invalid(path: Path) -> Path | None:
-    """Before re-measuring: keep an invalid result under a new name instead of overwriting it."""
-    if path.exists() and json.loads(path.read_text(encoding="utf-8")).get("invalid"):
+def archive_invalid(path: Path, protocol: str | None = None) -> Path | None:
+    """Before re-measuring: keep an invalid result, or one of another protocol when ``protocol`` is given, under a
+    new name instead of overwriting it."""
+    if not path.exists():
+        return None
+    r = json.loads(path.read_text(encoding="utf-8"))
+    if r.get("invalid") or (protocol is not None and r.get("protocol") != protocol):
         dst = path.with_name(f"{path.stem}.invalid-{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}.json")
         os.replace(path, dst)
         return dst
@@ -220,7 +242,75 @@ def power_state() -> dict:
                                                  timeout=10).stdout.strip()
         except (OSError, subprocess.SubprocessError):
             out["power_scheme"] = None
+    out["power_mode"] = power_mode()
     return out
+
+
+def power_mode() -> str | None:
+    """Windows power mode overlay (Settings > Power > Power mode): balanced, best_performance, ...; None elsewhere."""
+    if sys.platform != "win32":
+        return None
+    try:
+        import ctypes
+        import uuid
+
+        g = ctypes.create_string_buffer(16)
+        if ctypes.WinDLL("powrprof").PowerGetEffectiveOverlayScheme(g) != 0:
+            return None
+        s = str(uuid.UUID(bytes_le=g.raw))
+        return POWER_MODES.get(s, s)
+    except (OSError, AttributeError):
+        return None
+
+
+def cpu_sets() -> list[dict]:
+    """Logical processors with their physical core and efficiency class (Windows GetSystemCpuSetInformation;
+    a higher class is a faster core). Empty where unavailable."""
+    if sys.platform != "win32":
+        return []
+    import ctypes
+    import struct
+    from ctypes import wintypes
+
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    n = wintypes.ULONG(0)
+    k32.GetSystemCpuSetInformation(None, 0, ctypes.byref(n), None, 0)
+    buf = ctypes.create_string_buffer(n.value)
+    if not k32.GetSystemCpuSetInformation(buf, n, ctypes.byref(n), None, 0):
+        return []
+    raw, off, out = buf.raw, 0, []
+    while off < n.value:                       # SYSTEM_CPU_SET_INFORMATION records
+        size, _ = struct.unpack_from("<II", raw, off)
+        _, group, logical, core, _, _, eff = struct.unpack_from("<IHBBBBB", raw, off + 8)
+        out.append({"logical": logical, "core": core, "efficiency_class": eff, "group": group})
+        off += size
+    return out
+
+
+def performance_cpus(sets: list[dict], n: int, skip_core0: bool) -> list[int]:
+    """One logical CPU (the lowest index) of each of the first ``n`` performance cores (highest efficiency class,
+    processor group 0); core 0 is skipped if requested and enough performance cores remain (K-049)."""
+    sets = [s for s in sets if s["group"] == 0]
+    if not sets:
+        raise RuntimeError("CPU set information unavailable: cannot pin to performance cores")
+    top = max(s["efficiency_class"] for s in sets)
+    cores = sorted({s["core"] for s in sets if s["efficiency_class"] == top})
+    if skip_core0 and 0 in cores and len(cores) - 1 >= n:
+        cores.remove(0)
+    if len(cores) < n:
+        raise RuntimeError(f"only {len(cores)} performance cores available, {n} requested")
+    return [min(s["logical"] for s in sets if s["core"] == c) for c in cores[:n]]
+
+
+def pin_to_performance_cores(n: int, skip_core0: bool) -> dict:
+    import psutil
+
+    sets = cpu_sets()
+    cpus = performance_cpus(sets, n, skip_core0)
+    proc = psutil.Process()
+    proc.cpu_affinity(cpus)
+    return {"requested_cores": n, "skip_core0": skip_core0, "cpus": cpus, "applied": proc.cpu_affinity() == cpus,
+            "cpu_sets": sets}
 
 
 def git_state() -> dict:
@@ -288,7 +378,8 @@ def _ort_session(path: Path, threads: int):
     return ort.InferenceSession(str(path), so, providers=["CPUExecutionProvider"])
 
 
-def measure(target: dict, threads: int, warmup: int, repeats: int, min_repeats: int) -> dict:
+def measure(target: dict, threads: int, warmup: int, repeats: int, min_repeats: int,
+            warmup_min_s: float = 0.0) -> dict:
     import psutil
 
     if target["kind"] == "onnx":
@@ -333,29 +424,41 @@ def measure(target: dict, threads: int, warmup: int, repeats: int, min_repeats: 
         extra["runtime"] = {"library": "xgboost", "device": "cpu", "n_jobs": threads, "iteration_range": list(rng)}
     rss1 = proc.memory_info().rss
     n = len(x)
-    lat, shown, at = [], [], [0]
+    warm, lat, shown, at = [], [], [], [-1]          # at[0] = -1 during warm-up, else the timed inference index
     show_orig, filters0 = warnings.showwarning, list(warnings.filters)
 
     def record(message, category, filename, lineno, file=None, line=None):    # still printed, but counted
         shown.append({"inference": at[0], "category": category.__name__, "message": str(message)[:200]})
         show_orig(message, category, filename, lineno, file, line)
 
+    def timed(i):
+        xi = x[i % n: i % n + 1]                     # inputs are cycled
+        t0 = time.perf_counter_ns()
+        fn(xi)
+        return time.perf_counter_ns() - t0
+
     warnings.showwarning = record
     try:
-        for i in range(warmup + repeats):
-            at[0] = i
-            xi = x[i % n: i % n + 1]
-            t0 = time.perf_counter_ns()
-            fn(xi)
-            lat.append(time.perf_counter_ns() - t0)
+        # warm-up: at least `warmup` inferences AND at least `warmup_min_s` seconds (K-049); excluded (rule 8)
+        t_start = time.perf_counter()
+        while len(warm) < warmup or time.perf_counter() - t_start < warmup_min_s:
+            warm.append(timed(len(warm)))
+        k0 = len(warm)
+        for j in range(repeats):
+            at[0] = j
+            lat.append(timed(k0 + j))
     finally:
         warnings.showwarning = show_orig
     guard = {"warning_filters_intact": list(warnings.filters) == filters0, "n_warnings_shown": len(shown),
-             "n_warnings_shown_timed": sum(w["inference"] >= warmup for w in shown), "warnings": shown[:20]}
+             "n_warnings_shown_timed": sum(w["inference"] >= 0 for w in shown), "warnings": shown[:20]}
     if not guard["warning_filters_intact"] or guard["n_warnings_shown_timed"]:
         raise MeasurementInvalid(f"{target['id']}: output or warning-filter change inside the timed loop: {guard}")
     peak, method = peak_rss_bytes(proc)
-    return {"latency": latency_stats(lat, warmup, min_repeats), "latencies_us": [round(v / 1e3, 1) for v in lat],
+    w = np.asarray(warm, dtype=np.float64)
+    return {"latency": latency_stats(warm + lat, len(warm), min_repeats),
+            "warmup_run": {"n": int(len(w)), "seconds": float(w.sum() / 1e9), "min_inferences": warmup,
+                           "min_seconds": warmup_min_s, "median_ms": float(np.median(w) / 1e6)},
+            "latencies_us": [round(v / 1e3, 1) for v in lat],          # timed inferences only (warm-up excluded)
             "warnings_guard": guard,
             "memory": {"rss_before_load_mb": rss0 / 2**20, "rss_after_load_mb": rss1 / 2**20,
                        "peak_rss_mb": peak / 2**20, "peak_rss_delta_mb": (peak - rss0) / 2**20, "peak_method": method},
@@ -364,14 +467,27 @@ def measure(target: dict, threads: int, warmup: int, repeats: int, min_repeats: 
 
 
 def worker(target_id: str, profile: str, session: int, threads: int, warmup: int, repeats: int, min_repeats: int,
-           out: Path, manifest: Path) -> None:
+           out: Path, manifest: Path, warmup_min_s: float = 0.0, smoke: bool = False) -> None:
+    qcfg = load_qconfig()
+    prof = qcfg["benchmark"]["profiles"][profile]
     target = next(t for t in load_manifest(manifest) if t["id"] == target_id)
+    pinning = None
+    if prof.get("pin_performance_cores"):
+        # before the model is loaded, so every runtime thread inherits the affinity (K-049)
+        try:
+            pinning = pin_to_performance_cores(prof["pin_performance_cores"], prof.get("skip_core0", False))
+        except (RuntimeError, OSError) as e:
+            if not smoke:
+                raise
+            pinning = {"requested_cores": prof["pin_performance_cores"], "applied": False, "reason": str(e)}
+        if not pinning["applied"] and not smoke:
+            raise RuntimeError(f"could not pin the process: {pinning}")
     started = _now()
-    res = measure(target, threads, warmup, repeats, min_repeats)
-    res = {"target": target, "profile": profile, "session": session, "threads": threads, "warmup": warmup,
-           "repeats": repeats, "started_utc": started, "finished_utc": _now(),
-           "smoke": min_repeats < load_qconfig()["benchmark"]["min_repeats"],
-           "environment": environment_record(profile, threads, load_qconfig()), **res}
+    res = measure(target, threads, warmup, repeats, min_repeats, warmup_min_s)
+    res = {"target": target, "protocol": qcfg["benchmark"]["protocol"], "profile": profile, "session": session,
+           "threads": threads, "warmup": warmup, "warmup_min_seconds": warmup_min_s, "repeats": repeats,
+           "pinning": pinning, "started_utc": started, "finished_utc": _now(), "smoke": smoke,
+           "environment": environment_record(profile, threads, qcfg), **res}
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".tmp")
     tmp.write_text(json.dumps(res, indent=1) + "\n", encoding="utf-8")
@@ -394,9 +510,9 @@ def thread_env(threads: int) -> dict:
 def run_all(profile: str, session: int, threads: int, qcfg: dict, force: bool = False, smoke_out: Path | None = None,
             only: str | None = None, manifest: Path = MANIFEST, timeout: int = 3600) -> list[tuple[str, str]]:
     b = qcfg["benchmark"]
-    warmup, repeats, min_rep = b["warmup"], b["repeats"], b["min_repeats"]
+    warmup, repeats, min_rep, warm_s = b["warmup"], b["repeats"], b["min_repeats"], b["warmup_min_seconds"]
     if smoke_out is not None:
-        warmup, repeats, min_rep = SMOKE["warmup"], SMOKE["repeats"], SMOKE["repeats"]
+        warmup, repeats, min_rep, warm_s = SMOKE["warmup"], SMOKE["repeats"], SMOKE["repeats"], 0.0
     if repeats < min_rep:
         raise ValueError(f"repeats {repeats} < {min_rep} (CLAUDE.md rule 8)")
     done = []
@@ -411,17 +527,19 @@ def run_all(profile: str, session: int, threads: int, qcfg: dict, force: bool = 
         out = result_path(out_dir, profile, session, t["quant"])
         if smoke_out is not None:
             out = out.with_name(f"{t['run_id']}_{out.name}")
-        kept = archive_invalid(out)
+        kept = archive_invalid(out, b["protocol"])
         if kept:
-            log(f"{t['id']}: previous result is marked invalid, kept as {kept.name}")
+            log(f"{t['id']}: previous result is invalid or of another protocol, kept as {kept.name}")
         if out.exists() and not force:
             log(f"skip {t['id']}: already measured ({out.name})")
             done.append((t["id"], "exists"))
             continue
-        log(f"measure {t['id']} ({profile}, session {session}, {threads} threads, {warmup}+{repeats})")
+        log(f"measure {t['id']} ({profile}, session {session}, {threads} threads, "
+            f"warm-up >= {warmup} and >= {warm_s} s, {repeats} timed)")
         cmd = [sys.executable, "-m", "src.benchmark", "--worker", t["id"], "--profile", profile, "--session",
                str(session), "--threads", str(threads), "--warmup", str(warmup), "--repeats", str(repeats),
-               "--min-repeats", str(min_rep), "--out", str(out), "--manifest", str(manifest)]
+               "--min-repeats", str(min_rep), "--warmup-seconds", str(warm_s), "--out", str(out),
+               "--manifest", str(manifest)] + (["--smoke"] if smoke_out is not None else [])
         try:
             subprocess.run(cmd, cwd=PROJECT_ROOT, env=thread_env(threads), check=True, timeout=timeout)
             r = json.loads(out.read_text(encoding="utf-8"))
@@ -440,8 +558,12 @@ def status(profile: str, manifest: Path = MANIFEST) -> list[dict]:
         row = {"target": t["id"], "status": t["status"]}
         for s in (1, 2):
             p = result_path(PROJECT_ROOT / t["out_dir"], profile, s, t["quant"])
-            row[f"session{s}"] = ("invalid" if json.loads(p.read_text(encoding="utf-8")).get("invalid") else "done") \
-                if p.exists() else "missing"
+            if not p.exists():
+                row[f"session{s}"] = "missing"
+                continue
+            r = json.loads(p.read_text(encoding="utf-8"))
+            row[f"session{s}"] = "invalid" if r.get("invalid") else \
+                "done" if r.get("protocol") == current_protocol() else f"other protocol ({r.get('protocol')})"
         rows.append(row)
     return rows
 
@@ -457,7 +579,7 @@ def compare(profile: str, qcfg: dict, manifest: Path = MANIFEST):
         r1, r2 = (load_result(PROJECT_ROOT / t["out_dir"], profile, s, t["quant"]) for s in (1, 2))
         if r1 and r2:
             rows.append({"target": t["id"], "dataset": t["dataset"], "model": t["model"], "quant": t["quant"],
-                         **repeatability(r1, r2, tol)})
+                         "protocol": r1["protocol"], **repeatability(r1, r2, tol)})
     df = pd.DataFrame(rows)
     if len(df):
         df.to_csv(TABLES / f"benchmark_repeatability_{profile}.csv", index=False, float_format="%.6g")
@@ -481,7 +603,9 @@ def table(profile: str, manifest: Path = MANIFEST):
             if r:
                 found = True
                 env = r["environment"]
-                rows.append({**base, "profile": profile, **summary_columns(r), "cpu": env["cpu"],
+                rows.append({**base, "profile": profile, "protocol": r["protocol"], **summary_columns(r),
+                             "pinned_cpus": (r.get("pinning") or {}).get("cpus"),
+                             "power_mode": env["power"].get("power_mode"), "cpu": env["cpu"],
                              "in_container": env["in_container"], "git_commit": env["git"]["commit"],
                              "finished_utc": r["finished_utc"]})
         if not found:
@@ -512,13 +636,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--warmup", type=int, help=argparse.SUPPRESS)
     ap.add_argument("--repeats", type=int, help=argparse.SUPPRESS)
     ap.add_argument("--min-repeats", type=int, help=argparse.SUPPRESS)
+    ap.add_argument("--warmup-seconds", type=float, default=0.0, help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
     qcfg = load_qconfig()
     if a.profile not in qcfg["benchmark"]["profiles"]:
         raise SystemExit(f"unknown profile {a.profile!r}")
     threads = a.threads or qcfg["benchmark"]["profiles"][a.profile]["threads"]
     if a.worker:
-        worker(a.worker, a.profile, a.session, threads, a.warmup, a.repeats, a.min_repeats, a.out, a.manifest)
+        worker(a.worker, a.profile, a.session, threads, a.warmup, a.repeats, a.min_repeats, a.out, a.manifest,
+               a.warmup_seconds, a.smoke)
         return 0
     if a.invalidate:
         for t in load_manifest(a.manifest):
@@ -535,6 +661,9 @@ def main(argv: list[str] | None = None) -> int:
         df, ok = compare(a.profile, qcfg, a.manifest)
         print(df.to_string(index=False) if len(df) else "no target measured in both sessions")
         print("CONSISTENT" if ok else "NOT CONSISTENT (or incomplete)")
+        if len(df) and not ok:
+            print("Pre-registered (K-049): no re-measurement. Report both sessions, flag the inconsistent targets and "
+                  "base latency comparisons on within-session ratios (Qk/Q0).")
         return 0 if ok else 1
     if a.table:
         print(table(a.profile, a.manifest).to_string(index=False))
@@ -550,6 +679,10 @@ def main(argv: list[str] | None = None) -> int:
         g = git_state()
         if g["dirty"] and not a.allow_dirty:
             raise SystemExit("working tree has uncommitted changes (CLAUDE.md rule 7); commit or pass --allow-dirty")
+        need = qcfg["benchmark"]["profiles"][a.profile].get("required_power_mode")
+        if need and power_mode() != need:
+            raise SystemExit(f"power mode is {power_mode()!r}, the {a.profile} profile requires {need!r} (K-049): "
+                             "Settings > System > Power & battery > Power mode")
     done = run_all(a.profile, a.session, threads, qcfg, a.force, smoke_out, a.only, a.manifest)
     failed = [d for d in done if d[1] == "failed"]
     log(f"finished: {len(done)} targets, {len(failed)} failed {failed}")

@@ -144,7 +144,7 @@ threshold is also applied unchanged to measure calibration drift (K-036, K-045).
 ```powershell
 python -m src.quantize --pilot                       # Q0/Q1/Q2 + evaluation of the seed-0 pilot runs (~3 min)
 python -m src.quantize --pilot-table                 # rebuild results/tables/quant_pilot.csv
-python -m src.benchmark --profile host --session 1   # latency/size/memory, batch 1, 100 warm-up + 1000 timed
+python -m src.benchmark --profile host --session 1   # latency/size/memory, batch 1, >=1 s warm-up + 10,000 timed
 python -m src.benchmark --profile host --session 2
 python -m src.benchmark --profile host --compare     # repeatability: median within 5 %, p95 within 10 %
 .\docker\run_benchmark.ps1 -Session 1                # same in a container limited to 2 CPUs / 2 GB RAM
@@ -152,8 +152,11 @@ python -m src.benchmark --profile host --compare     # repeatability: median wit
 
 **Latency measurements:**
 - Run them on an otherwise idle machine, on AC power.
-- The `host` profile fixes the thread count at 4 but sets no CPU or memory quota, so it only approximates a
-  constrained device.
+- The `host` profile fixes the thread count at 4 and pins the process to 4 performance cores (core 0 skipped),
+  but sets no CPU or memory quota, so it only approximates a constrained device. It refuses to run unless the
+  Windows power mode is "Best performance" (protocol K-049).
+- Pre-registered: if targets are still inconsistent after the two K-049 sessions, they are not re-measured; both
+  sessions are reported, the targets flagged, and latency comparisons rest on within-session ratios (Qk/Q0).
 - The `container` profile (2 threads) needs Docker Desktop to be running.
 - The random forest predicts single-threaded (`n_jobs=1`): scikit-learn's threaded prediction races on the
   process-wide warning filters and then prints a warning per tree inside the timed loop (K-048). A measurement is

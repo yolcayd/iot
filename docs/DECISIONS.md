@@ -626,7 +626,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-046 — Benchmark protokolü ve tekrarlanabilirlik ölçütü
 
 - **Faz / tarih:** P4 · 2026-10-06
-- **Durum:** Kısmen geçersiz: RF iş parçacığı maddesi K-048 ile (RF artık n_jobs = 1); geri kalanı geçerli (tolerans ölçümden önce sabitlendi)
+- **Durum:** Kısmen geçersiz: RF iş parçacığı maddesi K-048 ile (RF artık n_jobs = 1); ölçüm sayısı (1000) ve ısınma (100) maddeleri K-049 ile (10.000 ölçüm; en az 100 çıkarım ve 1 s ısınma; çekirdek sabitlemesi; güç modu). Toleranslar (%5 / %10) ve geri kalanı geçerli.
 - **Karar:**
   - **Gecikme:** batch = 1, pencere başına. 100 ısınma koşusu atılır, ardından 1000 ölçüm yapılır (`perf_counter_ns`). Raporlananlar: ortalama, medyan, p95, p99, std. 1000'den az tekrar reddedilir.
   - **Girdi:** sabit tohumla seçilmiş 1100 val penceresi (`data/processed/bench/<veri seti>.npy`); etiket kullanılmaz, test kümesine dokunulmaz.
@@ -691,3 +691,46 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 - **Etkisi:**
   - RF gecikmesi artık tek iş parçacıklı tahmini ölçer. Karşılaştırmalarda RF'nin 4 değil 1 iş parçacığı kullandığı belirtilir.
   - Session 1'de iki RF hedefi yeniden ölçülmelidir (`--only rf_ --force`).
+
+## K-049 — Benchmark protokolü v2: 10.000 ölçüm, süreye bağlı ısınma, performans çekirdeğine sabitleme, güç modu; önceden kayıtlı raporlama kuralı
+
+- **Faz / tarih:** P4 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı; bu protokolle hiçbir ölçüm yapılmadan yazıldı). K-046'nın ölçüm sayısı ve ısınma maddelerini geçersiz kılar. K-046'nın toleransları (%5 / %10) ve K-048 (RF `n_jobs = 1`, uyarı koruması) geçerli.
+- **Bağlam** (ana makine, eski protokol: 1000 ölçüm, 100 ısınma; sabitleme yok; güç modu "Dengeli", plan "Office"):
+  - Session 1 ile 2'nin karşılaştırmasında 12 hedeften 8'i tutarsız çıktı (`results/tables/benchmark_repeatability_host_k048.csv`).
+  - **XGB ROAD session 1** (medyan 841 µs; session 2'de 468 µs): uyarı selinin bittiği saniyede ölçüldü (18:33:09). Bütün seri boyunca yüksek; dış yük altında olduğu düşünülüyor (konsol çizimi), kanıtlanmadı.
+  - **RF CH session 1 yeniden ölçümü** (18:50): 100'lük blokların üçünde ~21 ms; 314 ölçüm medyanın iki katını aşıyor. Session 2'de yok. Kaynak belirsiz.
+  - **Derin modeller:**
+    - Tutarsız 4 Car-Hacking çifti uyarı selinden **önce** ölçüldü; sel bu tutarsızlığı açıklamıyor.
+    - Oturum içi örnekleme hatası (bootstrap) medyanda %0.1–1.1, p95'te %0.5–6. Oturumlar arası fark medyanda %6.6–9.9, p95'te %10–49. Fark örnekleme hatası değil, sistematik.
+    - Bir derin model ölçümünün tamamı 50–130 ms, 100 ısınma koşusu 4–25 ms sürüyor.
+    - 100'lük blok medyanlarında kademeli seviye sıçramaları var (ör. CNN ROAD Q0 session 1: 66 → 48 → 40 → 50 µs). Bu desen, hibrit CPU'da (i7-12650H: 6 performans + 4 verimlilik çekirdeği) iş parçacıklarının çekirdekler arasında taşınmasıyla ya da frekans değişimiyle uyumlu; doğrulanmadı.
+- **Karar** (`configs/quantization.yaml → benchmark`, `protocol: K-049`):
+  1. **Ölçüm sayısı:** her hedefte 10.000; iki oturumda da. Girdiler döngüsel kullanılır (1100 val penceresi).
+  2. **Isınma:** en az 100 çıkarım *ve* en az 1 saniye; istatistiklerin dışında (kural 8). Gerçekleşen ısınma sayısı ve süresi sonuca yazılır.
+  3. **Çekirdek sabitlemesi** (yalnızca ana makine profili):
+     - Süreç, model yüklenmeden önce, 4 performans çekirdeğinin her birinden en küçük indeksli mantıksal işlemciye sabitlenir.
+     - Performans çekirdeği = Windows `GetSystemCpuSetInformation` ile en yüksek verimlilik sınıfı.
+     - İşletim sistemi kesmelerinin çoğunu alan çekirdek 0 atlanır. Bu makinede çekirdekler 2, 4, 6, 8; mantıksal işlemciler [2, 4, 6, 8].
+     - Sabitleme uygulanamazsa ölçüm yapılmaz.
+     - ORT iş parçacığı sayısı 4 olarak kalır. RF tek iş parçacığıyla çalışır (K-048).
+  4. **Güç modu:** Windows güç modu "En iyi performans" (`PowerGetEffectiveOverlayScheme` = `ded574b5-…`) değilse ana makine ölçümü başlamaz. Güç modu ve güç planı her sonuçta kayıtlı.
+  5. **Tolerans değişmez:** medyan göreli farkı ≤ %5, p95 göreli farkı ≤ %10.
+  6. **Eski sonuçlar:** K-046/K-048 protokolüyle alınmış bütün ana makine sonuçları (session 1 ve 2, 24 dosya) `invalid` olarak işaretlendi; silinmedi.
+     - Her sonuç `protocol` alanı taşır. Başka protokolün sonuçları okuyucularca yok sayılır ve yeniden ölçümden önce arşivlenir.
+     - Eski tablolar `benchmark_host_k048.csv` ve `benchmark_repeatability_host_k048.csv` adıyla saklandı.
+  7. **Önceden kayıtlı raporlama kuralı:** Bu protokolle yapılan iki oturumdan sonra bazı hedefler yine tolerans dışında kalırsa **yeniden ölçüm yapılmaz**. Bu durumda:
+     - iki oturumun değerleri birlikte raporlanır;
+     - tutarsız hedefler açıkça işaretlenir;
+     - makalede gecikme karşılaştırmaları ağırlıklı olarak **aynı oturum içindeki oranlara** (ör. Q2/Q0) dayandırılır.
+
+     `--compare` çıktısı bu kuralı hatırlatır.
+- **Gerekçe:**
+  - Gözlenen değişkenlik süreçten sürece ve zaman penceresinden pencereye sistematik.
+  - Ölçüm sayısını artırmak pencereyi derin modellerde 0.5–1.3 saniyeye uzatır; tek başına ise kaynağı kontrol etmez.
+  - Süreye bağlı ısınma, frekans ve önbelleklerin oturmasını sağlar. Çekirdek sabitlemesi, performans ve verimlilik çekirdekleri arasındaki taşınmayı kaldırır. Güç modu, frekans politikasını iki oturumda sabitler.
+  - Kural 7, ölçümden önce kaydedildi. Böylece tutarlılık kontrolü geçene kadar yeniden ölçme yapılamaz.
+- **Etkisi:**
+  - Çekirdek sabitlemesi bir ECU'nun koşullarını temsil etmekten çok ölçümün tekrarlanabilirliği içindir; makalede ve sınırlılıklarda belirtilecek.
+  - Konteyner profili değişmez: sabitleme yok; 10.000 ölçüm ve 1 saniyelik ısınma ona da uygulanır.
+  - Oturum başına süre ≈ 5 dk. Bunun ≈ 3 dk'sı iki RF hedefi (10.000 × ~9 ms).

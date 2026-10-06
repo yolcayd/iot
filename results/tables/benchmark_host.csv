@@ -1,0 +1,17 @@
+dataset,model,quant,run_id,status,model_size_mb,size_ratio_vs_q0,profile
+car_hacking,cnn1d,q0,cnn1d_car_hacking_s0_47c82757,measure,0.10323,1,host
+car_hacking,cnn1d,q1,cnn1d_car_hacking_s0_47c82757,cpu_unsupported,0.053874,0.521886,host
+car_hacking,cnn1d,q2,cnn1d_car_hacking_s0_47c82757,measure,0.0391397,0.379153,host
+car_hacking,conv_ae,q0,conv_ae_car_hacking_s0_580cfd1d,measure,0.111159,1,host
+car_hacking,conv_ae,q1,conv_ae_car_hacking_s0_580cfd1d,cpu_unsupported,0.0582037,0.523606,host
+car_hacking,conv_ae,q2,conv_ae_car_hacking_s0_580cfd1d,measure,0.0417624,0.375698,host
+road,cnn1d,q0,cnn1d_road_s0_6f18f03c,measure,0.10323,1,host
+road,cnn1d,q1,cnn1d_road_s0_6f18f03c,cpu_unsupported,0.053874,0.521886,host
+road,cnn1d,q2,cnn1d_road_s0_6f18f03c,measure,0.0391407,0.379162,host
+road,conv_ae,q0,conv_ae_road_s0_6dae8bb6,measure,0.111159,1,host
+road,conv_ae,q1,conv_ae_road_s0_6dae8bb6,cpu_unsupported,0.0582037,0.523606,host
+road,conv_ae,q2,conv_ae_road_s0_6dae8bb6,measure,0.0417624,0.375698,host
+car_hacking,rf,native,rf_car_hacking_s0_670afc2e,measure,6.00138,,host
+car_hacking,xgb,native,xgb_car_hacking_s0_44735717,measure,0.205381,,host
+road,rf,native,rf_road_s0_4bdc89c9,measure,134.367,,host
+road,xgb,native,xgb_road_s0_e016fbfe,measure,0.273556,,host

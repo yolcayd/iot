@@ -77,6 +77,54 @@ def test_smoke_run_outside_results(tmp_path):
     assert rf_res["runtime"]["n_jobs"] == B.RF_N_JOBS == 1                         # K-048
     for r in res:
         assert r["warnings_guard"]["warning_filters_intact"] and r["warnings_guard"]["n_warnings_shown_timed"] == 0
+        assert r["protocol"] == B.current_protocol() and len(r["latencies_us"]) == B.SMOKE["repeats"]
+        if B.cpu_sets():                                                           # host profile: pinned (K-049)
+            want = B.performance_cpus(B.cpu_sets(), 4, True)
+            assert r["pinning"]["applied"] and r["pinning"]["cpus"] == want
+            assert r["environment"]["cpu_affinity"] == want
+
+
+def test_k049_protocol_config():
+    b = B.load_qconfig()["benchmark"]
+    assert b["protocol"] == "K-049" and b["repeats"] == 10000 and b["warmup"] >= 100
+    assert b["warmup_min_seconds"] >= 1.0 and b["min_repeats"] >= 1000
+    assert b["repeatability"] == {"median_rel_tol": 0.05, "p95_rel_tol": 0.10}       # unchanged (K-046)
+    h = b["profiles"]["host"]
+    assert h["threads"] == 4 and h["pin_performance_cores"] == 4 and h["required_power_mode"] == "best_performance"
+
+
+HYBRID = ([{"logical": 2 * c + k, "core": 2 * c, "efficiency_class": 1, "group": 0} for c in range(6) for k in (0, 1)]
+          + [{"logical": 12 + i, "core": 12 + i, "efficiency_class": 0, "group": 0} for i in range(4)])
+
+
+def test_performance_cpu_selection():
+    assert B.performance_cpus(HYBRID, 4, skip_core0=True) == [2, 4, 6, 8]          # i7-12650H layout
+    assert B.performance_cpus(HYBRID, 4, skip_core0=False) == [0, 2, 4, 6]
+    assert B.performance_cpus(HYBRID, 6, skip_core0=True) == [0, 2, 4, 6, 8, 10]   # core 0 kept if needed
+    with pytest.raises(RuntimeError):
+        B.performance_cpus(HYBRID, 7, skip_core0=True)
+    flat = [{"logical": i, "core": i, "efficiency_class": 0, "group": 0} for i in range(8)]
+    assert B.performance_cpus(flat, 4, skip_core0=True) == [1, 2, 3, 4]           # non-hybrid: every core
+    with pytest.raises(RuntimeError):
+        B.performance_cpus([], 4, True)
+
+
+def test_power_mode_is_read_on_windows():
+    import sys
+
+    m = B.power_mode()
+    if sys.platform == "win32":
+        assert m is not None
+    else:
+        assert m is None
+
+
+def test_host_run_refused_without_best_performance(monkeypatch):
+    monkeypatch.setattr(B, "git_state", lambda: {"commit": "x", "dirty": False})
+    monkeypatch.setattr(B, "power_mode", lambda: "balanced")
+    monkeypatch.setattr(B, "run_all", lambda *a, **k: pytest.fail("must not measure"))
+    with pytest.raises(SystemExit, match="best_performance"):
+        B.main(["--profile", "host", "--session", "1"])
 
 
 @pytest.fixture
@@ -132,6 +180,13 @@ def test_guard_accepts_a_warning_during_warmup(monkeypatch, rf_target):
     assert r["warnings_guard"]["n_warnings_shown"] == 1 and r["warnings_guard"]["n_warnings_shown_timed"] == 0
 
 
+def test_warmup_lasts_at_least_the_minimum_time_and_is_excluded(rf_target):
+    r = B.measure(rf_target, 1, warmup=2, repeats=5, min_repeats=5, warmup_min_s=0.3)
+    w = r["warmup_run"]
+    assert w["n"] >= 2 and w["seconds"] >= 0.3 * 0.95 and w["min_seconds"] == 0.3
+    assert r["latency"]["n_warmup"] == w["n"] and r["latency"]["n_measured"] == 5 and len(r["latencies_us"]) == 5
+
+
 def test_guard_rejects_changed_warning_filters(monkeypatch, rf_target):
     import warnings
 
@@ -159,7 +214,7 @@ def test_only_the_sklearn_delayed_message_is_ignored(rf_target):
 
 def test_invalid_results_are_kept_ignored_and_archived(tmp_path):
     p = B.result_path(tmp_path, "host", 1, "native")
-    p.write_text(json.dumps({"latency": {"median_ms": 1.0}}))
+    p.write_text(json.dumps({"protocol": B.current_protocol(), "latency": {"median_ms": 1.0}}))
     assert B.load_result(tmp_path, "host", 1, "native") is not None
     B.invalidate(p, "warning output inside the timed loop", "K-048")
     assert B.load_result(tmp_path, "host", 1, "native") is None
@@ -168,6 +223,15 @@ def test_invalid_results_are_kept_ignored_and_archived(tmp_path):
     assert kept.exists() and not p.exists() and ".invalid-" in kept.name
     assert json.loads(kept.read_text())["latency"]["median_ms"] == 1.0            # data preserved
     assert B.archive_invalid(p) is None
+
+
+def test_results_of_another_protocol_are_ignored_and_archived(tmp_path):
+    p = B.result_path(tmp_path, "host", 2, "q0")
+    p.write_text(json.dumps({"latency": {"median_ms": 1.0}}))                    # K-046 results have no protocol
+    assert B.load_result(tmp_path, "host", 2, "q0") is None
+    assert B.archive_invalid(p) is None                                           # without a protocol: kept in place
+    kept = B.archive_invalid(p, B.current_protocol())
+    assert kept is not None and kept.exists() and not p.exists()
 
 
 def test_smoke_must_not_write_under_results():
