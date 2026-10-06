@@ -1,0 +1,60 @@
+# Post-training quantization (P4, plan F3) and latency benchmark. Decisions: docs/DECISIONS.md K-042 ... K-047.
+# Every value here is fixed before any quantized result was computed.
+
+models: [cnn1d, conv_ae]          # deep models that get Q0/Q1/Q2 (conv_ae = unsupervised model, K-039)
+not_quantized: [rf, xgb]          # classical references: no quantization; size and latency only (K-042)
+
+pilot:                            # end-to-end pilot of P4: seed-0 baseline runs of the CURRENT configuration
+  datasets: [car_hacking, road]
+  seed: 0
+
+onnx:
+  opset: 17
+  q0_atol: 1.0e-5                 # Q0 ONNX vs PyTorch float32 on CPU (absolute + relative tolerance)
+  q0_rtol: 1.0e-4
+
+q1:                               # float16
+  method: onnxruntime.transformers.float16 (keep_io_types)
+  min_heavy_fp16_share: 0.5       # share of heavy layers (Conv/ConvTranspose/Gemm/MatMul/LSTM) that must run fp16
+                                  # on the CPU execution provider; below it Q1 is "cpu_unsupported"
+  # What to do when the share is below the bar. null = stop with Q1CoverageError (user decides).
+  # simulate_fp16 = user decision of 2026-10-06 (K-043): accuracy from real fp16 arithmetic in PyTorch
+  # (weights + activations in half precision), size of the fp16 ONNX file, no CPU latency/memory.
+  low_cpu_coverage_action: simulate_fp16
+  simulation_device: cuda         # falls back to cpu if CUDA is unavailable (recorded)
+
+q2:                               # INT8 post-training static quantization (onnxruntime.quantization)
+  format: QDQ
+  activation_type: QUInt8
+  activation_symmetric: false     # asymmetric: [0, 1] input -> scale 1/255, zero point 0, 256 levels (P2, K-024)
+  weight_type: QInt8
+  weight_symmetric: true
+  per_channel: true
+  calibrate_method: MinMax
+  op_types: [Conv, ConvTranspose, Gemm, MatMul, MaxPool, Relu, Transpose]
+  calibration_windows: 1000       # sampled from the model's OWN training selection only (CLAUDE.md rule 4)
+  min_calibration_windows: 500
+  calibration_batch: 100
+
+evaluation:
+  batch_size: 2048                # ONNX Runtime CPU scoring; threads = configs/models.yaml runtime.threads
+
+benchmark:
+  warmup: 100                     # excluded from the statistics (CLAUDE.md rule 8)
+  repeats: 1000                   # measured inferences, batch = 1
+  min_repeats: 1000
+  input_split: val                # benchmark inputs: fixed sample of validation windows (labels unused)
+  n_inputs: 1100                  # = warmup + repeats, one distinct window per inference
+  input_seed: 0
+  profiles:
+    host:
+      threads: 4
+      note: >-
+        Approximation of a constrained device: ONNX Runtime/BLAS threads fixed, no CPU quota and no memory
+        limit; other processes may share the machine.
+    container:
+      threads: 2
+      note: Docker container limited with --cpus=2 --memory=2g --memory-swap=2g (docker/run_benchmark.ps1).
+  repeatability:                  # two sessions of the same profile are consistent if, for every target,
+    median_rel_tol: 0.05          # |a - b| / mean(a, b) of the median latency <= 5 %
+    p95_rel_tol: 0.10             # and of the p95 latency <= 10 %

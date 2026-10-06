@@ -101,6 +101,9 @@ GENERATED_OUTPUTS = (
     "results/tables/baseline_*.csv",           # src/evaluate.py baseline_table, src/sanity.py
     "results/tables/ae_feasibility.csv",       # src/run_grid.py --ae-check
     "results/tables/road_cnn_gap_*.csv",       # analysis/road_cnn_gap.py
+    "results/tables/quant_*.csv",              # src/quantize.py
+    "results/tables/benchmark_*.csv",          # src/benchmark.py
+    "results/tables/benchmark_manifest.json",  # src/quantize.py (benchmark targets)
 )
 
 
