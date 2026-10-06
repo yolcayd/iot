@@ -14,6 +14,8 @@ Definitions (docs/DECISIONS.md K-029):
 * Pooled (secondary): every window of the primary pool.
 * Decision: score > threshold, the threshold calibrated on validation normals at FPR 1% (K-035). The
   primary AS-1 measure is the per-type recall at that threshold (K-037); F1, ROC-AUC and AP are secondary.
+* ``roc_tpr_at_fpr_0.01``: highest TPR on the evaluated set's own ROC curve at FPR <= 1%; descriptive only,
+  same status as ROC-AUC, never used for a choice (K-040).
 
 Usage:
     python -m src.evaluate --run <run_id> [--split test|val]   # metrics_<split>.csv, scores_<split>.parquet
@@ -38,6 +40,7 @@ from src.data import splits as SP
 
 TABLES = S.PROJECT_ROOT / "results" / "tables"
 NORMAL = "normal"
+ROC_FPR = 0.01     # operating point of the descriptive ROC measure (K-040)
 PAIR_COLUMNS = ["source_capture", "fabrication", "masquerade", "role", "f1_fabrication", "f1_masquerade",
                 "recall_fabrication", "recall_masquerade", "fpr_fabrication", "fpr_masquerade"]
 
@@ -50,15 +53,30 @@ def binary_metrics(y: np.ndarray, pred: np.ndarray, score: np.ndarray | None = N
     recall = tp / (tp + fn) if tp + fn else np.nan
     f1 = 2 * tp / (2 * tp + fp + fn) if tp + fn else np.nan
     fpr = fp / (fp + tn) if fp + tn else np.nan
-    auc = ap = np.nan
+    auc = ap = tpr_roc = np.nan
     if score is not None and 0 < y.sum() < len(y):
         from sklearn.metrics import average_precision_score, roc_auc_score
 
         auc = float(roc_auc_score(y, score))
         ap = float(average_precision_score(y, score))
+        tpr_roc = roc_tpr_at_fpr(y, score, ROC_FPR)
     return {"n_attack": int(y.sum()), "n_normal": int((~y).sum()), "tp": tp, "fp": fp, "fn": fn, "tn": tn,
             "precision": precision, "recall": recall, "f1": f1, "fpr": fpr, "roc_auc": auc,
-            "average_precision": ap}
+            "average_precision": ap, "roc_tpr_at_fpr_0.01": tpr_roc}
+
+
+def roc_tpr_at_fpr(y: np.ndarray, score: np.ndarray, max_fpr: float) -> float:
+    """Highest TPR on the ROC curve of THIS window set with FPR <= max_fpr (K-040).
+
+    Descriptive only, same status as ROC-AUC: the operating point is read off the evaluated set's own labels,
+    so it is never used for any threshold, model or epoch choice. The decision threshold stays the one
+    calibrated on validation normals (K-035, K-038).
+    """
+    from sklearn.metrics import roc_curve
+
+    fpr, tpr, _ = roc_curve(np.asarray(y).astype(bool), score)
+    ok = fpr <= max_fpr + 1e-12
+    return float(tpr[ok].max()) if ok.any() else 0.0
 
 
 def roles(cfg: dict) -> dict[str, set[str]]:
@@ -193,7 +211,7 @@ def baseline_table(run_dirs: list[Path] | None = None) -> pd.DataFrame:
         raise RuntimeError("no finished, evaluated baseline runs under results/raw")
     out = pd.concat(frames, ignore_index=True)
     cols = ["dataset", "model", "status", "seed", "run_id", "level", "name", "group", "role", "n_attack", "n_normal",
-            "precision", "recall", "f1", "fpr", "roc_auc", "average_precision"]
+            "precision", "recall", "f1", "fpr", "roc_auc", "average_precision", "roc_tpr_at_fpr_0.01"]
     out = out[cols].sort_values(["dataset", "level", "name", "model"]).reset_index(drop=True)
     TABLES.mkdir(parents=True, exist_ok=True)
     out.to_csv(TABLES / "baseline_f1.csv", index=False, float_format="%.4f")

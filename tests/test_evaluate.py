@@ -78,3 +78,15 @@ def test_pairs_table_without_pairs_keeps_columns(tmp_path):
     assert len(pairs) == 0 and list(pairs.columns) == E.PAIR_COLUMNS
     pairs.to_csv(tmp_path / "p.csv", index=False)
     assert list(pd.read_csv(tmp_path / "p.csv").columns) == E.PAIR_COLUMNS
+
+
+def test_roc_tpr_at_fpr_by_hand():
+    # 100 normals with scores 0..99, 10 attacks: 5 above every normal, 5 between normals 97 and 98
+    y = np.r_[np.zeros(100), np.ones(10)]
+    s = np.r_[np.arange(100.0), np.full(5, 200.0), np.full(5, 97.5)]
+    # FPR <= 1% allows at most 1 normal above the cut: normals 99 -> only the 5 top attacks pass
+    assert E.roc_tpr_at_fpr(y, s, 0.01) == pytest.approx(0.5)
+    # FPR <= 2% allows normals 98, 99 -> cut at 97.5 keeps all 10 attacks
+    assert E.roc_tpr_at_fpr(y, s, 0.02) == pytest.approx(1.0)
+    m = E.binary_metrics(y, s > 150, s)
+    assert m["roc_tpr_at_fpr_0.01"] == pytest.approx(0.5) and m["recall"] == 0.5

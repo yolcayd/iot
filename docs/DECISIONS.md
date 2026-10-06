@@ -475,7 +475,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-037 — AS-1 birincil ölçüsü: kalibre eşikte recall (%1 FPR'da TPR) ve ΔRecall
 
 - **Faz / tarih:** P3 · 2026-10-06
-- **Durum:** Geçerli (kullanıcı kararı). K-029'daki "F1 birincil" ifadesini AS-1 için günceller.
+- **Durum:** Geçerli (kullanıcı kararı). K-029'daki "F1 birincil" ifadesini AS-1 için günceller. Birincil eşleştirilmiş testin birim kümesi K-041'deki taban kuralıyla sınırlanır; açıklayıcı ROC ölçüsü K-040'ta.
 - **Karar:** AS-1'in birincil ölçüsü, K-035'e göre kalibre edilmiş eşikteki saldırı türü bazında recall (val normal FPR = %1'de TPR) ve onun nicemleme kaybı ΔRecall = Recall(Q0) − Recall(Qk). F1, ROC-AUC ve AP ikincildir ve raporlanır.
 - **Gerekçe:**
   - Recall yalnızca saldırı pencerelerine bağlıdır; türler arasındaki saldırı oranı farklarından etkilenmez (ROAD tür kümelerinde 103–973 normal pencere).
@@ -513,3 +513,28 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 - **Karar:** (1) ROAD'da geçemedi, (2) incelendi; (2) ROAD'da geçemedi, (3) incelendi. (3) iki veri setinde de geçen ilk aday; **iki veri setinde de denetimsiz model conv-AE'dir** (M2-alt). Çıkış kuralı tetiklenmedi; AS-3 iki veri setinde değerlendirilir.
 - **Gözlem:** Baseline LSTM-AE v2 koşusu v1 val AUC'lerini birebir yeniden üretti (0.807448 / 0.394506). LSTM-AE'nin iki sürümünde de eğitim kaybı ≈ 0.073–0.08'de düzleşti; ayar denemesi bunu değiştirmedi.
 - **Etkisi:** Test değerlendirmesi yalnızca seçimden sonra, seçilen conv-AE koşuları için yapıldı. `baseline_f1.csv`'de LSTM-AE satırları `rejected_k033`, conv-AE satırları `selected_k033` olarak işaretli. F3–F5'te M2 yerine conv-AE kullanılır. Plandan (M2 = LSTM-AE) bu sapma README'de ve faz günlüğünde belirtilir; danışmana haftalık raporda bildirilecek.
+
+## K-040 — Açıklayıcı ölçü: test ROC eğrisinde FPR = %1'deki TPR
+
+- **Faz / tarih:** P3 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı)
+- **Bağlam:** v2 baseline'da kalibre eşik (K-035, K-038) teste farklı aktarıldı. Temiz saldırısız test kayıtlarında gerçekleşen FPR denetimli modellerde ≈ %1 (CNN 1.2%, RF 1.0%, XGB 0.9%; ROAD), conv-AE'de ise ≈ %0.1 (ROAD 0.11%, CH 0.18%). conv-AE testte hedeften on kat sıkı bir işletim noktasında çalışıyor; "kalibre recall" modeller arasında aynı noktayı temsil etmiyor.
+- **Karar:**
+  - Her değerlendirme kümesi için `roc_tpr_at_fpr_0.01` raporlanır: o kümenin kendi ROC eğrisinde FPR ≤ %1 olan en yüksek TPR.
+  - **Yalnızca açıklayıcıdır**, ROC-AUC ile aynı statüdedir: eşik, model, epoch veya aday seçiminde kullanılmaz.
+  - Kalibrasyon kuralı değişmez. Birincil ölçü K-037'deki kalibre recall olarak kalır; aktarım farkı bulgu olarak raporlanır.
+- **Gerekçe:** Eşik kalibrasyonunun aktarımından bağımsız, sabit test FPR'ında bir ayırt edicilik ölçüsü verir. Testin kendi etiketlerini kullandığı için karar ölçüsü olamaz.
+- **Etkisi:** `src/evaluate.py: roc_tpr_at_fpr`. Normal pencere sayısı küçük kümelerde (ROAD tür kümeleri 103–973) gürültülüdür; FPR ≤ %1, 103 normalde en fazla 1 yanlış alarm demektir.
+
+## K-041 — AS-1 birincil eşleştirilmiş testinde taban kuralı (yalnızca Q0'a dayalı)
+
+- **Faz / tarih:** P3 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı; nicemlenmiş hiçbir sonuç görülmeden)
+- **Karar:**
+  - Birim: (model, fabrication–masquerade çifti) (K-013; birincil havuz, coolant hariç K-019).
+  - Bir birimde Q0'daki (float32) **fabrication veya masquerade recall'undan biri < 0.10** ise (taban etkisi), o birim AS-1'in birincil eşleştirilmiş testinden çıkarılır. Tablolarda ve şekillerde raporlanmaya devam eder, çıkarılma nedeniyle işaretlenir.
+  - Kural yalnızca Q0 değerlerine dayanır. Q1/Q2 sonuçları ve ΔRecall kullanılmaz. Aynı birim kümesi her nicemleme düzeyinde (Q1, Q2) kullanılır.
+  - **İşlem tanımı** (kullanıcı onayına açık): "Q0 recall" = test kümesinde kalibre eşikteki (K-035/K-038) recall'un **3 tohum üzerinden ortalaması**.
+  - Car-Hacking'de çift yoktur; denetimli modellerin Car-Hacking'de tavanda olması (recall ≈ 1, ΔRecall'un aşağı yönde payı yok) bilinen sınırlılık olarak raporlanır. Grup düzeyindeki ikincil analiz (K-013) bu kuraldan etkilenmez.
+- **Gerekçe:** Recall'u Q0'da sıfıra yakın bir türde nicemleme kaybı ölçülemez; ΔRecall tabanla sınırlıdır ve "kayıp yok" sonucu yanıltıcı olur. Eşik ve uygulama Q0'a bağlı olduğundan kural ΔRecall'a bakılarak ayarlanamaz.
+- **Etkisi (yalnızca bilgi; P3 tek tohumu, kesin değil):** P3 seed-0 Q0 recall'larıyla 16 birimden 7'si eşiği geçiyor (CNN 3, RF 1, XGB 2, conv-AE 1). Birincil testin istatistiksel gücü sınırlı olabilir; kesin birim listesi F4'teki 3 tohumla belirlenir.
