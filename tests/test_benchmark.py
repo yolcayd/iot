@@ -246,3 +246,25 @@ def test_benchmark_module_does_not_import_torch():
     code = "import sys, src.benchmark, src.models.classical; sys.exit('torch' in sys.modules)"
     assert subprocess.run([sys.executable, "-c", code], cwd=B.PROJECT_ROOT).returncode == 0
     assert torch is not None
+
+
+def test_ratio_table_reports_both_sessions_and_flags(tmp_path, monkeypatch):
+    monkeypatch.setattr(B, "TABLES", tmp_path)
+
+    def res(med, p95):
+        return {"protocol": B.current_protocol(), "latency": {"median_ms": med, "p95_ms": p95}}
+    targets = [{"id": f"m:{q}", "run_id": "m", "model": "cnn1d", "dataset": "d", "quant": q, "kind": "onnx",
+                "model_path": "x", "input_path": "x", "out_dir": str(tmp_path), "status": s}
+               for q, s in (("q0", "measure"), ("q1", "cpu_unsupported"), ("q2", "measure"))]
+    man = tmp_path / "manifest.json"
+    man.write_text(json.dumps({"targets": targets}))
+    values = {(1, "q0"): (0.040, 0.050), (2, "q0"): (0.046, 0.060),     # q0 inconsistent (median 14 %)
+              (1, "q2"): (0.030, 0.033), (2, "q2"): (0.030, 0.034)}     # q2 consistent
+    for (s, q), v in values.items():
+        B.result_path(tmp_path, "host", s, q).write_text(json.dumps(res(*v)))
+    df = B.ratio_table("host", B.load_qconfig(), man)
+    assert len(df) == 1 and df.loc[0, "quant"] == "q2"                    # q1 cpu_unsupported is not a ratio
+    r = df.iloc[0]
+    assert r["ratio_median_s1"] == pytest.approx(0.75) and r["ratio_median_s2"] == pytest.approx(0.030 / 0.046)
+    assert r["ratio_median_direction_stable"] and not r["q0_consistent"] and r["qk_consistent"]
+    assert (tmp_path / "benchmark_ratios_host.csv").exists()

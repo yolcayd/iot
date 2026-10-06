@@ -756,11 +756,21 @@ def pilot_table(runs: dict[str, list[Path]] | None = None, profile: str = "host"
             if res and not unsupported:
                 for c, v in B.summary_columns(res).items():
                     m.loc[sel, c] = v
+            # K-049 rule 7: both sessions side by side, inconsistent targets flagged
+            both = [B.load_result(r / QUANT_DIR, profile, s, q) for s in (1, 2)]
+            for s, rs in zip((1, 2), both):
+                if rs and not unsupported:
+                    m.loc[sel, f"latency_median_ms_s{s}"] = rs["latency"]["median_ms"]
+                    m.loc[sel, f"latency_p95_ms_s{s}"] = rs["latency"]["p95_ms"]
+            if all(both) and not unsupported:
+                tol = load_qconfig()["benchmark"]["repeatability"]
+                m.loc[sel, "latency_consistent"] = B.repeatability(*both, tol)["consistent"]
         frames.append(m)
     if not frames:
         raise RuntimeError("no evaluated pilot run (results/raw/<run>/quant/metrics.csv)")
     out = pd.concat(frames, ignore_index=True)
-    for c in B.SUMMARY_COLUMNS:
+    for c in B.SUMMARY_COLUMNS + ["latency_median_ms_s1", "latency_p95_ms_s1", "latency_median_ms_s2",
+                                  "latency_p95_ms_s2", "latency_consistent"]:
         if c not in out:
             out[c] = np.nan
     out = out.drop(columns=["tp", "fp", "fn", "tn", "captures", "attack_types"], errors="ignore")

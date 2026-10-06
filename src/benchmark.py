@@ -32,6 +32,7 @@ Usage:
     python -m src.benchmark --profile host --status
     python -m src.benchmark --profile host --compare            # results/tables/benchmark_repeatability_host.csv
     python -m src.benchmark --profile host --table              # results/tables/benchmark_host.csv
+    python -m src.benchmark --profile host --ratios             # results/tables/benchmark_ratios_host.csv (K-049)
     python -m src.benchmark --profile host --session 1 --only rf_ --invalidate "<reason>" --decision K-048
     python -m src.benchmark --smoke --out <dir outside results/>    # 20 timed runs, not a measurement
 """
@@ -586,6 +587,41 @@ def compare(profile: str, qcfg: dict, manifest: Path = MANIFEST):
     return df, bool(len(df)) and bool(df["consistent"].all())
 
 
+def ratio_table(profile: str, qcfg: dict, manifest: Path = MANIFEST):
+    """K-049 rule 7: both sessions side by side with the within-session ratios Qk/Q0 (median and p95) and the
+    consistency flag of every target; ``direction_stable`` = the ratio is on the same side of 1 in both sessions."""
+    import pandas as pd
+
+    tol = qcfg["benchmark"]["repeatability"]
+    targets = load_manifest(manifest)
+    q0 = {t["run_id"]: t for t in targets if t["quant"] == "q0"}
+    rows = []
+    for t in targets:
+        if t["quant"] in ("q0", "native") or t["status"] != "measure" or t["run_id"] not in q0:
+            continue
+        r0 = [load_result(PROJECT_ROOT / q0[t["run_id"]]["out_dir"], profile, s, "q0") for s in (1, 2)]
+        rk = [load_result(PROJECT_ROOT / t["out_dir"], profile, s, t["quant"]) for s in (1, 2)]
+        if not all(r0 + rk):
+            continue
+        row = {"dataset": t["dataset"], "model": t["model"], "run_id": t["run_id"], "quant": t["quant"]}
+        for stat in ("median", "p95"):
+            ratios = []
+            for s in (1, 2):
+                a, b = rk[s - 1]["latency"][f"{stat}_ms"], r0[s - 1]["latency"][f"{stat}_ms"]
+                row.update({f"q0_{stat}_ms_s{s}": b, f"qk_{stat}_ms_s{s}": a, f"ratio_{stat}_s{s}": a / b})
+                ratios.append(a / b)
+            row.update({f"ratio_{stat}_min": min(ratios), f"ratio_{stat}_max": max(ratios),
+                        f"ratio_{stat}_rel_diff": rel_diff(*ratios),
+                        f"ratio_{stat}_direction_stable": bool((ratios[0] < 1) == (ratios[1] < 1))})
+        row["q0_consistent"] = repeatability(*r0, tol)["consistent"]
+        row["qk_consistent"] = repeatability(*rk, tol)["consistent"]
+        rows.append(row)
+    df = pd.DataFrame(rows)
+    if len(df):
+        df.to_csv(TABLES / f"benchmark_ratios_{profile}.csv", index=False, float_format="%.6g")
+    return df
+
+
 def table(profile: str, manifest: Path = MANIFEST):
     import pandas as pd
 
@@ -625,6 +661,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--status", action="store_true")
     ap.add_argument("--compare", action="store_true")
     ap.add_argument("--table", action="store_true")
+    ap.add_argument("--ratios", action="store_true",
+                    help="within-session Qk/Q0 ratios of both sessions (K-049 rule 7) -> benchmark_ratios_<profile>.csv")
     ap.add_argument("--smoke", action="store_true", help="20 timed runs into --out (outside results/); not a measurement")
     ap.add_argument("--out", type=Path)
     ap.add_argument("--allow-dirty", action="store_true")
@@ -667,6 +705,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if ok else 1
     if a.table:
         print(table(a.profile, a.manifest).to_string(index=False))
+        return 0
+    if a.ratios:
+        df = ratio_table(a.profile, qcfg, a.manifest)
+        print(df.to_string(index=False) if len(df) else "no target pair measured in both sessions")
         return 0
     smoke_out = None
     if a.smoke:

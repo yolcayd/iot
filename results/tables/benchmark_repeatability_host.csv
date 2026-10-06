@@ -1,0 +1,13 @@
+target,dataset,model,quant,protocol,median_s1_ms,median_s2_ms,median_rel_diff,p95_s1_ms,p95_s2_ms,p95_rel_diff,consistent
+cnn1d_car_hacking_s0_47c82757:q0,car_hacking,cnn1d,q0,K-049,0.0421,0.0403,0.0436893,0.0541,0.0551,0.018315,True
+cnn1d_car_hacking_s0_47c82757:q2,car_hacking,cnn1d,q2,K-049,0.0295,0.0298,0.010118,0.0335,0.0392,0.156809,False
+conv_ae_car_hacking_s0_580cfd1d:q0,car_hacking,conv_ae,q0,K-049,0.1017,0.1101,0.0793201,0.1104,0.19242,0.541708,False
+conv_ae_car_hacking_s0_580cfd1d:q2,car_hacking,conv_ae,q2,K-049,0.1098,0.1159,0.0540541,0.163205,0.16071,0.0154053,False
+cnn1d_road_s0_6f18f03c:q0,road,cnn1d,q0,K-049,0.0398,0.0465,0.155272,0.0449,0.05781,0.251387,False
+cnn1d_road_s0_6f18f03c:q2,road,cnn1d,q2,K-049,0.0299,0.0298,0.00335008,0.0327,0.034,0.0389805,True
+conv_ae_road_s0_6dae8bb6:q0,road,conv_ae,q0,K-049,0.1021,0.107,0.0468675,0.1099,0.126,0.136499,False
+conv_ae_road_s0_6dae8bb6:q2,road,conv_ae,q2,K-049,0.1072,0.1078,0.0055814,0.113,0.171605,0.411834,False
+rf_car_hacking_s0_670afc2e:native,car_hacking,rf,native,K-049,9.1099,9.8,0.0729882,11.8059,11.1353,0.0584621,False
+xgb_car_hacking_s0_44735717:native,car_hacking,xgb,native,K-049,0.518,0.4887,0.05821,1.27367,0.9517,0.289367,False
+rf_road_s0_4bdc89c9:native,road,rf,native,K-049,10.2988,10.1888,0.0107382,12.1146,12.1368,0.0018333,True
+xgb_road_s0_e016fbfe:native,road,xgb,native,K-049,0.5003,0.4837,0.0337398,1.23808,0.93725,0.276583,False

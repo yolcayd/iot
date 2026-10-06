@@ -734,3 +734,38 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - Çekirdek sabitlemesi bir ECU'nun koşullarını temsil etmekten çok ölçümün tekrarlanabilirliği içindir; makalede ve sınırlılıklarda belirtilecek.
   - Konteyner profili değişmez: sabitleme yok; 10.000 ölçüm ve 1 saniyelik ısınma ona da uygulanır.
   - Oturum başına süre ≈ 5 dk. Bunun ≈ 3 dk'sı iki RF hedefi (10.000 × ~9 ms).
+
+## K-050 — K-049 kural 7'nin uygulanması: ana makine gecikme sonuçlarının raporlanma biçimi
+
+- **Faz / tarih:** P4 · 2026-10-06
+- **Durum:**
+  - Kural 7'nin uygulanması önceden kayıtlıdır (K-049).
+  - Aşağıdaki **yorum kısıtı** (madde 4) sonuçlar görüldükten sonra yazıldı; kullanıcı onayına açık.
+- **Bağlam:** K-049 protokolüyle iki ana makine oturumu yapıldı (21:19–21:27; 24 sonucun hepsi K-049 koşullarında). Sonuçlar:
+  - **Tutarlılık:** 12 hedeften 3'ü tutarlı, 9'u tolerans dışı (`results/tables/benchmark_repeatability_host.csv`).
+  - **Medyan göreli farkı:** en büyük %15.5 (CNN ROAD Q0).
+  - **p95 göreli farkı:** en büyük %54 (conv-AE CH Q0).
+  - **Oturum içi örnekleme hatası:** medyanda ≤ %0.2 (bootstrap). Farklar sistematik; ölçüm sayısından bağımsız.
+  - **Oturum içi Q2/Q0 oranları** (medyan; oturum 1 / 2):
+    - CNN CH 0.70 / 0.74; CNN ROAD 0.75 / 0.64;
+    - conv-AE CH 1.08 / 1.05; conv-AE ROAD 1.05 / 1.01.
+    - Oranların oturumlar arası göreli farkı %2.5–16; oturum içi bootstrap aralıkları (genişlik ≤ 0.004) bu farkı kapsamıyor.
+  - **p95 oranları:** conv-AE CH'de yön değiştiriyor (1.48 / 0.84).
+- **Karar:**
+  1. **Yeniden ölçüm yapılmaz** (K-049 kural 7).
+  2. **İki oturum birlikte raporlanır** ve tutarsız hedefler işaretlenir:
+     - `results/tables/benchmark_ratios_host.csv`: oturum içi Qk/Q0 oranları, iki oturum, yön kararlılığı, tutarlılık bayrakları.
+     - `quant_pilot.csv`: `latency_median_ms_s1/s2`, `latency_p95_ms_s1/s2`, `latency_consistent`.
+  3. **Gecikme karşılaştırmaları oturum içi oranlara dayanır.** Raporlanan değer, iki oturumun oran aralığıdır (min–max). Tek oturumun değeri ya da oturum içi güven aralığı belirsizlik ölçüsü olarak kullanılmaz.
+  4. **Yorum kısıtı** (kullanıcı onayına açık):
+     - Yalnızca **medyan oranının yönü iki oturumda da aynıysa** yönlü bir sonuç ifade edilir. Bu, dört çiftin dördünde sağlanıyor.
+     - **p95 oranları yorumlanmaz**, yalnızca tabloda verilir; bir çiftte yön değiştiriyor ve göreli farkları %14–56.
+     - Mutlak gecikmeler yalnızca **büyüklük mertebesi** olarak verilir: derin modeller ~30–115 µs; XGB ~0.5 ms; RF ~9–10 ms.
+- **Gerekçe:**
+  - Kural 7 oranları "ağırlıklı olarak" kullanmayı öngörüyor. Ancak veriler, oranların da oturumdan oturuma %16'ya kadar değiştiğini gösteriyor.
+  - Bu nedenle tek bir oran değeri ya da oturum içi güven aralığı, gerçek belirsizliği eksik gösterir. İki oturumun aralığı ve yalnızca yönlü ifade, verinin desteklediği en güçlü iddiadır.
+- **Etkisi:**
+  - AS-2'nin gecikme boyutu ana makine profilinde nitel kalır: "CNN'de INT8 medyan gecikmeyi %25–36 azaltıyor; conv-AE'de azaltmıyor (Q2/Q0 1.01–1.08)."
+  - conv-AE sonucu K-044 ile uyumlu: iki ConvTranspose katmanı CPU'da QDQ benzetimiyle (float) çalışıyor. Bu bir açıklama önerisidir; ayrı bir deneyle doğrulanmadı.
+  - Bellek ve boyut ölçümleri iki oturumda tutarlı (tepe bellek farkı ≤ %4); bunlar mutlak değer olarak raporlanabilir.
+  - P4 kabul kriteri "benchmark iki kez çalıştırıldığında tutarlı" **sağlanmadı**. P4'ün bu durumda kapatılıp kapatılmayacağı kullanıcı kararıdır.
