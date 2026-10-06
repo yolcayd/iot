@@ -538,3 +538,124 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - Car-Hacking'de çift yoktur; denetimli modellerin Car-Hacking'de tavanda olması (recall ≈ 1, ΔRecall'un aşağı yönde payı yok) bilinen sınırlılık olarak raporlanır. Grup düzeyindeki ikincil analiz (K-013) bu kuraldan etkilenmez.
 - **Gerekçe:** Recall'u Q0'da sıfıra yakın bir türde nicemleme kaybı ölçülemez; ΔRecall tabanla sınırlıdır ve "kayıp yok" sonucu yanıltıcı olur. Eşik ve uygulama Q0'a bağlı olduğundan kural ΔRecall'a bakılarak ayarlanamaz.
 - **Etkisi (yalnızca bilgi; P3 tek tohumu, kesin değil):** P3 seed-0 Q0 recall'larıyla 16 birimden 7'si eşiği geçiyor (CNN 3, RF 1, XGB 2, conv-AE 1). Birincil testin istatistiksel gücü sınırlı olabilir; kesin birim listesi F4'teki 3 tohumla belirlenir.
+
+## K-042 — Nicemleme araç zinciri, kapsamı ve INT8 kalibrasyon kümesi
+
+- **Faz / tarih:** P4 · 2026-10-06
+- **Durum:** Geçerli (plan kullanıcı tarafından onaylandı; nicemlenmiş hiçbir sonuç görülmeden)
+- **Karar:**
+  - Nicemlenen modeller: CNN ve conv-AE (K-039). RF ve XGBoost nicemlenmez. Yalnızca boyut ve gecikme ölçümüne kendi biçimleriyle girerler: `model.joblib`, `model.ubj`.
+  - Araç: ONNX Runtime 1.30. Q0, PyTorch modelinin TorchScript dışa aktarıcısıyla üretilmiş float32 ONNX hâlidir (opset 17).
+  - Q2 için `quantize_static` QDQ biçiminde kullanılır:
+    - aktivasyon QUInt8, asimetrik;
+    - ağırlık QInt8, simetrik, kanal başına;
+    - kalibrasyon yöntemi MinMax.
+  - Nicemlenecek işlem türleri izin listesiyle verilir: Conv, ConvTranspose, Gemm, MatMul, MaxPool, Relu, Transpose.
+  - **INT8 kalibrasyon kümesi:** modelin kendi eğitim seçiminden (CNN: `supervised_train`; conv-AE: `ae_train`) koşu tohumuyla rastgele seçilen 1000 penceredir.
+    - `check_calibration_selection`, train dışı pencereyi ya da 500'den az pencereyi reddeder (CLAUDE.md kural 4).
+    - Seçimin özeti (`digest`) `quant_meta.json`'a yazılır.
+  - Pilot kapsamı: CNN ve conv-AE, iki veri seti, tohum 0. İstemin "bir baseline model" asgarisinin üstündedir; kullanıcı onayladı.
+  - Ayarlar `configs/quantization.yaml` dosyasındadır.
+- **Gerekçe:**
+  - QDQ biçimi, hangi katmanların nicemlendiğini grafikte açıkça gösterir.
+  - Asimetrik uint8 aktivasyon, [0, 1] girdisine 256 seviye verir (P2 açık sorunu, K-024/K-025).
+  - Kalibrasyon kümesinin modelin kendi eğitim dağılımından gelmesi, otokodlayıcıyı saldırı penceresi olmadan kalibre eder.
+- **Etkisi:** Q2 dosya boyutu Q0'ın 0.376–0.379'u. Tensör verisinin oranı 0.28: int8 ağırlıklar, int32 bias'lar, ölçekler ve sıfır noktaları. Kalan fark QDQ düğümlerinin grafik ek yüküdür (≈ 11.5 KB). Model küçük (≈ 26–28 bin parametre) olduğu için bu ek yük oranı belirgin biçimde etkiliyor.
+
+## K-043 — Q1 (float16): CPU sağlayıcısında desteklenmiyor; doğruluk fp16 benzetimiyle
+
+- **Faz / tarih:** P4 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı; Q1 doğruluk sonuçları görülmeden)
+- **Bağlam:**
+  - Q1, Q0 grafiğinin `onnxruntime.transformers.float16` ile dönüştürülmüş hâlidir (`keep_io_types=True`).
+  - ONNX Runtime profilinden okunan gerçek çekirdek girdi türleri şunu gösteriyor: x86 CPU sağlayıcısının bu modellerde hiçbir ağır katman için fp16 çekirdeği yok.
+    - CNN: 0/5 ağır katman fp16 çalışıyor (Conv ×3, Gemm ×2). Bütün çekirdeklerde fp16 payı 2/10 (Transpose, Squeeze).
+    - conv-AE: 0/6 (Conv ×4, ConvTranspose ×2). Bütün çekirdeklerde 1/13.
+    - Grafik optimizasyonu kapalıyken de sonuç aynı.
+  - ORT her ağır katmanın önüne fp32'ye dönüştürme (Cast) ekliyor. CPU'da çalışan "Q1" dosyası bu yüzden fp16'ya yuvarlanmış ağırlıklarla fp32 hesap yapıyor. Gecikmesi de fp16 hesabı değil, Cast ek yükünü ölçer.
+  - Kullanıcının önceden koyduğu kural: ağır katmanların yarısından fazlası float32'de kalıyorsa Q1 olduğu gibi raporlanmaz; iş durur ve kullanıcıya sorulur. Kural kodda `Q1CoverageError` ile uygulanır.
+- **Karar** (kullanıcının seçtiği seçenek (a)):
+  - Q1 "CPU'da desteklenmiyor" (`cpu_status = cpu_unsupported`) olarak işaretlenir.
+  - **Doğruluk:** gerçek float16 aritmetiğiyle ölçülür. PyTorch modelinin `.half()` kopyası kullanılır: ağırlıklar, girdi ve aktivasyonlar float16. Hesap CUDA'da (RTX 4050) yapılır; cuDNN/cuBLAS ara toplamaları genellikle fp32 tutar.
+  - **Boyut:** fp16 ONNX dosyasının boyutudur (fp16 depolama).
+  - **CPU gecikmesi ve belleği:** ölçülmez; tablolarda `cpu_unsupported` olarak boş kalır.
+  - Kural `configs/quantization.yaml → q1.low_cpu_coverage_action: simulate_fp16` ile kayıtlıdır. Bu ayar olmadan kod durur.
+  - Kapsam raporu (`fp16_coverage`: işlem türü bazında, ağır katman payı) her koşunun `quant_meta.json` dosyasında.
+- **Gerekçe:**
+  - H3 (float16 en dengeli nokta) float16'nın sayısal etkisini ölçmeyi gerektirir. Ancak CPU'daki dosya bu etkiyi temsil etmez; gecikme ölçümü de yanıltıcı olur.
+  - Benzetim sayısal etkiyi verir. Gecikme–boyut ödünleşimi (AS-2) Q1 için CPU'da tanımsızdır ve bu bir bulgu olarak raporlanır.
+- **Etkisi:** Q1'in gecikme kazancı bu projede ölçülmez; fp16 çekirdekli bir donanım gerekir (ör. ARM, GPU). Bu, sınırlılık olarak yazılacak.
+
+## K-044 — Q2 grafiği: skor grafikte, seçmeli nicemleme, INT8 çekirdek ile benzetimin ayrımı, girdi nicemlemesi
+
+- **Faz / tarih:** P4 · 2026-10-06
+- **Durum:** Geçerli
+- **Karar:**
+  - **Skor grafikte:** ONNX grafiği eşiklenen skoru üretir: CNN'de logit, conv-AE'de pencere yeniden oluşturma MSE'si. Böylece benchmark skor dahil tüm çıkarımı ölçer.
+  - **Constant/Identity düzeltmesi:** TorchScript dışa aktarıcısının `Constant` ve paylaşılan `Identity` bias'ları initializer'a çevrilir. Aksi hâlde nicemleyici o katmanın bias'ını tanımaz ve Conv katmanı float kalır; sentetik testte bu durum görüldü.
+  - **Seçmeli (hybrid) nicemleme:**
+    - İzin listesinde olmayan ya da nicemlenemeyen düğümler float kalır ve `quant_meta.json → levels.q2.execution.float_nodes` alanına türleriyle yazılır.
+    - Pilotta float kalan düğümler: CNN'de Transpose, ReduceMean, Squeeze; conv-AE'de Transpose ×2 ve skor kuyruğu (Sigmoid, Sub, Pow, ReduceMean).
+    - LSTM katmanları nicemlenmez ve listelenir (sentetik testle doğrulandı; LSTM-AE projede nicemlenmiyor).
+  - **Çalışma biçiminin ayrımı:** Her ağır katman için CPU sağlayıcısının gerçekte INT8 çekirdeği mi (QLinearConv/QGemm) kullandığı, yoksa DQ → float işlem → Q biçiminde benzetim mi yaptığı profilden okunup kaydedilir.
+    - CNN: 5/5 INT8 çekirdek.
+    - conv-AE: 4/6 INT8 çekirdek. İki ConvTranspose, ORT CPU'da INT8 çekirdeği olmadığı için benzetimle çalışıyor. Sayısal olarak int8 ağırlık ve aktivasyonlar korunuyor; yalnızca aritmetik (ve gecikme) float. P3 açık sorun 7c'nin yanıtı budur.
+  - **Girdi nicemlemesi (P2 açık sorunu):** Q2 girdisinin uint8 nicemleyicisi okunup doğrulanır: ölçek 1/255, sıfır noktası 0, temsil aralığı [0, 1], yani asimetrik ve 256 seviye.
+    - Doğrulanan: bayt ızgarası (k/255) 256 değer → 256 seviye; ID ızgarası (k/K) K+1 değer → K+1 seviye (çakışmasız); kalibrasyon girdisi aralığı [0, 1].
+    - Simetrik şema ya da ID/bayt çakışması `InputQuantizationError` ile durdurur.
+    - IAT sürekli bir öznitelik; kalibrasyon penceresinde 55–256 seviyeye iner (P2'deki seviye analiziyle uyumlu, kayıp beklenen).
+- **Gerekçe:** Plan Bölüm 2.4 nicemlenemeyen katmanların ve seçmeli nicemlemenin raporlanmasını istiyor. Ayrıca benzetimle çalışan katman, doğruluk etkisini korurken gecikme kazancı sağlamaz; bu ayrım AS-2 için gerekli.
+
+## K-045 — K-036'nın uygulanması: referans Q0-ONNX (CPU), iki eşik kipi, Δ = Q0 − Qk
+
+- **Faz / tarih:** P4 · 2026-10-06
+- **Durum:** Geçerli
+- **Karar:**
+  - Her sürüm şu kümeleri puanlar: temiz val normalleri (K-038), val ve test. Q0 ve Q2 ONNX Runtime CPU'da (4 iş parçacığı), Q1 K-043'e göre PyTorch fp16'da puanlanır.
+  - **(a) Birincil (`recalibrated`):** her sürümün eşiği kendi temiz val normal skorlarından K-035/K-038 kuralıyla (FPR %1) yeniden hesaplanır.
+  - **(b) Kalibrasyon kayması (`q0_threshold`):** Q0-ONNX eşiği Q1/Q2'ye aynen uygulanır. Val/test FPR ve recall değişimi raporlanır.
+  - **(c) Eşikten bağımsız ölçüler:** ΔROC-AUC, ΔAP ve test FPR %1'deki TPR değişimi (K-040).
+  - **Referans:** Q0, P3'ün PyTorch/GPU değerlendirmesi değil, **Q0-ONNX'in CPU'daki değerlendirmesidir**. Böylece bütün Δ değerleri aynı hatta hesaplanır.
+  - P3 ile tutarlılık kaydedilir (`q0_consistency`):
+    - eşik göreli farkı ≤ 1.8e-4;
+    - test kararlarında 0–2 değişen pencere (59,621 pencerede);
+    - tür bazında recall farkı ≤ 0.0147. Bu üst değer, ROAD conv-AE'de az pencereli bir türde eşiğe çok yakın tek bir pencerenin GPU/CPU sayısal farkıyla yön değiştirmesinden geliyor.
+  - **Δ tanımı:** Q0 − Qk; pozitif değer kayıp demektir (K-037).
+  - Çıktılar: `results/raw/<run>/quant/metrics.csv` ve `results/tables/quant_pilot.csv`. Pilot tablosu `attack_type`, `attack_free` ve `pooled` satırlarını içerir. Kayıt düzeyindeki satırlar koşu klasöründe.
+
+## K-046 — Benchmark protokolü ve tekrarlanabilirlik ölçütü
+
+- **Faz / tarih:** P4 · 2026-10-06
+- **Durum:** Geçerli (tolerans ölçümden önce sabitlendi)
+- **Karar:**
+  - **Gecikme:** batch = 1, pencere başına. 100 ısınma koşusu atılır, ardından 1000 ölçüm yapılır (`perf_counter_ns`). Raporlananlar: ortalama, medyan, p95, p99, std. 1000'den az tekrar reddedilir.
+  - **Girdi:** sabit tohumla seçilmiş 1100 val penceresi (`data/processed/bench/<veri seti>.npy`); etiket kullanılmaz, test kümesine dokunulmaz.
+  - **İş parçacığı:**
+    - Ana makine profili 4 (kullanıcı kararı).
+    - ORT: intra-op = T, inter-op = 1, sıralı yürütme, `CPUExecutionProvider`.
+    - OMP/MKL/OpenBLAS = T.
+    - XGBoost: `n_jobs = T`, CPU.
+    - RF: `n_jobs = T`. Batch = 1'de bu, joblib iş dağıtımının ek yükünü içerir (deneme koşusunda ≈ 36 ms). Bu, kütüphanenin bu ayarla davranışıdır, düzeltilmedi.
+  - RF/XGB gecikmesine pencere özet özniteliklerinin hesabı dahildir.
+  - **Bellek:** Her hedef ayrı bir alt süreçte ölçülür. Raporlananlar:
+    - tepe RSS: Windows'ta peak working set, Linux'ta `ru_maxrss`;
+    - tepe RSS'in, kütüphaneler yüklendikten sonra ama model yüklenmeden önce ölçülen değere göre farkı.
+  - **Künye:** CPU adı ve özellik bayrakları, fiziksel/mantıksal çekirdek, affinity, toplam bellek, cgroup sınırları, ORT sürümü ve kullanılan sağlayıcı, iş parçacıkları, pil/güç planı, git commit, kütüphane sürümleri. Her sonuç JSON'una yazılır.
+  - **Tekrarlanabilirlik:** iki ayrı oturum (`--session 1/2`) yapılır. Her hedefte medyan göreli farkı ≤ %5 ve p95 göreli farkı ≤ %10 ise tutarlı sayılır (göreli fark = |a − b| / ortalama). Çıktı `results/tables/benchmark_repeatability_<profil>.csv`.
+  - **Q1:** K-043 gereği ölçülmez.
+- **Gerekçe:** CLAUDE.md kural 8; plan F3 kabul kriteri ("aynı model iki kez ölçüldüğünde tutarlı"). Toleranslar ölçümden önce sabitlendi.
+- **Etkisi:** Ölçümler 2026-10-06'da çalıştırılmadı (makinede DRL deneyi vardı); kullanıcı makine boşken çalıştıracak. O zamana kadar kabul kriterinin bu maddesi beklemede.
+
+## K-047 — Kısıtlı ölçüm ortamı: Docker konteyneri (2 CPU, 2 GB) ve ana makine yaklaşımı
+
+- **Faz / tarih:** P4 · 2026-10-06
+- **Durum:** Geçerli
+- **Bağlam:** Raspberry Pi yok. Docker Desktop kurulu, ancak motor 2026-10-06'da kapalı.
+- **Karar:**
+  - **Konteyner profili:** `docker/benchmark.Dockerfile` (python:3.13-slim; yalnızca numpy, onnxruntime, scikit-learn, xgboost, psutil, PyYAML; `requirements.txt` sürümleri) ve `docker/run_benchmark.ps1`.
+    - Çalıştırma: `docker run --cpus=2 --memory=2g --memory-swap=2g`, iş parçacığı 2.
+    - Depo salt okunur, `results/` yazılabilir bağlanır. Commit ve kirli ağaç bilgisi ortam değişkeniyle geçirilir.
+    - Benchmark modülü PyTorch'a ve veri hattına ihtiyaç duymaz (testle doğrulandı).
+  - **Ana makine profili:** 4 iş parçacığı; CPU kotası ya da bellek sınırı yok. Bu bir **yaklaşımdır** ve her sonuçta `profile_note` alanıyla belirtilir.
+  - Plan F4'e uygun olarak, iki profilde de birincil raporlama Q0'a göre oranlardır.
+- **Gerekçe:** Plan F3/F4'ün kısıtlı ortam yönergesi. Kullanıcı, iş parçacığı sayısının 4 ile sınırlanmasını istedi (ana makine profili).

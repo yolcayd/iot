@@ -118,3 +118,40 @@ Car-Hacking 0.807). The single pre-registered retry (hidden 128, lr 3e-4, up to 
 is the unsupervised model on **both** datasets from F3 on. The decision used validation data only; test metrics
 were computed after the selection (`docs/DECISIONS.md` K-030, K-033, K-039; `results/tables/ae_feasibility.csv`).
 <!-- Unsupervised model decision (K-030) to be added after the baseline runs. -->
+
+### Quantization and benchmark (P4)
+
+Every trained deep model (1D-CNN, convolutional autoencoder) gets three versions; settings in
+`configs/quantization.yaml`, decisions `docs/DECISIONS.md` K-042 ... K-047. Random forest and XGBoost are not
+quantized; they enter the size and latency benchmark only.
+
+| Level | Version | Accuracy measured with |
+|---|---|---|
+| Q0 | float32 ONNX (opset 17), output = the thresholded score (logit / reconstruction MSE) | ONNX Runtime, CPU |
+| Q1 | float16 ONNX (`keep_io_types`) | real float16 arithmetic in PyTorch: the x86 CPU provider has no float16 kernel for any heavy layer of these models (0/5, 0/6), so Q1 is marked `cpu_unsupported` and gets no CPU latency (K-043) |
+| Q2 | INT8 static PTQ, QDQ, asymmetric uint8 activations, symmetric per-channel int8 weights, MinMax calibration on 1000 windows of the model's own **training** selection | ONNX Runtime, CPU |
+
+`quant_meta.json` records, per run:
+- the layers that stay float (selective quantization);
+- for the INT8 graph, the heavy layers that run an INT8 kernel versus those simulated as DequantizeLinear → float op
+  → QuantizeLinear (the autoencoder's ConvTranspose);
+- the float16 kernel coverage;
+- the input quantizer (scale 1/255, zero point 0, 256 levels; every payload byte and ID code on its own level).
+
+Each version's decision threshold is recalibrated with the validation-normal FPR 1% rule (primary). The float32
+threshold is also applied unchanged to measure calibration drift (K-036, K-045).
+
+```powershell
+python -m src.quantize --pilot                       # Q0/Q1/Q2 + evaluation of the seed-0 pilot runs (~3 min)
+python -m src.quantize --pilot-table                 # rebuild results/tables/quant_pilot.csv
+python -m src.benchmark --profile host --session 1   # latency/size/memory, batch 1, 100 warm-up + 1000 timed
+python -m src.benchmark --profile host --session 2
+python -m src.benchmark --profile host --compare     # repeatability: median within 5 %, p95 within 10 %
+.\docker\run_benchmark.ps1 -Session 1                # same in a container limited to 2 CPUs / 2 GB RAM
+```
+
+**Latency measurements:**
+- Run them on an otherwise idle machine, on AC power.
+- The `host` profile fixes the thread count at 4 but sets no CPU or memory quota, so it only approximates a
+  constrained device.
+- The `container` profile (2 threads) needs Docker Desktop to be running.

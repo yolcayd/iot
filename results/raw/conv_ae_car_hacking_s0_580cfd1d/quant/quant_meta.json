@@ -1,0 +1,641 @@
+{
+  "run_id": "conv_ae_car_hacking_s0_580cfd1d",
+  "model": "conv_ae",
+  "dataset": "car_hacking",
+  "seed": 0,
+  "source": {
+    "file": "model.pt",
+    "size_bytes": 117723,
+    "sha256": "ddbed3c1a80b4cb2c229d555d4b99fe2b4b0f45e3c55d77cc59bd266b2ea828c"
+  },
+  "created_utc": "2026-10-06T10:15:31+00:00",
+  "git": {
+    "commit": "a3410536a27c382c9d3146804c3b367c3fcade9d",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json"
+    ]
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_count": 16,
+    "threads": 4,
+    "device": "cpu",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "versions": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "pyarrow": "25.0.1",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.4.1",
+      "torch": "2.14.1+cu130",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "config": {
+    "models": [
+      "cnn1d",
+      "conv_ae"
+    ],
+    "not_quantized": [
+      "rf",
+      "xgb"
+    ],
+    "pilot": {
+      "datasets": [
+        "car_hacking",
+        "road"
+      ],
+      "seed": 0
+    },
+    "onnx": {
+      "opset": 17,
+      "q0_atol": 1e-05,
+      "q0_rtol": 0.0001
+    },
+    "q1": {
+      "method": "onnxruntime.transformers.float16 (keep_io_types)",
+      "min_heavy_fp16_share": 0.5,
+      "low_cpu_coverage_action": "simulate_fp16",
+      "simulation_device": "cuda"
+    },
+    "q2": {
+      "format": "QDQ",
+      "activation_type": "QUInt8",
+      "activation_symmetric": false,
+      "weight_type": "QInt8",
+      "weight_symmetric": true,
+      "per_channel": true,
+      "calibrate_method": "MinMax",
+      "op_types": [
+        "Conv",
+        "ConvTranspose",
+        "Gemm",
+        "MatMul",
+        "MaxPool",
+        "Relu",
+        "Transpose"
+      ],
+      "calibration_windows": 1000,
+      "min_calibration_windows": 500,
+      "calibration_batch": 100
+    },
+    "evaluation": {
+      "batch_size": 2048
+    },
+    "benchmark": {
+      "warmup": 100,
+      "repeats": 1000,
+      "min_repeats": 1000,
+      "input_split": "val",
+      "n_inputs": 1100,
+      "input_seed": 0,
+      "profiles": {
+        "host": {
+          "threads": 4,
+          "note": "Approximation of a constrained device: ONNX Runtime/BLAS threads fixed, no CPU quota and no memory limit; other processes may share the machine."
+        },
+        "container": {
+          "threads": 2,
+          "note": "Docker container limited with --cpus=2 --memory=2g --memory-swap=2g (docker/run_benchmark.ps1)."
+        }
+      },
+      "repeatability": {
+        "median_rel_tol": 0.05,
+        "p95_rel_tol": 0.1
+      }
+    }
+  },
+  "opset": 17,
+  "levels": {
+    "q0": {
+      "file": "q0_fp32.onnx",
+      "size_bytes": 116559,
+      "sha256": "586fb9d9dde16a96f063905497320b19a2bda3c5183bc3aa055354c58d11e529",
+      "precision": "float32",
+      "backend": "onnxruntime-cpu",
+      "equivalence_vs_pytorch_cpu": {
+        "n_windows": 1000,
+        "max_abs_diff": 5.587935447692871e-09,
+        "max_rel_diff": 1.4092479432292748e-06,
+        "atol": 1e-05,
+        "rtol": 0.0001,
+        "allclose": true
+      }
+    },
+    "q1": {
+      "file": "q1_fp16.onnx",
+      "size_bytes": 61031,
+      "sha256": "dd8af62ec7305c2b9dcc8c9ba878de1ddf041fd4fc3ae541af394dca5acc5d19",
+      "precision": "float16",
+      "cpu_status": "cpu_unsupported",
+      "fp16_coverage": {
+        "provider": "CPUExecutionProvider",
+        "n_kernels": 13,
+        "n_kernels_fp16": 1,
+        "share_fp16": 0.07692307692307693,
+        "n_heavy": 6,
+        "n_heavy_fp16": 0,
+        "heavy_share_fp16": 0.0,
+        "n_casts": 3,
+        "by_op": {
+          "Transpose": {
+            "float16": 1,
+            "other": 1
+          },
+          "FusedConv": {
+            "float16": 0,
+            "other": 4
+          },
+          "ConvTranspose": {
+            "float16": 0,
+            "other": 2
+          },
+          "Relu": {
+            "float16": 0,
+            "other": 2
+          },
+          "Sub": {
+            "float16": 0,
+            "other": 1
+          },
+          "Pow": {
+            "float16": 0,
+            "other": 1
+          },
+          "ReduceMean": {
+            "float16": 0,
+            "other": 1
+          }
+        },
+        "kernels": [
+          {
+            "node": "/net/Transpose",
+            "op": "Transpose",
+            "input_type": "float16",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/encoder/encoder.0/Conv",
+            "op": "FusedConv",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/encoder/encoder.2/Conv",
+            "op": "FusedConv",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/encoder/encoder.4/Conv",
+            "op": "FusedConv",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/decoder/decoder.0/ConvTranspose",
+            "op": "ConvTranspose",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/decoder/decoder.1/Relu",
+            "op": "Relu",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/decoder/decoder.2/ConvTranspose",
+            "op": "ConvTranspose",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/decoder/decoder.3/Relu",
+            "op": "Relu",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/decoder/decoder.4/Conv",
+            "op": "FusedConv",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/Transpose_1",
+            "op": "Transpose",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/Sub",
+            "op": "Sub",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/Pow",
+            "op": "Pow",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/ReduceMean",
+            "op": "ReduceMean",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          }
+        ]
+      },
+      "accuracy_backend": "pytorch-fp16-cuda",
+      "latency_benchmark": "not measured: cpu_unsupported (K-043)",
+      "size_ratio_vs_q0": 0.5236060707452878
+    },
+    "q2": {
+      "file": "q2_int8.onnx",
+      "size_bytes": 43791,
+      "sha256": "c11bc1355f3af23057f6798ea084ab3dcab7477bb892a32e37a83b054165086c",
+      "precision": "int8",
+      "backend": "onnxruntime-cpu",
+      "scheme": {
+        "format": "QDQ",
+        "activation_type": "QUInt8",
+        "activation_symmetric": false,
+        "weight_type": "QInt8",
+        "weight_symmetric": true,
+        "per_channel": true,
+        "calibrate_method": "MinMax",
+        "op_types": [
+          "Conv",
+          "ConvTranspose",
+          "Gemm",
+          "MatMul",
+          "MaxPool",
+          "Relu",
+          "Transpose"
+        ]
+      },
+      "calibration": {
+        "split": "train",
+        "selector": "ae_train",
+        "n_windows": 1000,
+        "seed": 0,
+        "digest": "8e6b9e29456a70b4",
+        "n_attack": 0,
+        "n_normal": 1000,
+        "n_captures": 2
+      },
+      "execution": {
+        "n_heavy": 6,
+        "n_heavy_quantized_in_graph": 6,
+        "n_heavy_float_in_graph": 0,
+        "n_heavy_int8_kernel": 4,
+        "n_heavy_qdq_simulated": 2,
+        "selective": true,
+        "float_nodes": [
+          {
+            "node": "/net/Transpose",
+            "op": "Transpose"
+          },
+          {
+            "node": "/net/Sigmoid",
+            "op": "Sigmoid"
+          },
+          {
+            "node": "/net/Transpose_1",
+            "op": "Transpose"
+          },
+          {
+            "node": "/Sub",
+            "op": "Sub"
+          },
+          {
+            "node": "/Pow",
+            "op": "Pow"
+          },
+          {
+            "node": "/ReduceMean",
+            "op": "ReduceMean"
+          }
+        ],
+        "quantized_nodes": [
+          {
+            "node": "/net/encoder/encoder.0/Conv",
+            "op": "Conv"
+          },
+          {
+            "node": "/net/encoder/encoder.2/Conv",
+            "op": "Conv"
+          },
+          {
+            "node": "/net/encoder/encoder.4/Conv",
+            "op": "Conv"
+          },
+          {
+            "node": "/net/decoder/decoder.0/ConvTranspose",
+            "op": "ConvTranspose"
+          },
+          {
+            "node": "/net/decoder/decoder.2/ConvTranspose",
+            "op": "ConvTranspose"
+          },
+          {
+            "node": "/net/decoder/decoder.4/Conv",
+            "op": "Conv"
+          }
+        ],
+        "heavy_kernels": [
+          {
+            "node": "/net/encoder/encoder.0/Conv_token_0",
+            "op": "QLinearConv",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider",
+            "layer": "Conv",
+            "int8_kernel": true
+          },
+          {
+            "node": "/net/encoder/encoder.2/Conv_token_3",
+            "op": "QLinearConv",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider",
+            "layer": "Conv",
+            "int8_kernel": true
+          },
+          {
+            "node": "/net/encoder/encoder.4/Conv_token_6",
+            "op": "QLinearConv",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider",
+            "layer": "Conv",
+            "int8_kernel": true
+          },
+          {
+            "node": "/net/decoder/decoder.0/ConvTranspose",
+            "op": "ConvTranspose",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider",
+            "layer": "ConvTranspose",
+            "int8_kernel": false
+          },
+          {
+            "node": "/net/decoder/decoder.2/ConvTranspose",
+            "op": "ConvTranspose",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider",
+            "layer": "ConvTranspose",
+            "int8_kernel": false
+          },
+          {
+            "node": "/net/decoder/decoder.4/Conv_token_10",
+            "op": "QLinearConv",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider",
+            "layer": "Conv",
+            "int8_kernel": true
+          }
+        ],
+        "kernels": [
+          {
+            "node": "/net/encoder/encoder.0/Conv_token_0",
+            "op": "QLinearConv",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/encoder/encoder.2/Conv_token_3",
+            "op": "QLinearConv",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/encoder/encoder.4/Conv_token_6",
+            "op": "QLinearConv",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "Transpose_token_5",
+            "op": "Transpose",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/decoder/decoder.0/ConvTranspose",
+            "op": "ConvTranspose",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/decoder/decoder.2/ConvTranspose",
+            "op": "ConvTranspose",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "Transpose_token_8",
+            "op": "Transpose",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/decoder/decoder.4/Conv_token_10",
+            "op": "QLinearConv",
+            "input_type": "uint8",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/net/Sigmoid",
+            "op": "Sigmoid",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/Sub",
+            "op": "Sub",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/Pow",
+            "op": "Pow",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          },
+          {
+            "node": "/ReduceMean",
+            "op": "ReduceMean",
+            "input_type": "float",
+            "provider": "CPUExecutionProvider"
+          }
+        ]
+      },
+      "input_quantization": {
+        "tensor": "/net/Transpose_output_0",
+        "dtype": "uint8",
+        "scale": 0.003921568859368563,
+        "zero_point": 0,
+        "representable_range": [
+          0.0,
+          1.0000000591389835
+        ],
+        "scheme": "asymmetric",
+        "levels_on_unit_interval": 256
+      },
+      "input_levels": {
+        "columns": [
+          {
+            "feature": "can_id",
+            "min": 0.02631578966975212,
+            "max": 0.7631579041481018,
+            "n_values": 27,
+            "n_levels": 27,
+            "lossless": true
+          },
+          {
+            "feature": "byte_0",
+            "min": 0.0,
+            "max": 1.0,
+            "n_values": 256,
+            "n_levels": 256,
+            "lossless": true
+          },
+          {
+            "feature": "byte_1",
+            "min": 0.0,
+            "max": 1.0,
+            "n_values": 255,
+            "n_levels": 255,
+            "lossless": true
+          },
+          {
+            "feature": "byte_2",
+            "min": 0.0,
+            "max": 0.9960784316062927,
+            "n_values": 254,
+            "n_levels": 254,
+            "lossless": true
+          },
+          {
+            "feature": "byte_3",
+            "min": 0.0,
+            "max": 1.0,
+            "n_values": 250,
+            "n_levels": 250,
+            "lossless": true
+          },
+          {
+            "feature": "byte_4",
+            "min": 0.0,
+            "max": 1.0,
+            "n_values": 256,
+            "n_levels": 256,
+            "lossless": true
+          },
+          {
+            "feature": "byte_5",
+            "min": 0.0,
+            "max": 1.0,
+            "n_values": 256,
+            "n_levels": 256,
+            "lossless": true
+          },
+          {
+            "feature": "byte_6",
+            "min": 0.0,
+            "max": 0.9450980424880981,
+            "n_values": 200,
+            "n_levels": 200,
+            "lossless": true
+          },
+          {
+            "feature": "byte_7",
+            "min": 0.0,
+            "max": 1.0,
+            "n_values": 256,
+            "n_levels": 256,
+            "lossless": true
+          },
+          {
+            "feature": "iat",
+            "min": 0.3867339789867401,
+            "max": 1.0,
+            "n_values": 10920,
+            "n_levels": 55,
+            "lossless": false
+          }
+        ],
+        "grids": {
+          "bytes": {
+            "n_values": 256,
+            "n_levels": 256
+          },
+          "id_codes": {
+            "n_values": 39,
+            "n_levels": 39
+          }
+        },
+        "calibration_input_range": [
+          0.0,
+          1.0
+        ]
+      },
+      "size_ratio_vs_q0": 0.3756981442874424
+    }
+  },
+  "thresholds": {
+    "q0": {
+      "rule": "score > threshold",
+      "method": "val_normal_fpr",
+      "threshold": 0.010618600994348526,
+      "target_fpr": 0.01,
+      "realized_val_fpr": 0.009501187648456057,
+      "n_val_normal": 1684,
+      "fitted_on_split": "val",
+      "calibration_windows_digest": "99ad2568e341f351"
+    },
+    "q1": {
+      "rule": "score > threshold",
+      "method": "val_normal_fpr",
+      "threshold": 0.0106048583984375,
+      "target_fpr": 0.01,
+      "realized_val_fpr": 0.009501187648456057,
+      "n_val_normal": 1684,
+      "fitted_on_split": "val",
+      "calibration_windows_digest": "99ad2568e341f351"
+    },
+    "q2": {
+      "rule": "score > threshold",
+      "method": "val_normal_fpr",
+      "threshold": 0.010788170620799065,
+      "target_fpr": 0.01,
+      "realized_val_fpr": 0.009501187648456057,
+      "n_val_normal": 1684,
+      "fitted_on_split": "val",
+      "calibration_windows_digest": "99ad2568e341f351"
+    }
+  },
+  "q0_consistency": {
+    "p3_threshold": 0.010617430321872234,
+    "q0_onnx_threshold": 0.010618600994348526,
+    "threshold_rel_diff": 0.00011025949225021379,
+    "max_abs_recall_diff_attack_types": 0.00026219192448884154,
+    "test_decision_flips": 1,
+    "test_max_abs_score_diff": 1.7583370208740234e-05,
+    "n_test_windows_compared": 27849
+  },
+  "evaluated_utc": "2026-10-06T10:16:14+00:00"
+}
