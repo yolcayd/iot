@@ -1,7 +1,4 @@
 dataset,attack_type,split,capture,segment,n_windows,n_attack,first_row,last_row
-car_hacking,dos,test,car_hacking/DoS_dataset,car_hacking/DoS_dataset[2154166:2774703],6205,2206,2154166,2774566
-car_hacking,dos,train,car_hacking/DoS_dataset,car_hacking/DoS_dataset[0:1591698],31832,13112,0,1591550
-car_hacking,dos,val,car_hacking/DoS_dataset,car_hacking/DoS_dataset[1616036:2135567],5195,2096,1616036,2135436
 car_hacking,fuzzy,test,car_hacking/Fuzzy_dataset,car_hacking/Fuzzy_dataset[2433218:2947792],5145,1962,2433218,2947618
 car_hacking,fuzzy,train,car_hacking/Fuzzy_dataset,car_hacking/Fuzzy_dataset[0:1921710],38433,18667,0,1921600
 car_hacking,fuzzy,val,car_hacking/Fuzzy_dataset,car_hacking/Fuzzy_dataset[1937803:2419832],4820,1723,1937803,2419703

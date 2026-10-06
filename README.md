@@ -109,4 +109,12 @@ rate of 1% on clean validation normals (label 0, no masquerade capture, at least
 frame; attack labels are not used). The primary per-attack-type
 measure is the recall at that threshold; F1, ROC-AUC and average precision are secondary
 (`docs/DECISIONS.md` K-035, K-037). The 1D-CNN stops early on validation average precision (K-034).
+
+### Unsupervised model decision (P3)
+
+The LSTM autoencoder (M2) failed the pre-registered feasibility check on ROAD (validation ROC-AUC 0.395 < 0.6;
+Car-Hacking 0.807). The single pre-registered retry (hidden 128, lr 3e-4, up to 60 epochs) also failed on ROAD
+(0.372). The 1D convolutional autoencoder (M2-alt) passed on both datasets (Car-Hacking 0.999, ROAD 0.722) and
+is the unsupervised model on **both** datasets from F3 on. The decision used validation data only; test metrics
+were computed after the selection (`docs/DECISIONS.md` K-030, K-033, K-039; `results/tables/ae_feasibility.csv`).
 <!-- Unsupervised model decision (K-030) to be added after the baseline runs. -->

@@ -129,9 +129,7 @@ def main(argv: list[str] | None = None) -> int:
     print(out.to_string(index=False) if len(out) else "no attack type with F1 >= 0.995")
     params = F.load_params()
     store = D.FeatureStore.build("car_hacking", ("test",), cfg)
-    from src.run_grid import planned_dirs
-
-    for run in planned_dirs("baseline"):
+    for run in [T.RAW_DIR / r for r in sorted(set(table["run_id"]))]:   # every run in baseline_f1.csv
         if not (run / "scores_test.parquet").exists():
             continue
         if json.loads((run / "run_config.json").read_text(encoding="utf-8"))["dataset"] == "car_hacking":

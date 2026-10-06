@@ -497,3 +497,19 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - Saldırıya yakın normal etiketli pencereler saldırının etkisini (geçiş, gecikme, yanıt trafiği) taşıyabilir; eşik "temiz" normal trafiğe kalibre edilmelidir.
 - **Yapısal sonuç** (sonuç değil, ayrım tanımından): Car-Hacking'de patlamalar arası aralık 3 s < ±5 s olduğundan saldırı dosyalarının val normal pencerelerinin hiçbiri bu kümeye girmez. Car-Hacking kalibrasyon kümesi yalnızca normal dosyanın val bloğudur (1,684 pencere; ROAD 50,337). %1 FPR eşiği CH'de ≈ 17 pencerelik kuyruğa dayanır. Saldırı dosyalarının normal pencerelerindeki FPR testte ayrıca raporlanır.
 - **Etkisi:** Val ve testte raporlanan FPR, kalibrasyon kümesinden farklı pencerelerde ölçülür; %1'den sapabilir ve sapma raporlanır.
+
+## K-039 — K-033 protokolünün sonucu: iki veri setinde 1D evrişimli otokodlayıcı
+
+- **Faz / tarih:** P3 · 2026-10-06
+- **Durum:** Geçerli. K-033'ün önceden kayıtlı kuralının uygulanmasıdır; yeni bir seçim serbestliği içermez.
+- **Girdi** (val ROC-AUC, birincil havuz; `results/tables/ae_feasibility.csv`; eşik 0.6):
+
+  | Aday | Car-Hacking | ROAD |
+  |---|---:|---:|
+  | (1) baseline LSTM-AE (gizli 64, lr 1e-3) | 0.807 ✔ | 0.395 ✘ |
+  | (2) ayar denemesi LSTM-AE (gizli 128, lr 3e-4, ≤ 60 epoch) | 0.809 ✔ | 0.372 ✘ |
+  | (3) conv-AE | 0.999 ✔ | 0.722 ✔ |
+
+- **Karar:** (1) ROAD'da geçemedi, (2) incelendi; (2) ROAD'da geçemedi, (3) incelendi. (3) iki veri setinde de geçen ilk aday; **iki veri setinde de denetimsiz model conv-AE'dir** (M2-alt). Çıkış kuralı tetiklenmedi; AS-3 iki veri setinde değerlendirilir.
+- **Gözlem:** Baseline LSTM-AE v2 koşusu v1 val AUC'lerini birebir yeniden üretti (0.807448 / 0.394506). LSTM-AE'nin iki sürümünde de eğitim kaybı ≈ 0.073–0.08'de düzleşti; ayar denemesi bunu değiştirmedi.
+- **Etkisi:** Test değerlendirmesi yalnızca seçimden sonra, seçilen conv-AE koşuları için yapıldı. `baseline_f1.csv`'de LSTM-AE satırları `rejected_k033`, conv-AE satırları `selected_k033` olarak işaretli. F3–F5'te M2 yerine conv-AE kullanılır. Plandan (M2 = LSTM-AE) bu sapma README'de ve faz günlüğünde belirtilir; danışmana haftalık raporda bildirilecek.

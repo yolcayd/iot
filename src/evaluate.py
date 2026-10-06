@@ -144,29 +144,55 @@ def evaluate_run(run_dir: Path, split: str = "test", log=print) -> pd.DataFrame:
     return m
 
 
+def selected_autoencoders() -> dict[str, str | None]:
+    """dataset -> run id of the autoencoder selected by the K-033 protocol (None = excluded / not decided)."""
+    from src import run_grid as G
+    from src import train as T
+
+    table, dec = G.ae_check(T.load_models_config()["ae_feasibility"]["min_val_roc_auc"])
+    if dec["selected"] is None:
+        return {d: None for d in G.DATASETS}
+    out = {}
+    for d, cand in dec["selected"].items():
+        out[d] = None if cand is None else table.loc[(table.candidate == cand) & (table.dataset == d), "run"].iloc[0]
+    return out
+
+
 def baseline_table(run_dirs: list[Path] | None = None) -> pd.DataFrame:
-    """Test metrics of the given runs; by default the runs the CURRENT config plans for the baseline stage
-    (older runs with other run ids under results/raw are ignored)."""
+    """Test metrics of the P3 baseline: the runs the CURRENT config plans for the baseline stage plus the
+    autoencoder selected by K-033 (older runs with other run ids under results/raw are ignored).
+
+    ``status``: ``baseline`` (supervised), ``selected_k033`` / ``rejected_k033`` (autoencoders).
+    """
+    from src import train as T
+
+    sel = {}
     if run_dirs is None:
         from src.run_grid import planned_dirs
 
-        run_dirs = planned_dirs("baseline")
+        sel = selected_autoencoders()
+        run_dirs = planned_dirs("baseline") + [T.RAW_DIR / r for r in sel.values() if r]
+    selected = {r for r in sel.values() if r}
     frames, pairs = [], []
-    for d in run_dirs:
+    for d in dict.fromkeys(run_dirs):
         if not (d / "DONE").exists() or not (d / "metrics_test.csv").exists():
             continue
         rc = json.loads((d / "run_config.json").read_text(encoding="utf-8"))
+        status = ("selected_k033" if rc["run_id"] in selected else "rejected_k033")             if rc["model"] in T.AUTOENCODERS else "baseline"
         m = pd.read_csv(d / "metrics_test.csv")
-        frames.append(m[m["level"].isin(["attack_type", "attack_free", "pooled"])])
+        m = m[m["level"].isin(["attack_type", "attack_free", "pooled"])].copy()
+        m["status"] = status
+        frames.append(m)
         p = pd.read_csv(d / "pairs_test.csv")
         if len(p):
             p.insert(0, "run_id", rc["run_id"])
             p.insert(1, "model", rc["model"])
+            p.insert(2, "status", status)
             pairs.append(p)
     if not frames:
         raise RuntimeError("no finished, evaluated baseline runs under results/raw")
     out = pd.concat(frames, ignore_index=True)
-    cols = ["dataset", "model", "seed", "run_id", "level", "name", "group", "role", "n_attack", "n_normal",
+    cols = ["dataset", "model", "status", "seed", "run_id", "level", "name", "group", "role", "n_attack", "n_normal",
             "precision", "recall", "f1", "fpr", "roc_auc", "average_precision"]
     out = out[cols].sort_values(["dataset", "level", "name", "model"]).reset_index(drop=True)
     TABLES.mkdir(parents=True, exist_ok=True)

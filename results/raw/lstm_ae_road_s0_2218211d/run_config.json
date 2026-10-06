@@ -1,0 +1,103 @@
+{
+  "run_id": "lstm_ae_road_s0_2218211d",
+  "model": "lstm_ae",
+  "dataset": "road",
+  "seed": 0,
+  "smoke": false,
+  "hparams": {
+    "batch_size": 256,
+    "lr": 0.0003,
+    "weight_decay": 0.0,
+    "max_epochs": 60,
+    "patience": 5,
+    "eval_batch_size": 2048,
+    "family": "autoencoder",
+    "hidden": 128,
+    "latent": 32
+  },
+  "overrides": {
+    "hidden": 128,
+    "lr": 0.0003,
+    "max_epochs": 60
+  },
+  "decision_config": {
+    "rule": "val_normal_fpr",
+    "target_fpr": 0.01
+  },
+  "window_size": 100,
+  "data_hash": "8e302d6edf1553e2",
+  "train_windows": {
+    "n_windows": 295689,
+    "n_attack": 0,
+    "n_normal": 295689,
+    "n_captures": 10,
+    "digest": "8faf52dbfa53568d"
+  },
+  "val_windows": {
+    "n_windows": 50337,
+    "n_attack": 0,
+    "n_normal": 50337,
+    "n_captures": 7,
+    "digest": "76d609a0864ddb4d"
+  },
+  "git": {
+    "commit": "8fe34e4f383fb26e7ee608ff969e674bee2064ff",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv"
+    ]
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_count": 16,
+    "threads": 4,
+    "device": "cuda",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "versions": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "pyarrow": "25.0.1",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.4.1",
+      "torch": "2.14.1+cu130",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "started_utc": "2026-10-06T08:22:11+00:00",
+  "finished_utc": "2026-10-06T08:44:13+00:00",
+  "duration_s": 1321.8,
+  "meta": {
+    "best_epoch": 22,
+    "early_stopping": "val_loss",
+    "best_monitor_value": 0.07658176102293456,
+    "epochs_run": 27,
+    "stopped_early": true,
+    "resumed_at_epochs": [],
+    "train_score_quantiles": {
+      "0.5": 0.07686218619346619,
+      "0.9": 0.08555835485458374,
+      "0.99": 0.09791500866413116,
+      "0.999": 0.10755892843008041
+    },
+    "decision": {
+      "rule": "score > threshold",
+      "method": "val_normal_fpr",
+      "threshold": 0.0924130231142044,
+      "target_fpr": 0.01,
+      "realized_val_fpr": 0.009992649542086339,
+      "n_val_normal": 50337,
+      "fitted_on_split": "val",
+      "calibration_windows_digest": "76d609a0864ddb4d"
+    }
+  }
+}

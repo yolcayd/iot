@@ -1,0 +1,12 @@
+run_id,model,dataset,seed,split,level,name,group,role,captures,n_attack,n_normal,tp,fp,fn,tn,precision,recall,f1,fpr,roc_auc,average_precision,attack_types
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,attack_type,dos,coarse,primary,car_hacking/DoS_dataset,2096,3099,0,0,2096,3099,,0.0,0.0,0.0,0.11157240454320404,0.24725560300639915,
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,attack_type,fuzzy,coarse,primary,car_hacking/Fuzzy_dataset,1723,3097,1692,0,31,3097,1.0,0.9820081253627394,0.990922401171303,0.0,0.9989780985511787,0.9988746315405451,
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,attack_type,gear_spoofing,coarse,primary,car_hacking/gear_dataset,3764,3116,3,0,3761,3116,1.0,0.0007970244420828905,0.0015927794000530925,0.0,0.9805880041853162,0.9835563639451643,
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,attack_type,rpm_spoofing,coarse,primary,car_hacking/RPM_dataset,4339,3151,4217,0,122,3151,1.0,0.9718829223323346,0.9857410004675082,0.0,0.9986555920196832,0.9992578753080865,
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,attack_free,ambient,,fpr_only,car_hacking/normal_run_data,0,1684,0,16,0,1668,0.0,,,0.009501187648456057,,,
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,attack_free_capture,car_hacking/normal_run_data,,fpr_only,car_hacking/normal_run_data,0,1684,0,16,0,1668,0.0,,,0.009501187648456057,,,
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,capture,car_hacking/DoS_dataset,,primary,,2096,3099,0,0,2096,3099,,0.0,0.0,0.0,0.11157240454320404,0.24725560300639915,dos
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,capture,car_hacking/Fuzzy_dataset,,primary,,1723,3097,1692,0,31,3097,1.0,0.9820081253627394,0.990922401171303,0.0,0.9989780985511787,0.9988746315405451,fuzzy
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,capture,car_hacking/RPM_dataset,,primary,,4339,3151,4217,0,122,3151,1.0,0.9718829223323346,0.9857410004675082,0.0,0.9986555920196832,0.9992578753080865,rpm_spoofing
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,capture,car_hacking/gear_dataset,,primary,,3764,3116,3,0,3761,3116,1.0,0.0007970244420828905,0.0015927794000530925,0.0,0.9805880041853162,0.9835563639451643,gear_spoofing
+lstm_ae_car_hacking_s0_bda2d750,lstm_ae,car_hacking,0,val,pooled,primary_pool,,secondary,,11922,14147,5912,16,6010,14131,0.9973009446693657,0.49588995135044456,0.6624089635854342,0.0011309818336042977,0.8087020138333014,0.8675237974091857,

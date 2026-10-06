@@ -1,0 +1,7 @@
+candidate,dataset,run,val_roc_auc,passes
+baseline,car_hacking,lstm_ae_car_hacking_s0_054d9dc6,0.8074,True
+baseline,road,lstm_ae_road_s0_80d3f38c,0.3945,False
+retry,car_hacking,lstm_ae_car_hacking_s0_bda2d750,0.8087,True
+retry,road,lstm_ae_road_s0_2218211d,0.3724,False
+conv_ae,car_hacking,conv_ae_car_hacking_s0_580cfd1d,0.9989,True
+conv_ae,road,conv_ae_road_s0_6dae8bb6,0.7223,True
