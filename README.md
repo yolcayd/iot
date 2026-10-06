@@ -147,7 +147,7 @@ python -m src.quantize --pilot-table                 # rebuild results/tables/qu
 python -m src.benchmark --profile host --session 1   # latency/size/memory, batch 1, >=1 s warm-up + 10,000 timed
 python -m src.benchmark --profile host --session 2
 python -m src.benchmark --profile host --compare     # repeatability: median within 5 %, p95 within 10 %
-.\docker\run_benchmark.ps1 -Session 1                # same in a container limited to 2 CPUs / 2 GB RAM
+.\docker\run_benchmark.ps1 -Session 1                # container (2 CPUs / 2 GB): defined, not used (K-051)
 ```
 
 **Latency measurements:**
@@ -157,7 +157,9 @@ python -m src.benchmark --profile host --compare     # repeatability: median wit
   Windows power mode is "Best performance" (protocol K-049).
 - Pre-registered: if targets are still inconsistent after the two K-049 sessions, they are not re-measured; both
   sessions are reported, the targets flagged, and latency comparisons rest on within-session ratios (Qk/Q0).
-- The `container` profile (2 threads) needs Docker Desktop to be running.
+- The `container` profile (2 threads, Docker Desktop) is kept in the repository but was never built or run: since
+  microsecond-level latencies were not reproducible even on the host, container measurements are out of scope
+  (K-051; a limitation of the paper).
 - The random forest predicts single-threaded (`n_jobs=1`): scikit-learn's threaded prediction races on the
   process-wide warning filters and then prints a warning per tree inside the timed loop (K-048). A measurement is
   rejected if any warning is shown during the timed inferences.

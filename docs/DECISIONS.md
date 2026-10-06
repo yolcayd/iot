@@ -649,7 +649,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-047 — Kısıtlı ölçüm ortamı: Docker konteyneri (2 CPU, 2 GB) ve ana makine yaklaşımı
 
 - **Faz / tarih:** P4 · 2026-10-06
-- **Durum:** Geçerli
+- **Durum:** Kısmen geçersiz: konteynerde ölçüm K-051 ile kapsam dışı. Konteyner tanımı (depoda kalıyor) ve ana makine yaklaşımı maddeleri geçerli.
 - **Bağlam:** Raspberry Pi yok. Docker Desktop kurulu, ancak motor 2026-10-06'da kapalı.
 - **Karar:**
   - **Konteyner profili:** `docker/benchmark.Dockerfile` (python:3.13-slim; yalnızca numpy, onnxruntime, scikit-learn, xgboost, psutil, PyYAML; `requirements.txt` sürümleri) ve `docker/run_benchmark.ps1`.
@@ -738,9 +738,15 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-050 — K-049 kural 7'nin uygulanması: ana makine gecikme sonuçlarının raporlanma biçimi
 
 - **Faz / tarih:** P4 · 2026-10-06
-- **Durum:**
+- **Durum:** Geçerli (kullanıcı onayı, 2026-10-06).
   - Kural 7'nin uygulanması önceden kayıtlıdır (K-049).
-  - Aşağıdaki **yorum kısıtı** (madde 4) sonuçlar görüldükten sonra yazıldı; kullanıcı onayına açık.
+  - Madde 4'teki **yorum kısıtı**, ana makine sonuçları görüldükten **sonra** yazıldı. Bu kısıt iddiaları güçlendirmiyor, kısıtlıyor:
+    - belirsizlik olarak tek oturum ya da oturum içi güven aralığı yerine daha geniş olan iki oturum aralığı kullanılıyor;
+    - yalnızca iki oturumda aynı yönde olan medyan oranları için yönlü ifade kullanılıyor;
+    - p95 oranlarından hiçbir sonuç çıkarılmıyor;
+    - mutlak gecikmeler yalnızca büyüklük mertebesi olarak veriliyor.
+
+    Sonuca bakılarak gevşetilen ya da lehte seçilen bir ölçüt yok. Kullanıcı bu gerekçeyle onayladı.
 - **Bağlam:** K-049 protokolüyle iki ana makine oturumu yapıldı (21:19–21:27; 24 sonucun hepsi K-049 koşullarında). Sonuçlar:
   - **Tutarlılık:** 12 hedeften 3'ü tutarlı, 9'u tolerans dışı (`results/tables/benchmark_repeatability_host.csv`).
   - **Medyan göreli farkı:** en büyük %15.5 (CNN ROAD Q0).
@@ -769,3 +775,19 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - conv-AE sonucu K-044 ile uyumlu: iki ConvTranspose katmanı CPU'da QDQ benzetimiyle (float) çalışıyor. Bu bir açıklama önerisidir; ayrı bir deneyle doğrulanmadı.
   - Bellek ve boyut ölçümleri iki oturumda tutarlı (tepe bellek farkı ≤ %4); bunlar mutlak değer olarak raporlanabilir.
   - P4 kabul kriteri "benchmark iki kez çalıştırıldığında tutarlı" **sağlanmadı**. P4'ün bu durumda kapatılıp kapatılmayacağı kullanıcı kararıdır.
+
+## K-051 — Konteyner profilinde gecikme ölçümü kapsam dışı
+
+- **Faz / tarih:** P4 (kapanış) · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı). K-047'nin konteynerde ölçüm yapılması öngörüsünü ve plan F3/F4'ün "Docker konteynerinde tekrarla" adımını geçersiz kılar. K-047'nin konteyner tanımı ve ana makine yaklaşımı maddeleri geçerli.
+- **Bağlam:**
+  - Ana makinede, iş parçacığı sabitlemesi, performans çekirdeklerine sabitleme, "En iyi performans" güç modu, ≥ 1 s ısınma ve 10.000 ölçümle bile iki oturum 12 hedeften yalnızca 3'ünde tutarlı çıktı (K-049, K-050).
+  - Derin modellerin gecikmesi 30–115 µs düzeyinde. Oturumlar arası medyan farkı %16'ya, p95 farkı %54'e kadar çıkıyor.
+- **Karar:**
+  - Konteyner profilinde (2 CPU, 2 GB) gecikme ölçümü yapılmaz.
+  - `docker/benchmark.Dockerfile`, `docker/requirements-benchmark.txt`, `docker/run_benchmark.ps1` ve yapılandırmadaki `container` profili depoda kalır. İmaj hiç derlenmedi, betik hiç çalıştırılmadı; bu da belirtilir.
+  - Makalede sınırlılık olarak yazılır: kaynak kısıtlı uç cihaz ne gerçek donanımda (Raspberry Pi / ECU) ne de konteyner kısıtıyla ölçüldü. Gecikme sonuçları tek bir dizüstü bilgisayarın ana makine profilinden gelir ve oturumlar arası değişkenlikleri K-050'ye göre raporlanır.
+- **Gerekçe:** Ana makinede bile mikrosaniye düzeyinde tekrarlanabilirlik sağlanamadı. Konteyner (CPU kotası ve sanallaştırma katmanı) ek değişkenlik getirir, ek bilgi getirmez.
+- **Etkisi:**
+  - AS-2'nin gecikme boyutu yalnızca ana makine profiline dayanır ve nitel/yönlü kalır (K-050).
+  - Bellek ve boyut ölçümleri bu karardan etkilenmez.
