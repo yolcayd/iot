@@ -117,6 +117,28 @@ def test_same_seed_same_training(model, tmp_path):
     json.dumps(r0["meta"])  # metadata is serialisable
 
 
+@pytest.mark.parametrize("model", ["cnn1d", "lstm_ae"])
+def test_resume_from_checkpoint_matches_uninterrupted_run(model, tmp_path):
+    store = _store()
+    starts = np.arange(0, 2800, 50)
+    win = pd.DataFrame({"segment": "seg", "start": starts, "label": (np.arange(len(starts)) % 4 == 0).astype(int)})
+    if model == "lstm_ae":
+        win["label"] = 0
+    hp = {**_hp(model), "max_epochs": 4, "patience": 100}
+    full, part = tmp_path / "full", tmp_path / "part"
+    full.mkdir(), part.mkdir()
+    T.seed_everything(0)
+    T.train_deep(model, hp, 0, store, win, win, 100, "cpu", full, log=lambda m: None)
+    T.seed_everything(0)
+    T.train_deep(model, {**hp, "max_epochs": 2}, 0, store, win, win, 100, "cpu", part, log=lambda m: None)
+    assert (part / "checkpoint.pt").exists()          # left behind, as after an interruption
+    T.seed_everything(0)
+    res = T.train_deep(model, hp, 0, store, win, win, 100, "cpu", part, log=lambda m: None)
+    assert res["meta"]["resumed_at_epochs"] == [2] and res["meta"]["epochs_run"] == 4
+    wa, wb = torch.load(full / "model.pt", weights_only=True), torch.load(part / "model.pt", weights_only=True)
+    assert all(torch.equal(wa[k], wb[k]) for k in wa)
+
+
 @pytest.mark.skipif(not SP.WINDOW_INDEX.exists(), reason="window index not built")
 @pytest.mark.parametrize("dataset", ["car_hacking", "road"])
 def test_real_selectors_draw_from_allowed_splits_only(dataset):

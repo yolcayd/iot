@@ -68,3 +68,13 @@ def test_attack_free_fpr_and_pairs():
     r = pairs.iloc[0]
     assert (r["fabrication"], r["masquerade"]) == ("fab", "masq")
     assert r["recall_fabrication"] == 0.5 and r["recall_masquerade"] == 0.5
+
+
+def test_pairs_table_without_pairs_keeps_columns(tmp_path):
+    df, s, p = _example()
+    keep = df["capture"] != "masq"
+    m = E.evaluate_windows(df[keep], s[keep.to_numpy()], p[keep.to_numpy()], "road", GROUPS, CFG)
+    pairs = E.pairs_table(m, df[keep])
+    assert len(pairs) == 0 and list(pairs.columns) == E.PAIR_COLUMNS
+    pairs.to_csv(tmp_path / "p.csv", index=False)
+    assert list(pd.read_csv(tmp_path / "p.csv").columns) == E.PAIR_COLUMNS

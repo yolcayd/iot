@@ -214,7 +214,8 @@ def train_deep(model: str, hp: dict, seed: int, store: D.FeatureStore, tr, va, s
     state = {"epoch": 0, "best_val": float("inf"), "best_epoch": -1, "bad": 0, "history": [], "best_state": None}
     ckpt = out / "checkpoint.pt"
     if ckpt.exists():
-        c = torch.load(ckpt, map_location=device, weights_only=False)
+        # RNG states must stay CPU byte tensors; weights and optimizer state are moved by load_state_dict
+        c = torch.load(ckpt, map_location="cpu", weights_only=False)
         net.load_state_dict(c["model"])
         opt.load_state_dict(c["optimizer"])
         gen.set_state(c["generator"])
@@ -222,6 +223,7 @@ def train_deep(model: str, hp: dict, seed: int, store: D.FeatureStore, tr, va, s
         if c.get("cuda_rng") is not None and device.startswith("cuda"):
             torch.cuda.set_rng_state_all(c["cuda_rng"])
         state = c["state"]
+        state.setdefault("resumed_at_epochs", []).append(state["epoch"])
         log(f"resumed from epoch {state['epoch']}")
 
     def mean_loss(g, y):
@@ -256,16 +258,20 @@ def train_deep(model: str, hp: dict, seed: int, store: D.FeatureStore, tr, va, s
             state["bad"] += 1
         state["history"].append({"epoch": state["epoch"], "train_loss": tot / len(perm), "val_loss": val,
                                  "seconds": time.time() - t0})
-        log(f"epoch {state['epoch']:3d} train {tot / len(perm):.6f} val {val:.6f} ({time.time() - t0:.1f} s)")
+        # written to a temporary file and renamed, so a kill during the write leaves the previous checkpoint
+        tmp = ckpt.with_suffix(".tmp")
         torch.save({"model": net.state_dict(), "optimizer": opt.state_dict(), "generator": gen.get_state(),
                     "torch_rng": torch.get_rng_state(),
                     "cuda_rng": torch.cuda.get_rng_state_all() if device.startswith("cuda") else None,
-                    "state": state}, ckpt)
+                    "state": state}, tmp)
+        os.replace(tmp, ckpt)
+        log(f"epoch {state['epoch']:3d} train {tot / len(perm):.6f} val {val:.6f} ({time.time() - t0:.1f} s)")
 
     net.load_state_dict(state["best_state"])
     torch.save(net.state_dict(), out / "model.pt")
     meta = {"best_epoch": state["best_epoch"], "best_val_loss": state["best_val"], "epochs_run": state["epoch"],
-            "stopped_early": state["bad"] >= hp["patience"], **extra}
+            "stopped_early": state["bad"] >= hp["patience"],
+            "resumed_at_epochs": state.get("resumed_at_epochs", []), **extra}
     if is_ae:
         from src.models.lstm_autoencoder import fit_threshold
 
@@ -344,6 +350,11 @@ def score_windows(run_dir: Path, store: D.FeatureStore, w, device: str | None = 
 
         clf = XGBClassifier()
         clf.load_model(run_dir / "model.ubj")
+        # same device as in training (CPU and CUDA predictions differ by ~1e-7) and the early-stopping
+        # best iteration stated explicitly rather than relying on the attribute restored by load_model
+        clf.set_params(device="cuda" if device.startswith("cuda") else "cpu")
+        best = int(rc["meta"]["best_iteration"])
+        return clf.predict_proba(x, iteration_range=(0, best + 1))[:, 1]
     return clf.predict_proba(x)[:, 1]
 
 

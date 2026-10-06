@@ -35,6 +35,8 @@ from src.data import splits as SP
 
 TABLES = S.PROJECT_ROOT / "results" / "tables"
 NORMAL = "normal"
+PAIR_COLUMNS = ["source_capture", "fabrication", "masquerade", "role", "f1_fabrication", "f1_masquerade",
+                "recall_fabrication", "recall_masquerade", "fpr_fabrication", "fpr_masquerade"]
 
 
 def binary_metrics(y: np.ndarray, pred: np.ndarray, score: np.ndarray | None = None) -> dict:
@@ -111,7 +113,7 @@ def pairs_table(metrics: pd.DataFrame, win: pd.DataFrame) -> pd.DataFrame:
                         "f1_fabrication": f["f1"], "f1_masquerade": m["f1"],
                         "recall_fabrication": f["recall"], "recall_masquerade": m["recall"],
                         "fpr_fabrication": f["fpr"], "fpr_masquerade": m["fpr"]})
-    return pd.DataFrame(out)
+    return pd.DataFrame(out, columns=PAIR_COLUMNS)
 
 
 def evaluate_run(run_dir: Path, split: str = "test", log=print) -> pd.DataFrame:
