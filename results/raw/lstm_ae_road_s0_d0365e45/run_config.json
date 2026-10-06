@@ -1,0 +1,85 @@
+{
+  "run_id": "lstm_ae_road_s0_d0365e45",
+  "model": "lstm_ae",
+  "dataset": "road",
+  "seed": 0,
+  "smoke": false,
+  "hparams": {
+    "batch_size": 256,
+    "lr": 0.001,
+    "weight_decay": 0.0,
+    "max_epochs": 30,
+    "patience": 5,
+    "eval_batch_size": 2048,
+    "family": "autoencoder",
+    "hidden": 64,
+    "latent": 32,
+    "threshold_percentile": 99.0
+  },
+  "window_size": 100,
+  "data_hash": "8e302d6edf1553e2",
+  "train_windows": {
+    "n_windows": 295689,
+    "n_attack": 0,
+    "n_normal": 295689,
+    "n_captures": 10,
+    "digest": "8faf52dbfa53568d"
+  },
+  "val_windows": {
+    "n_windows": 50337,
+    "n_attack": 0,
+    "n_normal": 50337,
+    "n_captures": 7,
+    "digest": "76d609a0864ddb4d"
+  },
+  "git": {
+    "commit": "ea9eb2f6b9ddc43c3271cbd8db7c0764c0a5539e",
+    "dirty": false,
+    "dirty_files": []
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_count": 16,
+    "threads": 8,
+    "device": "cuda",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "versions": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "pyarrow": "25.0.1",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.4.1",
+      "torch": "2.14.1+cu130",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "started_utc": "2026-10-06T06:28:18+00:00",
+  "finished_utc": "2026-10-06T06:34:19+00:00",
+  "duration_s": 361.2,
+  "meta": {
+    "best_epoch": 24,
+    "best_val_loss": 0.07560160432552546,
+    "epochs_run": 29,
+    "stopped_early": true,
+    "resumed_at_epochs": [],
+    "decision": {
+      "rule": "score > threshold",
+      "threshold": 0.09478573739528655,
+      "percentile": 99.0,
+      "fitted_on_split": "train",
+      "n_scores": 295689
+    },
+    "train_score_quantiles": {
+      "0.5": 0.07582991570234299,
+      "0.9": 0.08451466262340546,
+      "0.99": 0.09478573501110077,
+      "0.999": 0.10639318078756332
+    }
+  }
+}

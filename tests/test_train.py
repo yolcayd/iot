@@ -109,11 +109,16 @@ def test_same_seed_same_training(model, tmp_path):
     (r0, w0), (r1, w1) = out
     assert [h["train_loss"] for h in r0["history"]] == [h["train_loss"] for h in r1["history"]]
     assert all(torch.equal(w0[k], w1[k]) for k in w0)
+    assert "decision" not in r0["meta"]          # the threshold is calibrated afterwards on val normals (K-035)
     if model == "lstm_ae":
-        assert r0["meta"]["decision"]["fitted_on_split"] == "train"
-        assert r0["meta"]["decision"]["threshold"] == r1["meta"]["decision"]["threshold"]
+        assert r0["meta"]["early_stopping"] == "val_loss"
+        assert r0["meta"]["train_score_quantiles"] == r1["meta"]["train_score_quantiles"]
     else:
         assert r0["meta"]["pos_weight"] == pytest.approx(3.0, rel=0.1)
+        assert r0["meta"]["early_stopping"] == "val_average_precision"
+        assert all("val_ap" in h for h in r0["history"])
+        best = max(r0["history"], key=lambda h: h["val_ap"])
+        assert r0["meta"]["best_epoch"] == best["epoch"] and r0["meta"]["best_monitor_value"] == best["val_ap"]
     json.dumps(r0["meta"])  # metadata is serialisable
 
 
@@ -158,6 +163,27 @@ def test_real_selectors_draw_from_allowed_splits_only(dataset):
     assert not val["segment"].astype(str).map(lambda s: segs[s].is_masquerade).any()
     for split in ("val", "test"):
         assert set(D.eval_windows(win, dataset, split)["split"].astype(str)) == {split}
+
+
+def test_autoencoder_refuses_ap_early_stopping(tmp_path):
+    store = _store()
+    win = pd.DataFrame({"segment": "seg", "start": np.arange(0, 2800, 50), "label": 0})
+    with pytest.raises(ValueError):
+        T.train_deep("lstm_ae", {**_hp("lstm_ae"), "early_stopping": "val_average_precision"}, 0, store, win, win,
+                     100, "cpu", tmp_path, log=lambda m: None)
+
+
+def test_overrides_and_planned_run_id():
+    mcfg = T.load_models_config()
+    ov = T.resolve_overrides("ae_feasibility.retry", mcfg)
+    assert ov == mcfg["ae_feasibility"]["retry"] and T.resolve_overrides(None, mcfg) == {}
+    base, retry = T.planned_run_id("lstm_ae", "road", 0), T.planned_run_id("lstm_ae", "road", 0, ov)
+    assert base != retry and base.startswith("lstm_ae_road_s0_")
+    assert T.model_config("lstm_ae", mcfg, ov)["hidden"] == 128
+    # the decision rule is not a hyperparameter: no model carries a threshold any more (K-035)
+    for m in mcfg["models"]:
+        hp = T.model_config(m, mcfg)
+        assert "decision_threshold" not in hp and "threshold_percentile" not in hp
 
 
 def test_git_info_fields():

@@ -41,6 +41,8 @@ PROJECT = [
     "src.benchmark",
     "src.run_grid",
     "src.sanity",
+    "src.calibration",
+    "analysis.road_cnn_gap",
     "analysis",
     "analysis.aggregate",
     "analysis.stats",

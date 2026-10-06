@@ -1,17 +1,21 @@
 # Model hyperparameters (P3, plan F2). Fixed a priori; nothing here was tuned on test data.
-# Decisions: docs/DECISIONS.md K-027 ... K-031. The only tuning step allowed in P3 is the one-off LSTM
-# autoencoder retry on the VALIDATION ROC-AUC (K-030), recorded as a separate entry below if used.
+# Decisions: docs/DECISIONS.md K-027 ... K-037. The only tuning step allowed in P3 is the one-off LSTM
+# autoencoder retry on the VALIDATION ROC-AUC (K-030, K-033), defined in `ae_feasibility` below.
 
 runtime:            # not part of the run id; recorded in run_config.json (K-031)
   device: cuda      # deep models and XGBoost
   threads: 4        # CPU threads for torch, sklearn, XGBoost and data preparation; override with --threads
+
+decision:           # every model (K-035); applied after training, not part of the run id
+  rule: val_normal_fpr
+  target_fpr: 0.01  # threshold = 0.99 quantile of the scores of all label-0 VALIDATION windows; attack = score > threshold
 
 common:             # deep models
   batch_size: 512
   lr: 1.0e-3
   weight_decay: 0.0
   max_epochs: 30
-  patience: 5       # early stopping on validation loss
+  patience: 5       # early stopping on validation loss (autoencoders) or validation AP (cnn1d, K-034)
   eval_batch_size: 2048
 
 models:
@@ -22,21 +26,19 @@ models:
     hidden: 32
     dropout: 0.2
     pos_weight: auto            # N_neg / N_pos of the training windows (K-027)
-    decision_threshold: 0.5     # fixed, not tuned (K-027)
+    early_stopping: val_average_precision   # K-034
 
   lstm_ae:          # unsupervised LSTM autoencoder (M2), trained on normal_subset windows only (K-022)
     family: autoencoder
     hidden: 64
     latent: 32
     batch_size: 256
-    threshold_percentile: 99.0  # of the training (normal subset) score distribution (K-030)
 
   conv_ae:          # fallback (M2-alt): written, trained only if lstm_ae fails the validation check
     family: autoencoder
     channels: [32, 64]
     latent_channels: 16
     batch_size: 256
-    threshold_percentile: 99.0
 
   rf:               # classical reference (M0) on window summary features
     family: classical
@@ -44,7 +46,6 @@ models:
     max_depth: null
     min_samples_leaf: 1
     class_weight: balanced      # K-027
-    decision_threshold: 0.5
 
   xgb:
     family: classical
@@ -55,9 +56,9 @@ models:
     colsample_bytree: 1.0
     early_stopping_rounds: 20   # on validation logloss
     scale_pos_weight: auto      # N_neg / N_pos of the training windows (K-027)
-    decision_threshold: 0.5
 
-# Feasibility decision for the unsupervised model (K-030): validation ROC-AUC per dataset, primary pool.
+# Feasibility decision for the unsupervised model (K-030, K-033): validation ROC-AUC per dataset, primary pool.
+# Candidate order: baseline lstm_ae -> lstm_ae with `retry` overrides -> conv_ae (configs/grid.yaml ae_feasibility).
 ae_feasibility:
   min_val_roc_auc: 0.6
   retry:            # applied once if lstm_ae is below the bar on any dataset

@@ -27,6 +27,7 @@ import sys
 import numpy as np
 import pandas as pd
 
+from src import calibration as C
 from src import train as T
 from src.data import dataset as D
 from src.data import features as F
@@ -91,9 +92,7 @@ def diag_false_alarms(run_dir, store: D.FeatureStore, params: dict, size: int) -
     """K-026: Car-Hacking fuzzy false alarms that contain the diagnostic response IDs."""
     s = pd.read_parquet(run_dir / "scores_test.parquet")
     meta = json.loads((run_dir / "meta.json").read_text(encoding="utf-8"))
-    thr = meta["decision"]["threshold"]
-    ae = run_dir.name.startswith(("lstm_ae", "conv_ae"))
-    alarm = s["score"] > thr if ae else s["score"] >= thr
+    alarm = C.predict(s["score"].to_numpy(), meta["decision"])
     fuzzy_segs = [k for k, seg in store.segments.items() if seg.attack_type == "fuzzy" and seg.split == "test"]
     fa = s[alarm & (s["label"] == 0) & s["segment"].isin(fuzzy_segs)]
     codes = id_codes(DIAG_IDS, params["datasets"]["car_hacking"]["id_vocab"])
@@ -130,8 +129,12 @@ def main(argv: list[str] | None = None) -> int:
     print(out.to_string(index=False) if len(out) else "no attack type with F1 >= 0.995")
     params = F.load_params()
     store = D.FeatureStore.build("car_hacking", ("test",), cfg)
-    for run in sorted(T.RAW_DIR.glob("*_car_hacking_s*")):
-        if (run / "scores_test.parquet").exists() and not run.name.endswith("_smoke"):
+    from src.run_grid import planned_dirs
+
+    for run in planned_dirs("baseline"):
+        if not (run / "scores_test.parquet").exists():
+            continue
+        if json.loads((run / "run_config.json").read_text(encoding="utf-8"))["dataset"] == "car_hacking":
             print(f"K-026 {run.name}: {diag_false_alarms(run, store, params, size)}")
     return 0
 

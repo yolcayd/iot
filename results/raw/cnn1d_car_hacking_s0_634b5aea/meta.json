@@ -1,0 +1,12 @@
+{
+  "best_epoch": 12,
+  "best_val_loss": 0.0031077223099655483,
+  "epochs_run": 17,
+  "stopped_early": true,
+  "resumed_at_epochs": [],
+  "pos_weight": 1.3632921558878648,
+  "decision": {
+    "rule": "probability >= threshold",
+    "threshold": 0.5
+  }
+}

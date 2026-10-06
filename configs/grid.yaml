@@ -1,5 +1,16 @@
-# Experiment grid. P3 (plan F2) uses the baseline stage only; the full grid is filled in F4.
+# Experiment grid. P3 (plan F2) uses the baseline and ae_feasibility stages; the full grid is filled in F4.
+# Every run: train -> calibrate the decision threshold on validation normals (K-035) -> evaluate `evaluate_splits`.
+
 baseline:           # feasibility: every model on every dataset with one seed
   models: [cnn1d, lstm_ae, rf, xgb]
   datasets: [car_hacking, road]
   seeds: [0]
+  evaluate_splits: [val, test]
+
+ae_feasibility:     # K-030, K-033: candidates 2 and 3 of the autoencoder protocol, run after baseline
+  runs:
+    - {model: lstm_ae, overrides: ae_feasibility.retry}   # hidden 128, lr 3e-4, max 60 epochs
+    - {model: conv_ae}
+  datasets: [car_hacking, road]
+  seeds: [0]
+  evaluate_splits: [val]      # test only after the protocol has selected a model

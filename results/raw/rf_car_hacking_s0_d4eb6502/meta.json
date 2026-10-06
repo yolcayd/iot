@@ -1,0 +1,32 @@
+{
+  "summary_features": [
+    "id_entropy",
+    "n_unique_ids",
+    "unseen_id_share",
+    "iat_mean",
+    "iat_std",
+    "iat_min",
+    "iat_q10",
+    "byte0_mean",
+    "byte1_mean",
+    "byte2_mean",
+    "byte3_mean",
+    "byte4_mean",
+    "byte5_mean",
+    "byte6_mean",
+    "byte7_mean",
+    "byte0_var",
+    "byte1_var",
+    "byte2_var",
+    "byte3_var",
+    "byte4_var",
+    "byte5_var",
+    "byte6_var",
+    "byte7_var",
+    "payload_change_rate"
+  ],
+  "decision": {
+    "rule": "probability >= threshold",
+    "threshold": 0.5
+  }
+}

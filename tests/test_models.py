@@ -1,4 +1,4 @@
-"""Model definitions: output shapes, threshold fitting rule, summary features (synthetic data only)."""
+"""Model definitions: output shapes and summary features (synthetic data only)."""
 
 import numpy as np
 import pytest
@@ -29,16 +29,6 @@ def test_autoencoders_reconstruct_input_shape_in_unit_range(mod, cfg):
     assert y.shape == x.shape
     assert float(y.min()) >= 0 and float(y.max()) <= 1
     assert lstm_autoencoder.reconstruction_score(net, x).shape == (4,)
-
-
-def test_threshold_only_from_training_scores():
-    s = np.arange(1, 101, dtype=float)
-    t = lstm_autoencoder.fit_threshold(s, "train", 99)
-    assert t["threshold"] == pytest.approx(np.percentile(s, 99))
-    assert t["fitted_on_split"] == "train" and t["n_scores"] == 100
-    for split in ("val", "test"):
-        with pytest.raises(ValueError):
-            lstm_autoencoder.fit_threshold(s, split, 99)
 
 
 def test_summary_features_by_hand():

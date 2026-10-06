@@ -1,8 +1,8 @@
 """Unsupervised 1D convolutional autoencoder; fallback if the LSTM autoencoder fails (M2-alt).
 
-Same interface as the LSTM autoencoder (score = mean squared reconstruction error; threshold fitted on
-training scores only, see ``src.models.lstm_autoencoder.fit_threshold``). Trained only if the LSTM
-autoencoder fails the validation feasibility check (docs/DECISIONS.md K-030).
+Same interface as the LSTM autoencoder (score = mean squared reconstruction error; decision threshold
+calibrated on validation normals, src/calibration.py). Candidate 3 of the autoencoder feasibility
+protocol (docs/DECISIONS.md K-030, K-033).
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 import torch
 from torch import nn
 
-from src.models.lstm_autoencoder import fit_threshold, reconstruction_score  # noqa: F401  (shared interface)
+from src.models.lstm_autoencoder import reconstruction_score  # noqa: F401  (shared interface)
 
 
 class ConvAutoencoder(nn.Module):

@@ -97,10 +97,15 @@ Baseline models (phase P3, work in progress). Hyperparameters are in `configs/mo
 ```powershell
 python -m src.train --model cnn1d --dataset road --seed 0   # one run -> results/raw/<run_id>/
 python -m src.evaluate --run <run_id> --split test          # per-attack-type metrics of one run
-python -m src.run_grid --stage baseline                     # all baseline runs (resumable) + tables
-python -m src.run_grid --stage baseline --status
+python -m src.run_grid --stage baseline ae_feasibility      # all P3 runs (resumable) + tables
+python -m src.run_grid --stage baseline ae_feasibility --status
+python -m src.run_grid --ae-check                           # autoencoder feasibility protocol (validation only)
+python -m src.sanity                                        # leakage suspicion checks for near-perfect F1
 ```
 
-Every run writes `run_config.json` (hyperparameters, library versions, git commit, environment), the
-training curve and, for the autoencoders, the anomaly threshold fitted on training scores only.
+Every run writes `run_config.json` (hyperparameters, library versions, git commit, environment) and the
+training curve. After training, the decision threshold of every model is calibrated on the label-0
+validation windows to a false-positive rate of 1% (attack labels are not used). The primary per-attack-type
+measure is the recall at that threshold; F1, ROC-AUC and average precision are secondary
+(`docs/DECISIONS.md` K-035, K-037). The 1D-CNN stops early on validation average precision (K-034).
 <!-- Unsupervised model decision (K-030) to be added after the baseline runs. -->

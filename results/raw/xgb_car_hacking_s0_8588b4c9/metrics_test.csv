@@ -1,0 +1,12 @@
+run_id,model,dataset,seed,split,level,name,group,role,captures,n_attack,n_normal,tp,fp,fn,tn,precision,recall,f1,fpr,roc_auc,attack_types
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,attack_type,dos,coarse,primary,car_hacking/DoS_dataset,2206,3999,2206,1,0,3998,0.9995468962392388,1.0,0.9997733967822343,0.00025006251562890725,1.0,
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,attack_type,fuzzy,coarse,primary,car_hacking/Fuzzy_dataset,1962,3183,1962,1,0,3182,0.999490575649516,1.0,0.9997452229299363,0.00031416902293433867,1.0,
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,attack_type,gear_spoofing,coarse,primary,car_hacking/gear_dataset,3814,3360,3814,1,0,3359,0.999737876802097,1.0,0.9998689212216542,0.00029761904761904765,0.9999999219666891,
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,attack_type,rpm_spoofing,coarse,primary,car_hacking/RPM_dataset,4308,3333,4308,0,0,3333,1.0,1.0,1.0,0.0,1.0,
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,attack_free,ambient,,fpr_only,car_hacking/normal_run_data,0,1684,0,0,0,1684,,,,0.0,,
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,attack_free_capture,car_hacking/normal_run_data,,fpr_only,car_hacking/normal_run_data,0,1684,0,0,0,1684,,,,0.0,,
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,capture,car_hacking/DoS_dataset,,primary,,2206,3999,2206,1,0,3998,0.9995468962392388,1.0,0.9997733967822343,0.00025006251562890725,1.0,dos
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,capture,car_hacking/Fuzzy_dataset,,primary,,1962,3183,1962,1,0,3182,0.999490575649516,1.0,0.9997452229299363,0.00031416902293433867,1.0,fuzzy
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,capture,car_hacking/RPM_dataset,,primary,,4308,3333,4308,0,0,3333,1.0,1.0,1.0,0.0,1.0,rpm_spoofing
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,capture,car_hacking/gear_dataset,,primary,,3814,3360,3814,1,0,3359,0.999737876802097,1.0,0.9998689212216542,0.00029761904761904765,0.9999999219666891,gear_spoofing
+xgb_car_hacking_s0_8588b4c9,xgb,car_hacking,0,test,pooled,primary_pool,,secondary,,12290,15559,12290,3,0,15556,0.9997559586756691,1.0,0.9998779644469755,0.00019281444822932066,0.9999999790816982,

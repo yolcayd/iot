@@ -1,0 +1,12 @@
+run_id,model,dataset,seed,split,level,name,group,role,captures,n_attack,n_normal,tp,fp,fn,tn,precision,recall,f1,fpr,roc_auc,attack_types
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,attack_type,dos,coarse,primary,car_hacking/DoS_dataset,2096,3099,0,0,2096,3099,,0.0,0.0,0.0,0.10568148368471485,
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,attack_type,fuzzy,coarse,primary,car_hacking/Fuzzy_dataset,1723,3097,1692,0,31,3097,1.0,0.9820081253627394,0.990922401171303,0.0,0.9989629190137947,
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,attack_type,gear_spoofing,coarse,primary,car_hacking/gear_dataset,3764,3116,4,0,3760,3116,1.0,0.0010626992561105207,0.0021231422505307855,0.0,0.9799067648515289,
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,attack_type,rpm_spoofing,coarse,primary,car_hacking/RPM_dataset,4339,3151,4230,0,109,3151,1.0,0.9748790043788892,0.9872797292566227,0.0,0.9986488630313697,
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,attack_free,ambient,,fpr_only,car_hacking/normal_run_data,0,1684,0,19,0,1665,0.0,,,0.011282660332541567,,
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,attack_free_capture,car_hacking/normal_run_data,,fpr_only,car_hacking/normal_run_data,0,1684,0,19,0,1665,0.0,,,0.011282660332541567,,
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,capture,car_hacking/DoS_dataset,,primary,,2096,3099,0,0,2096,3099,,0.0,0.0,0.0,0.10568148368471485,dos
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,capture,car_hacking/Fuzzy_dataset,,primary,,1723,3097,1692,0,31,3097,1.0,0.9820081253627394,0.990922401171303,0.0,0.9989629190137947,fuzzy
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,capture,car_hacking/RPM_dataset,,primary,,4339,3151,4230,0,109,3151,1.0,0.9748790043788892,0.9872797292566227,0.0,0.9986488630313697,rpm_spoofing
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,capture,car_hacking/gear_dataset,,primary,,3764,3116,4,0,3760,3116,1.0,0.0010626992561105207,0.0021231422505307855,0.0,0.9799067648515289,gear_spoofing
+lstm_ae_car_hacking_s0_328acff9,lstm_ae,car_hacking,0,val,pooled,primary_pool,,secondary,,11922,14147,5926,19,5996,14128,0.9968040370058873,0.49706425096460327,0.6633458331001287,0.0013430409274051037,0.8074484603493548,

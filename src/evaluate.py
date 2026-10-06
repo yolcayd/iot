@@ -12,6 +12,8 @@ Definitions (docs/DECISIONS.md K-029):
   attack-free capture on its own.
 * Pairs: fabrication vs masquerade capture of the same source capture (K-013).
 * Pooled (secondary): every window of the primary pool.
+* Decision: score > threshold, the threshold calibrated on validation normals at FPR 1% (K-035). The
+  primary AS-1 measure is the per-type recall at that threshold (K-037); F1, ROC-AUC and AP are secondary.
 
 Usage:
     python -m src.evaluate --run <run_id> [--split test|val]   # metrics_<split>.csv, scores_<split>.parquet
@@ -29,6 +31,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from src import calibration as C
 from src.data import dataset as D
 from src.data import sources as S
 from src.data import splits as SP
@@ -47,13 +50,15 @@ def binary_metrics(y: np.ndarray, pred: np.ndarray, score: np.ndarray | None = N
     recall = tp / (tp + fn) if tp + fn else np.nan
     f1 = 2 * tp / (2 * tp + fp + fn) if tp + fn else np.nan
     fpr = fp / (fp + tn) if fp + tn else np.nan
-    auc = np.nan
+    auc = ap = np.nan
     if score is not None and 0 < y.sum() < len(y):
-        from sklearn.metrics import roc_auc_score
+        from sklearn.metrics import average_precision_score, roc_auc_score
 
         auc = float(roc_auc_score(y, score))
+        ap = float(average_precision_score(y, score))
     return {"n_attack": int(y.sum()), "n_normal": int((~y).sum()), "tp": tp, "fp": fp, "fn": fn, "tn": tn,
-            "precision": precision, "recall": recall, "f1": f1, "fpr": fpr, "roc_auc": auc}
+            "precision": precision, "recall": recall, "f1": f1, "fpr": fpr, "roc_auc": auc,
+            "average_precision": ap}
 
 
 def roles(cfg: dict) -> dict[str, set[str]]:
@@ -126,8 +131,7 @@ def evaluate_run(run_dir: Path, split: str = "test", log=print) -> pd.DataFrame:
     store = D.FeatureStore.build(rc["dataset"], (split,), cfg, log=log)
     win = D.eval_windows(D.load_window_index(), rc["dataset"], split)
     score = score_windows(run_dir, store, win)
-    thr = meta["decision"]["threshold"]
-    pred = score > thr if rc["model"] in ("lstm_ae", "conv_ae") else score >= thr
+    pred = C.predict(score, meta["decision"])     # threshold calibrated on validation normals (K-035)
     m = evaluate_windows(win, score, pred, rc["dataset"], groups, cfg)
     m.insert(0, "split", split)
     for k in ("seed", "dataset", "model", "run_id"):
@@ -140,15 +144,18 @@ def evaluate_run(run_dir: Path, split: str = "test", log=print) -> pd.DataFrame:
     return m
 
 
-def baseline_table(raw: Path = S.PROJECT_ROOT / "results" / "raw") -> pd.DataFrame:
-    grid = yaml.safe_load((S.PROJECT_ROOT / "configs" / "grid.yaml").read_text(encoding="utf-8"))["baseline"]
+def baseline_table(run_dirs: list[Path] | None = None) -> pd.DataFrame:
+    """Test metrics of the given runs; by default the runs the CURRENT config plans for the baseline stage
+    (older runs with other run ids under results/raw are ignored)."""
+    if run_dirs is None:
+        from src.run_grid import planned_dirs
+
+        run_dirs = planned_dirs("baseline")
     frames, pairs = [], []
-    for d in sorted(raw.iterdir()):
+    for d in run_dirs:
         if not (d / "DONE").exists() or not (d / "metrics_test.csv").exists():
             continue
         rc = json.loads((d / "run_config.json").read_text(encoding="utf-8"))
-        if rc["smoke"] or rc["model"] not in grid["models"] + ["conv_ae"] or rc["seed"] not in grid["seeds"]:
-            continue
         m = pd.read_csv(d / "metrics_test.csv")
         frames.append(m[m["level"].isin(["attack_type", "attack_free", "pooled"])])
         p = pd.read_csv(d / "pairs_test.csv")
@@ -160,7 +167,7 @@ def baseline_table(raw: Path = S.PROJECT_ROOT / "results" / "raw") -> pd.DataFra
         raise RuntimeError("no finished, evaluated baseline runs under results/raw")
     out = pd.concat(frames, ignore_index=True)
     cols = ["dataset", "model", "seed", "run_id", "level", "name", "group", "role", "n_attack", "n_normal",
-            "precision", "recall", "f1", "fpr", "roc_auc"]
+            "precision", "recall", "f1", "fpr", "roc_auc", "average_precision"]
     out = out[cols].sort_values(["dataset", "level", "name", "model"]).reset_index(drop=True)
     TABLES.mkdir(parents=True, exist_ok=True)
     out.to_csv(TABLES / "baseline_f1.csv", index=False, float_format="%.4f")

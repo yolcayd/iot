@@ -1,0 +1,93 @@
+{
+  "run_id": "rf_road_s0_f1c8183c",
+  "model": "rf",
+  "dataset": "road",
+  "seed": 0,
+  "smoke": false,
+  "hparams": {
+    "family": "classical",
+    "n_estimators": 300,
+    "max_depth": null,
+    "min_samples_leaf": 1,
+    "class_weight": "balanced",
+    "decision_threshold": 0.5
+  },
+  "window_size": 100,
+  "data_hash": "8e302d6edf1553e2",
+  "train_windows": {
+    "n_windows": 305189,
+    "n_attack": 7236,
+    "n_normal": 297953,
+    "n_captures": 14,
+    "digest": "9d07f75329372bb0"
+  },
+  "val_windows": {
+    "n_windows": 58768,
+    "n_attack": 5542,
+    "n_normal": 53226,
+    "n_captures": 11,
+    "digest": "6e94b4126479bab2"
+  },
+  "git": {
+    "commit": "ea9eb2f6b9ddc43c3271cbd8db7c0764c0a5539e",
+    "dirty": false,
+    "dirty_files": []
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_count": 16,
+    "threads": 8,
+    "device": "cuda",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "versions": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "pyarrow": "25.0.1",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.4.1",
+      "torch": "2.14.1+cu130",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "started_utc": "2026-10-06T06:21:09+00:00",
+  "finished_utc": "2026-10-06T06:22:35+00:00",
+  "duration_s": 86.1,
+  "meta": {
+    "summary_features": [
+      "id_entropy",
+      "n_unique_ids",
+      "unseen_id_share",
+      "iat_mean",
+      "iat_std",
+      "iat_min",
+      "iat_q10",
+      "byte0_mean",
+      "byte1_mean",
+      "byte2_mean",
+      "byte3_mean",
+      "byte4_mean",
+      "byte5_mean",
+      "byte6_mean",
+      "byte7_mean",
+      "byte0_var",
+      "byte1_var",
+      "byte2_var",
+      "byte3_var",
+      "byte4_var",
+      "byte5_var",
+      "byte6_var",
+      "byte7_var",
+      "payload_change_rate"
+    ],
+    "decision": {
+      "rule": "probability >= threshold",
+      "threshold": 0.5
+    }
+  }
+}

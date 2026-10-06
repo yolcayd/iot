@@ -1,0 +1,20 @@
+{
+  "best_epoch": 5,
+  "best_val_loss": 0.07724156975746155,
+  "epochs_run": 10,
+  "stopped_early": true,
+  "resumed_at_epochs": [],
+  "decision": {
+    "rule": "score > threshold",
+    "threshold": 0.08627047598361968,
+    "percentile": 99.0,
+    "fitted_on_split": "train",
+    "n_scores": 29685
+  },
+  "train_score_quantiles": {
+    "0.5": 0.07199667394161224,
+    "0.9": 0.0807575210928917,
+    "0.99": 0.08627047389745712,
+    "0.999": 0.08963490277528763
+  }
+}

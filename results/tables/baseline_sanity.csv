@@ -1,0 +1,13 @@
+dataset,attack_type,model,group,role,f1,leakage_tests,stump_feature,stump_threshold,stump_f1,stump_recall,stump_fpr
+car_hacking,dos,cnn1d,coarse,primary,0.9995,22 passed in 67.21s (0:01:07),unseen_id_share,0.0050,1.0000,1.0000,0.0000
+car_hacking,dos,rf,coarse,primary,0.9995,22 passed in 67.21s (0:01:07),unseen_id_share,0.0050,1.0000,1.0000,0.0000
+car_hacking,dos,xgb,coarse,primary,0.9998,22 passed in 67.21s (0:01:07),unseen_id_share,0.0050,1.0000,1.0000,0.0000
+car_hacking,fuzzy,cnn1d,coarse,primary,0.9992,22 passed in 67.21s (0:01:07),unseen_id_share,0.0050,0.9997,0.9995,0.0000
+car_hacking,fuzzy,rf,coarse,primary,1.0000,22 passed in 67.21s (0:01:07),unseen_id_share,0.0050,0.9997,0.9995,0.0000
+car_hacking,fuzzy,xgb,coarse,primary,0.9997,22 passed in 67.21s (0:01:07),unseen_id_share,0.0050,0.9997,0.9995,0.0000
+car_hacking,gear_spoofing,cnn1d,coarse,primary,0.9997,22 passed in 67.21s (0:01:07),iat_min,0.3302,0.9999,1.0000,0.0003
+car_hacking,gear_spoofing,rf,coarse,primary,0.9999,22 passed in 67.21s (0:01:07),iat_min,0.3302,0.9999,1.0000,0.0003
+car_hacking,gear_spoofing,xgb,coarse,primary,0.9999,22 passed in 67.21s (0:01:07),iat_min,0.3302,0.9999,1.0000,0.0003
+car_hacking,rpm_spoofing,cnn1d,coarse,primary,0.9999,22 passed in 67.21s (0:01:07),iat_min,0.3604,1.0000,1.0000,0.0000
+car_hacking,rpm_spoofing,rf,coarse,primary,1.0000,22 passed in 67.21s (0:01:07),iat_min,0.3604,1.0000,1.0000,0.0000
+car_hacking,rpm_spoofing,xgb,coarse,primary,1.0000,22 passed in 67.21s (0:01:07),iat_min,0.3604,1.0000,1.0000,0.0000

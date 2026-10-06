@@ -347,7 +347,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-027 — Denetimli modellerde sınıf dengesizliği: ters frekans ağırlığı, sabit 0.5 eşiği
 
 - **Faz / tarih:** P3 · 2026-10-05
-- **Durum:** Geçerli
+- **Durum:** Kısmen geçersiz: sınıf ağırlıkları geçerli; erken durdurma ölçütü K-034 ile, sabit 0.5 karar eşiği K-035 ile geçersiz
 - **Bağlam:** Train pencerelerinde saldırı/normal oranı veri setleri arasında çok farklı: Car-Hacking ≈ 78 k saldırı / 107 k normal (≈ 1.4 normal : 1 saldırı), ROAD ≈ 7.2 k saldırı / 304 k normal (≈ 42 : 1; `split_summary.csv`). Kesin sayılar ve kullanılan ağırlık her koşunun `run_config.json`'unda.
 - **Karar:**
   - 1D-CNN: `BCEWithLogitsLoss(pos_weight = N_neg / N_pos)`, N'ler o koşunun train pencerelerinden.
@@ -371,7 +371,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-029 — Değerlendirme tanımları: tür kümesi, recall, saldırısız FPR, çiftler
 
 - **Faz / tarih:** P3 · 2026-10-05
-- **Durum:** Geçerli (kullanıcı kararı)
+- **Durum:** Geçerli (kullanıcı kararı); AS-1 birincil ölçüsü K-037 ile belirlendi
 - **Karar:**
   - **Tür bazında (birincil):** t türünün değerlendirme kümesi = t'nin saldırı pencereleri + t saldırı pencerelerini içeren kayıtların normal pencereleri. Metrikler: precision, recall (TPR), F1, FPR, ROC-AUC (bütün modeller; denetimsiz model için zorunlu), pencere sayıları.
   - **Recall (TPR) ve ΔRecall:** Recall yalnızca saldırı pencerelerine bağlıdır, türler arası saldırı oranı farklarından etkilenmez. AS-1'in türler arası karşılaştırmasında F1'in yanında recall ve nicemleme kaybı ΔRecall da kullanılır (F3/F5).
@@ -386,7 +386,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-030 — Denetimsiz model: skor, eşik, val kullanımı ve fizibilite kararı
 
 - **Faz / tarih:** P3 · 2026-10-05
-- **Durum:** Geçerli (go/no-go kümesi kullanıcı kararı)
+- **Durum:** Kısmen geçersiz: skor, val erken durdurma ve val go/no-go geçerli; train p99 eşiği K-035 ile geçersiz; protokolün yürütülmesi K-033'te
 - **Karar:**
   - Skor = pencere yeniden oluşturma MSE'si (100 adım × 10 öznitelik ortalaması).
   - Eşik = `normal_subset` train pencerelerinin (K-022) skorlarının 99. persentili; eğitim bittikten sonra en iyi ağırlıklarla hesaplanır, `meta.json` ve `run_config.json`'a yazılır. `fit_threshold` train dışı skorları reddeder.
@@ -412,9 +412,72 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-032 — Açık sorun (F3): nicemlenmiş otokodlayıcının anomali eşiği
 
 - **Faz / tarih:** P3 · 2026-10-05
-- **Durum:** Açık sorun — F3'te karara bağlanacak (kullanıcı notu)
+- **Durum:** Kapandı (K-036 ile; nicemlenmiş sonuçlar görülmeden)
 - **Soru:** Otokodlayıcının eşiği nicemlenmiş sürümlerde (Q1 float16, Q2 INT8) nasıl belirlenecek?
   - (a) float32 modelin eşiği aynen kullanılır;
   - (b) her nicemlenmiş sürüm için eşik, o sürümün **train normal alt kümesi** skorlarından aynı persentille yeniden hesaplanır.
 - **Neden önemli:** Nicemleme yeniden oluşturma hatası dağılımını kaydırabilir. (a)'da kayma doğrudan FPR/recall değişimi olarak ΔF1'e yansır; (b)'de eşik kaymayı telafi eder ve ΔF1 yalnızca sıralama (ayırt edicilik) kaybını ölçer. Seçim ΔF1'i doğrudan etkiler ve AS-3 (denetimli vs denetimsiz dayanıklılık) karşılaştırmasının anlamını değiştirir.
 - **Kısıt:** Her iki seçenekte de eşik yalnızca train verisinden gelir (CLAUDE.md kural 3). P3 kodu bunu kısıtlamaz: eşik `meta.json`'da saklanır, `fit_threshold` yeniden kullanılabilir.
+
+## K-033 — Denetimsiz model fizibilite protokolünün yürütülmesi ve önceden kayıtlı çıkış kuralı
+
+- **Faz / tarih:** P3 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı). Ayar denemesi ve conv-AE sonuçları görülmeden yazıldı.
+- **Bağlam:** Baseline LSTM-AE (gizli 64, lr 1e-3) val ROC-AUC'si (birincil havuz): Car-Hacking 0.807 (geçti), ROAD 0.394 (eşik 0.6; geçemedi). K-030 protokolü bir kez ayar denemesi, sonra 1D evrişimli otokodlayıcı öngörüyor.
+- **Karar:**
+  - Aday sırası: (1) baseline LSTM-AE, (2) ayar denemesi LSTM-AE (gizli 128, lr 3e-4, en fazla 60 epoch; `configs/models.yaml → ae_feasibility.retry`), (3) conv-AE (`models.conv_ae`, hiperparametreler a priori). Her aday her iki veri setinde, tohum 0 ile eğitilir.
+  - (2) ve (3) tek arka plan işinde peş peşe eğitilir (`python -m src.run_grid --stage ae_feasibility`). Bu aşamada yalnızca **val** değerlendirmesi yapılır; test ancak model seçildikten sonra değerlendirilir.
+  - Karar ölçüsü: veri seti başına val ROC-AUC (birincil havuz) ≥ 0.6. Eşikten bağımsızdır, K-035'teki eşik kuralından etkilenmez.
+  - **İnceleme sırası:** (3)'ün val sonucuna yalnızca (2) en az bir veri setinde başarısız olursa bakılır (`--ae-check` bu sırayı uygular ve gerekmediği sürece conv-AE satırını göstermez).
+  - **Seçim kuralı** (işlem tanımı: AUC'si en yüksek olan değil, sıradaki ilk geçen aday): seçilen otokodlayıcı, sırada iki veri setinde de geçen ilk adaydır. Böyle bir aday yoksa (üç aday da incelenmiştir) her veri seti için sırada o veri setinde geçen ilk aday kullanılır. Böylece val'de yalnızca geç/kal kararı verilir, en iyi model aranmaz. Bir aday iki veri setinde de geçerse sonraki adaylar incelenmez.
+  - **Çıkış kuralı:** (2) ve (3) ROAD'da val ROC-AUC < 0.6 kalırsa otokodlayıcı ROAD analizlerinden çıkarılır. AS-3 (denetimli vs denetimsiz) yalnızca Car-Hacking'de değerlendirilir. Bu durum bir bulgu olarak raporlanır: bu girdi temsiliyle yeniden oluşturma tabanlı modeller ROAD'un hedefli saldırılarını ayıramadı. Car-Hacking'de sırada Car-Hacking'de geçen ilk aday kullanılır.
+- **Gerekçe:** Çıkış kuralı ve seçim kuralı sonuçlar görülmeden sabitlenir. Bu, denetimsiz ailede val üzerinde arama yapılmasını ve sonuca göre kural uydurulmasını önler.
+- **Etkisi:** `configs/grid.yaml → ae_feasibility`, `src/run_grid.py --ae-check`. Sonuç P3 faz günlüğüne ve README'ye yazılacak.
+
+## K-034 — CNN erken durdurma ölçütü: val average precision
+
+- **Faz / tarih:** P3 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı). K-027'nin erken durdurma kısmını geçersiz kılar.
+- **Bağlam:** ROAD baseline CNN'de ağırlıklı val kaybı (pos_weight ≈ 41) 1. epoch'u seçti; bu model her pencereyi saldırı diyor (val/test FPR ≈ 1.0). Analiz (`analysis/road_cnn_gap.py`, `results/tables/road_cnn_gap_*.csv`):
+  - 2. epoch'tan itibaren val kaybının %100'ü pozitiflerden geliyor.
+  - En kötü 10 pozitifin payı %0.4–0.8 (gürültü değil, yaygın ve yüksek güvenli hata).
+  - Val AUC 0.79 → 0.94 ve AP 0.33 → 0.81 artarken kayıp 9.8'den 22–37'ye çıkıyor.
+  - Kayıp sıralamayı değil olasılık ölçeğini izliyor.
+- **Karar:** 1D-CNN'de erken durdurma ve en iyi epoch seçimi, val pencerelerinin tamamı üzerinde **average precision**'ı (logit skoru, eşikten bağımsız) en büyütmeye göre yapılır. Patience 5 ve en fazla 30 epoch aynı. Kayıp fonksiyonu, pos_weight ve diğer hiperparametreler değişmez. Ağırlıklı val kaybı yine kaydedilir.
+- **Gerekçe:** AP, sınıf dengesizliğinde pozitif sınıfın sıralama kalitesini ölçer ve kalibrasyondan bağımsızdır. Karar eşiği zaten ayrı bir kuralla belirlenir (K-035).
+- **Etkisi:** CNN her iki veri setinde yeniden eğitilir (tutarlılık). `cnn1d.early_stopping: val_average_precision` hiperparametre olarak run_id'ye girer.
+
+## K-035 — Karar eşiği: val normal pencerelerinde FPR = %1 (tüm modeller)
+
+- **Faz / tarih:** P3 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı). K-027'nin sabit 0.5 eşiğini ve K-030'daki train p99 eşiğini geçersiz kılar.
+- **Karar:**
+  - Her model için (CNN, RF, XGB, otokodlayıcılar) karar eşiği, **val kümesinin bütün label-0 pencerelerinin** skor dağılımından belirlenir.
+  - Eşik = bu skorların 0.99 kantili (`numpy.quantile(..., method="higher")`); karar kuralı skor > eşik. Böylece val normal pencerelerinde gerçekleşen FPR ≤ %1 olur; bağlarda daha düşük olabilir.
+  - Eşik, gerçekleşen val FPR'ı ve kullanılan normal pencere sayısı `meta.json` ve `run_config.json`'a yazılır.
+  - Saldırı etiketleri kullanılmaz. Test hiçbir zaman kullanılmaz (`calibrate_threshold` val dışı skorları reddeder).
+  - Skorlar: CNN logit, XGBoost ham marj (`output_margin`), RF olasılık, otokodlayıcı yeniden oluşturma MSE'si. Hepsi tekdüze skorlar; olasılık doygunluğundan (float32'de 1.0) doğan bağları önler.
+  - "Val normal pencereleri" kelimesi kelimesine uygulanır: val'deki bütün label-0 pencereleri. Saldırı kayıtlarının normal dönemleri ve masquerade kayıtlarının normal pencereleri de dahildir. Otokodlayıcının erken durdurma alt kümesi (±5 s payı, K-030) bu amaçla kullanılmaz.
+- **Gerekçe:** Sabit 0.5 eşiği ROAD'da kayıtlar arasında aktarılmadı: CNN'de FPR ≈ 1.0; RF correlated_signal'da test AUC 0.955 ama F1 0.091. Yanlış alarm oranına kalibre edilmiş eşik, modelleri aynı işletim noktasında karşılaştırır ve araç içi IDS'in pratik kısıtına (yanlış alarm bütçesi) karşılık gelir.
+- **Etkisi:** Bütün baseline koşuları yeni kuralla yeniden üretilir (eşik artık hiperparametre değil; run_id'ler değişir). P3 v1 koşuları (`results/raw/*_{634b5aea,328acff9,d4eb6502,8588b4c9,e89b45da,d0365e45,f1c8183c,d06e60c4}`) tarihçe olarak tutulur, tablolarda kullanılmaz.
+
+## K-036 — K-032'nin kapanışı: nicemlenmiş sürümlerin eşiği
+
+- **Faz / tarih:** P3 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı; nicemlenmiş sonuçlar görülmeden). K-032'yi kapatır.
+- **Karar** (denetimli ve denetimsiz bütün modeller):
+  - **(a) Birincil:** her nicemlenmiş sürüm (Q1, Q2) için eşik aynı kuralla (K-035: val normal pencereleri, FPR %1) o sürümün kendi val skorlarından yeniden hesaplanır.
+  - **(b) İkincil:** float32 (Q0) eşiği nicemlenmiş sürüme aynen uygulanarak kalibrasyon kayması ölçülür (val/test FPR ve recall değişimi).
+  - **(c)** Eşikten bağımsız ΔROC-AUC ve ΔAP raporlanır.
+- **Gerekçe:** (a) her sürümü aynı yanlış alarm bütçesinde karşılaştırır; ΔRecall ayırt edicilik kaybını ölçer. (b) dağıtımda eşik yeniden kalibre edilmezse ne olacağını gösterir. (c) eşik seçiminden bağımsız bir kontroldür.
+- **Etkisi:** F3'te `src/quantize.py` ve değerlendirme, her sürüm için val skorlarını da üretir.
+
+## K-037 — AS-1 birincil ölçüsü: kalibre eşikte recall (%1 FPR'da TPR) ve ΔRecall
+
+- **Faz / tarih:** P3 · 2026-10-06
+- **Durum:** Geçerli (kullanıcı kararı). K-029'daki "F1 birincil" ifadesini AS-1 için günceller.
+- **Karar:** AS-1'in birincil ölçüsü, K-035'e göre kalibre edilmiş eşikteki saldırı türü bazında recall (val normal FPR = %1'de TPR) ve onun nicemleme kaybı ΔRecall = Recall(Q0) − Recall(Qk). F1, ROC-AUC ve AP ikincildir ve raporlanır.
+- **Gerekçe:**
+  - Recall yalnızca saldırı pencerelerine bağlıdır; türler arasındaki saldırı oranı farklarından etkilenmez (ROAD tür kümelerinde 103–973 normal pencere).
+  - Eşikler sabit bir yanlış alarm oranına kalibre edildiği için recall modeller arasında adil karşılaştırılır.
+- **Etkisi:** Plan Bölüm 2.6/2.7'den (ΔF1 ana değişken) sapmadır; danışmana **haftalık raporda** bildirilecek. F5 istatistiksel testleri ΔRecall üzerinde birincil, ΔF1 üzerinde ikincil olarak yürütülür.

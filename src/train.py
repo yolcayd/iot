@@ -63,6 +63,24 @@ def model_config(name: str, mcfg: dict, overrides: dict | None = None) -> dict:
     return m
 
 
+def resolve_overrides(ref: str | dict | None, mcfg: dict) -> dict:
+    """Overrides given inline or as a dotted path into configs/models.yaml (e.g. ``ae_feasibility.retry``)."""
+    if ref is None or isinstance(ref, dict):
+        return dict(ref or {})
+    node = mcfg
+    for key in ref.split("."):
+        node = node[key]
+    return dict(node)
+
+
+def planned_run_id(model: str, dataset: str, seed: int, overrides: dict | None = None) -> str:
+    """Run id that ``train`` will use for this configuration (without building the feature store)."""
+    from src.data import features as F
+
+    hp = model_config(model, load_models_config(), overrides)
+    return run_id(model, dataset, seed, hp, F.load_params()["config_sha256_16"], S.load_config()["windows"]["size"])
+
+
 def run_id(model: str, dataset: str, seed: int, hparams: dict, data_hash: str, window_size: int) -> str:
     key = {"model": model, "dataset": dataset, "seed": seed, "hparams": hparams, "data_hash": data_hash,
            "window_size": window_size}
@@ -168,7 +186,10 @@ class GpuWindows:
 
 
 def score_deep(net, model: str, gw: GpuWindows, gstarts: np.ndarray, batch_size: int) -> np.ndarray:
-    """Attack probability (classifier) or reconstruction MSE (autoencoder) per window."""
+    """Logit (classifier) or reconstruction MSE (autoencoder) per window; higher = more anomalous.
+
+    Logits, not probabilities: sigmoid saturates to exactly 1.0 in float32, which would create ties at the
+    validation-normal FPR threshold (K-035). The ranking is the same."""
     import torch
 
     from src.models.lstm_autoencoder import reconstruction_score
@@ -179,7 +200,7 @@ def score_deep(net, model: str, gw: GpuWindows, gstarts: np.ndarray, batch_size:
     with torch.no_grad():
         for i in range(0, len(g), batch_size):
             x = gw.batch(g[i:i + batch_size])
-            s = reconstruction_score(net, x) if model in AUTOENCODERS else torch.sigmoid(net(x))
+            s = reconstruction_score(net, x) if model in AUTOENCODERS else net(x)
             out.append(s.float().cpu().numpy())
     return np.concatenate(out) if out else np.empty(0, dtype=np.float32)
 
@@ -235,6 +256,12 @@ def train_deep(model: str, hp: dict, seed: int, store: D.FeatureStore, tr, va, s
                 tot += float(loss_fn(xb, y[i:i + hp["eval_batch_size"]], net)) * len(xb)
         return tot / max(len(g), 1)
 
+    # early-stopping monitor (lower is better): validation loss, or minus validation AP for the CNN (K-034)
+    use_ap = hp.get("early_stopping", "val_loss") == "val_average_precision"
+    if use_ap and is_ae:
+        raise ValueError("autoencoders stop on validation loss (their validation set has no attacks)")
+    y_va_np = va["label"].to_numpy()
+
     bs = hp["batch_size"]
     while state["epoch"] < hp["max_epochs"] and state["bad"] < hp["patience"]:
         t0 = time.time()
@@ -250,13 +277,21 @@ def train_deep(model: str, hp: dict, seed: int, store: D.FeatureStore, tr, va, s
             opt.step()
             tot += float(loss.detach()) * len(idx)
         val = mean_loss(g_va, y_va)
+        row = {}
+        if use_ap:
+            from sklearn.metrics import average_precision_score
+
+            ap = float(average_precision_score(y_va_np, score_deep(net, model, gw, store.global_starts(va),
+                                                                   hp["eval_batch_size"])))
+            row["val_ap"] = ap
+        monitor = -row["val_ap"] if use_ap else val
         state["epoch"] += 1
-        if val < state["best_val"]:
-            state.update(best_val=val, best_epoch=state["epoch"], bad=0,
+        if monitor < state["best_val"]:
+            state.update(best_val=monitor, best_epoch=state["epoch"], bad=0,
                          best_state=copy.deepcopy({k: v.detach().cpu() for k, v in net.state_dict().items()}))
         else:
             state["bad"] += 1
-        state["history"].append({"epoch": state["epoch"], "train_loss": tot / len(perm), "val_loss": val,
+        state["history"].append({"epoch": state["epoch"], "train_loss": tot / len(perm), "val_loss": val, **row,
                                  "seconds": time.time() - t0})
         # written to a temporary file and renamed, so a kill during the write leaves the previous checkpoint
         tmp = ckpt.with_suffix(".tmp")
@@ -265,21 +300,18 @@ def train_deep(model: str, hp: dict, seed: int, store: D.FeatureStore, tr, va, s
                     "cuda_rng": torch.cuda.get_rng_state_all() if device.startswith("cuda") else None,
                     "state": state}, tmp)
         os.replace(tmp, ckpt)
-        log(f"epoch {state['epoch']:3d} train {tot / len(perm):.6f} val {val:.6f} ({time.time() - t0:.1f} s)")
+        ap_txt = f" val AP {row['val_ap']:.4f}" if use_ap else ""
+        log(f"epoch {state['epoch']:3d} train {tot / len(perm):.6f} val {val:.6f}{ap_txt} ({time.time() - t0:.1f} s)")
 
     net.load_state_dict(state["best_state"])
     torch.save(net.state_dict(), out / "model.pt")
-    meta = {"best_epoch": state["best_epoch"], "best_val_loss": state["best_val"], "epochs_run": state["epoch"],
+    meta = {"best_epoch": state["best_epoch"], "early_stopping": "val_average_precision" if use_ap else "val_loss",
+            "best_monitor_value": -state["best_val"] if use_ap else state["best_val"], "epochs_run": state["epoch"],
             "stopped_early": state["bad"] >= hp["patience"],
             "resumed_at_epochs": state.get("resumed_at_epochs", []), **extra}
-    if is_ae:
-        from src.models.lstm_autoencoder import fit_threshold
-
+    if is_ae:   # descriptive only; the decision threshold comes from validation normals (K-035)
         scores = score_deep(net, model, gw, store.global_starts(tr), hp["eval_batch_size"])
-        meta["decision"] = {"rule": "score > threshold", **fit_threshold(scores, "train", hp["threshold_percentile"])}
         meta["train_score_quantiles"] = {str(q): float(np.quantile(scores, q)) for q in (0.5, 0.9, 0.99, 0.999)}
-    else:
-        meta["decision"] = {"rule": "probability >= threshold", "threshold": hp["decision_threshold"]}
     return {"meta": meta, "history": state["history"]}
 
 
@@ -304,8 +336,7 @@ def train_classical(model: str, hp: dict, seed: int, store: D.FeatureStore, tr, 
     x_tr, y_tr = summary_matrix(store, tr, size), tr["label"].to_numpy()
     x_va, y_va = summary_matrix(store, va, size), va["label"].to_numpy()
     log(f"summary features: train {x_tr.shape}, val {x_va.shape}")
-    meta = {"summary_features": C.SUMMARY_NAMES,
-            "decision": {"rule": "probability >= threshold", "threshold": hp["decision_threshold"]}}
+    meta = {"summary_features": C.SUMMARY_NAMES}
     history = []
     if model == "rf":
         clf = C.build_rf(hp, seed, threads).fit(x_tr, y_tr)
@@ -352,9 +383,10 @@ def score_windows(run_dir: Path, store: D.FeatureStore, w, device: str | None = 
         clf.load_model(run_dir / "model.ubj")
         # same device as in training (CPU and CUDA predictions differ by ~1e-7) and the early-stopping
         # best iteration stated explicitly rather than relying on the attribute restored by load_model
+        # raw margin (log-odds), not probability: no saturation ties at the FPR threshold (K-035)
         clf.set_params(device="cuda" if device.startswith("cuda") else "cpu")
         best = int(rc["meta"]["best_iteration"])
-        return clf.predict_proba(x, iteration_range=(0, best + 1))[:, 1]
+        return clf.predict(x, output_margin=True, iteration_range=(0, best + 1)).astype(np.float64)
     return clf.predict_proba(x)[:, 1]
 
 
@@ -421,6 +453,7 @@ def train(model: str, dataset: str, seed: int, threads: int | None = None, devic
         tr, va = _subsample(tr, SMOKE["max_windows"], seed), _subsample(va, SMOKE["max_windows"], seed)
     started = datetime.now(timezone.utc)
     rc = {"run_id": rid, "model": model, "dataset": dataset, "seed": seed, "smoke": smoke, "hparams": hp,
+          "overrides": overrides or {}, "decision_config": mcfg["decision"],
           "window_size": size, "data_hash": store.params_hash,
           "train_windows": {**D.describe(tr), "digest": D.selection_digest(tr)},
           "val_windows": {**D.describe(va), "digest": D.selection_digest(va)},
@@ -439,6 +472,21 @@ def train(model: str, dataset: str, seed: int, threads: int | None = None, devic
     finished = datetime.now(timezone.utc)
     rc.update(finished_utc=finished.isoformat(timespec="seconds"),
               duration_s=round((finished - started).total_seconds(), 1), meta=res["meta"])
+    (out / "run_config.json").write_text(json.dumps(rc, indent=2) + "\n", encoding="utf-8")
+
+    # decision threshold from ALL label-0 validation windows at the target FPR (K-035); attack labels unused
+    from src.calibration import calibrate_threshold
+
+    cal = D.eval_windows(win, dataset, "val")
+    if smoke:
+        cal = _subsample(cal, SMOKE["max_windows"], seed)
+    scores = score_windows(out, store, cal, device)
+    res["meta"]["decision"] = {**calibrate_threshold(scores, cal["label"].to_numpy(), "val",
+                                                     mcfg["decision"]["target_fpr"]),
+                               "calibration_windows_digest": D.selection_digest(cal)}
+    d = res["meta"]["decision"]
+    log(f"{rid}: threshold {d['threshold']:.6g} (val normal FPR {d['realized_val_fpr']:.4f}, n={d['n_val_normal']})")
+    rc["meta"] = res["meta"]
     (out / "run_config.json").write_text(json.dumps(rc, indent=2) + "\n", encoding="utf-8")
     (out / "meta.json").write_text(json.dumps(res["meta"], indent=2) + "\n", encoding="utf-8")
     if res["history"]:
@@ -463,8 +511,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--smoke", action="store_true", help="tiny run (few windows, 2 epochs) for checking the pipeline")
     ap.add_argument("--allow-dirty", action="store_true")
     ap.add_argument("--force", action="store_true", help="retrain even if the run is marked DONE")
+    ap.add_argument("--overrides", help="dotted path into configs/models.yaml, e.g. ae_feasibility.retry")
     a = ap.parse_args(argv)
-    train(a.model, a.dataset, a.seed, a.threads, a.device, a.out, a.smoke, a.allow_dirty, a.force)
+    ov = resolve_overrides(a.overrides, load_models_config())
+    train(a.model, a.dataset, a.seed, a.threads, a.device, a.out, a.smoke, a.allow_dirty, a.force, overrides=ov)
     return 0
 
 
