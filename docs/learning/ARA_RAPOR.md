@@ -1235,3 +1235,447 @@ iddiaları **kısıtlıyor**, güçlendirmiyor; bu durum karar kaydında açık�
 - AS-1 test tasarımı ve XGB birimlerinin K-041 listesindeki durumu P6 planında ele alınacak.
 - Veri setleri arası genelleme kapsam dışı.
 - **Kullanıcı kararı.**
+
+---
+
+# 7. Şu ana kadarki sonuçlar ve nasıl okunmaları gerektiği
+
+> **Uyarı:** Aşağıdakiler **tanımlayıcı** sonuçlardır.
+> - Hiçbir hipotez testi yapılmadı; testler P6'da.
+> - "Fark var/yok" türünden istatistiksel iddialar henüz kurulamaz.
+> - Aksi belirtilmedikçe sonuçlar **test** kümesine, **birincil eşik kipine** (`recalibrated`) ve **3 tohumun
+>   ortalama ± std'sine** aittir.
+
+## 7.1 Mevcut tablo ve şekiller
+
+| Dosya | İçerik |
+|---|---|
+| `results/tables/data_profile.csv` | Kayıt bazında mesaj, saldırı oranı, kimlik, süre |
+| `attack_signatures.csv` | C1–C4 ve yük imzaları, grup |
+| `capture_lineage.csv` | Masquerade soy doğrulaması |
+| `split_summary.csv` | Küme × tür pencere sayıları |
+| `normalization_params.json`, `feature_int8_levels.csv` | Öznitelik parametreleri, INT8 seviye raporu |
+| `baseline_f1.csv`, `baseline_pairs.csv`, `ae_feasibility.csv` | P3 tek tohumlu baseline (RF dahil) |
+| `quant_pilot.csv` | P4 pilotu (tohum 0) + gecikme sütunları |
+| `benchmark_host.csv`, `benchmark_ratios_host.csv`, `benchmark_repeatability_host.csv` | K-049 ölçümleri |
+| `grid_quant.csv` (1260 satır), `grid_classical.csv`, `grid_k041_units.csv`, `grid_failures.csv` | P5 ızgarası |
+| `results/figures/signature_<veri seti>_<tür>.{png,pdf}`, `attack_signature_summary.*` | 15 imza şekli + özet (makalede Şekil 2 adayı) |
+
+Sonuç şekilleri (ΔRecall dağılımları, Pareto vb.) henüz üretilmedi; bunlar plan F6'nın işi.
+
+## 7.2 Keşifsel analiz (Şekil 2 adayı)
+
+`attack_signature_summary.png` ve tür şekilleri her saldırı için kimlik dağılımını, hedef kimliğin IAT dağılımını
+ve yük baytını gösterir.
+
+- **Ne gösteriyor:**
+  - DoS ve fuzzing kimlik dağılımını bozuyor. DoS'ta görülmemiş kimlik payı %54.5.
+  - Spoofing ve fabrication hedef kimliğin zamanlamasını bozuyor (hız ×2 ile ×7).
+  - Masquerade'de IAT eğrileri üst üste biniyor; fark yalnızca yük baytında.
+- **Ne göstermiyor:** Herhangi bir modelin bu farkları nasıl kullandığını ya da nicemlemenin etkisini.
+
+## 7.3 Q0 (float32) başarımı — 3 tohum
+
+| Veri seti / model | Recall (pooled) | F1 | ROC-AUC | AP |
+|---|---|---|---|---|
+| CH CNN | 1.000 ± 0.000 | 0.974 ± 0.018 | 1.000 | 1.000 |
+| CH conv-AE | 0.955 ± 0.030 | 0.977 ± 0.016 | 0.999 | 0.999 |
+| CH XGB (std 0, K-055) | 1.000 | 0.996 | 1.000 | 1.000 |
+| ROAD CNN | 0.545 ± 0.059 | 0.628 ± 0.067 | 0.892 ± 0.032 | 0.691 ± 0.073 |
+| ROAD conv-AE | 0.055 ± 0.041 | 0.101 ± 0.072 | 0.882 ± 0.020 | 0.531 ± 0.079 |
+| ROAD XGB (std 0) | 0.276 | 0.392 | 0.889 | 0.550 |
+
+Kaynak: `grid_quant.csv` (Q0-ONNX) ve `grid_classical.csv`.
+
+**Nasıl okunmalı:**
+- **Car-Hacking tavanda.**
+  - Tek bir öznitelik bile türleri ayırıyor (P3 akıl sağlığı kontrolü).
+  - Bu sızıntı değil, kaba imza.
+  - Sonuç: CH, nicemleme kaybını ölçmek için **zayıf bir sınama zemini**. ΔRecall'un aşağı yönde payı yok.
+- **ROAD zor:**
+  - ROC-AUC 0.88–0.89 ama kalibre recall düşük.
+  - Sebep: kalibre eşik **%1 yanlış alarm** bütçesine bağlı. Bu bütçede model sıralamada iyi olsa bile çoğu
+    saldırı penceresini kaçırıyor.
+- **conv-AE'nin düşük recall'u:**
+  - Kısmen eşik aktarımından kaynaklanıyor: testte FPR ≈ %0.1, hedeften on kat sıkı (K-040).
+  - Ayırt edicilik ölçüsü (AUC 0.88) o kadar kötü değil.
+- **Tek tohumlu pilot değerleri** (ör. ROAD CNN recall 0.611) tohum değişkenliğinin içinde. Tek tohumla
+  rapor vermenin neden yetersiz olduğunun somut örneği.
+
+## 7.4 Tür bazında recall ve nicemleme kaybı (ROAD)
+
+ΔR = Q0 − Qk; pozitif değer kayıp demektir.
+
+| Tür | Grup | CNN Q0 | CNN ΔR Q1 | CNN ΔR Q2 | conv-AE Q0 | conv-AE ΔR Q2 |
+|---|---|---|---|---|---|---|
+| correlated_signal | coarse | 0.901 ± 0.082 | 0.000 | 0.002 ± 0.005 | 0.036 ± 0.038 | −0.008 ± 0.019 |
+| correlated_signal_masq | stealthy | 0.854 ± 0.064 | 0.000 | 0.002 ± 0.007 | 0.021 ± 0.017 | −0.004 ± 0.011 |
+| max_speedometer | coarse | 0.642 ± 0.093 | 0.000 | 0.007 ± 0.002 | 0.069 ± 0.061 | −0.003 ± 0.013 |
+| max_speedometer_masq | stealthy | 0.718 ± 0.120 | 0.001 | 0.007 ± 0.003 | 0.113 ± 0.111 | 0.000 ± 0.025 |
+| reverse_light_off | coarse | 0.356 ± 0.115 | 0.000 | 0.007 ± 0.006 | 0.000 | 0.000 |
+| reverse_light_off_masq | stealthy | 0.540 ± 0.183 | 0.002 | 0.008 ± 0.011 | 0.000 | −0.001 ± 0.001 |
+| reverse_light_on | coarse | 0.088 ± 0.020 | 0.001 | 0.005 ± 0.005 | 0.001 | −0.001 ± 0.001 |
+| reverse_light_on_masq | stealthy | 0.096 ± 0.073 | 0.001 | 0.007 ± 0.006 | 0.003 | −0.001 ± 0.001 |
+| fuzzing | coarse | 0.995 ± 0.008 | 0.000 | −0.005 ± 0.008 | 0.564 ± 0.221 | 0.025 ± 0.095 |
+
+Kaynak: `P5.md`; üretim kodu `grid_quant.csv`.
+
+**Ne gösteriyor (tanımlayıcı):**
+- **Q1 (fp16):** Etkisi pratikte sıfır. Tohum × tür hücrelerinde en büyük |ΔR| 0.015; bu, 68 pencereli fuzzing
+  türünde tek bir pencereye karşılık geliyor.
+- **Q2 (INT8):**
+  - CNN ROAD'da tür bazında ortalama kayıp ≤ 0.008.
+  - conv-AE'de bazı türlerde negatif ΔR var (recall artışı). conv-AE fuzzing'de değişkenlik çok büyük
+    (± 0.095; tek tohumda 0.132).
+- **Toplam ölçüler:** Q0 → Q2 farkları küçük. Örnek: ROAD CNN recall 0.545 → 0.538, AUC 0.892 → 0.891;
+  ROAD conv-AE AP 0.531 → 0.515.
+
+**Ne göstermiyor:**
+- Gizli ile kaba arasındaki farkın anlamlı olup olmadığını; bu P6'nın testi.
+- Eşleştirilmiş birincil analizi; birimlerin çoğu taban kuralıyla dışarıda (7.6).
+- Bu ΔR'lerin pencere çözünürlüğünün üstünde olup olmadığını. Küçük türlerde bir pencere 0.015 eder; aynı
+  float32 model GPU ve CPU'da 0–4 test kararında ayrışıyor (P4 açık sorunu 5, P5).
+
+**İlk izlenim, test değil:**
+- Bu modellerde INT8 kaybı tür bazında birkaç binde bir ile yüzde birkaç arasında.
+- Kayıp, tohumlar arası Q0 değişkenliğinin (std 0.06–0.18) çok altında.
+- Bu, H1'in "sınırlı kayıp" kısmıyla uyumlu görünüyor. H2 (gizli > kaba) için tanımlayıcı tablo belirgin bir
+  desen göstermiyor. Karar P6'nın testine kalacak.
+
+## 7.5 Kalibrasyon kayması (K-036 b)
+
+Q0 eşiği aynen uygulandığında saldırısız kayıtlarda FPR, 3 tohum: ortalama (min–max).
+
+| Koşu | Val Q0 | Val Q2 | Test Q0 | Test Q2 |
+|---|---|---|---|---|
+| ROAD conv-AE | 0.0102 | **0.185 (0.020–0.486)** | 0.0009 | **0.062 (0.002–0.174)** |
+| CH conv-AE | 0.0095 | 0.0125 | 0.0020 | 0.0028 |
+| ROAD CNN | 0.0095 | 0.0094 | 0.0209 | 0.0201 |
+| CH CNN | 0.0095 | 0.0091 | 0.0146 | 0.0129 |
+
+**Ne gösteriyor:**
+- **conv-AE INT8'e çevrilip eşik yeniden kalibre edilmezse:**
+  - ROAD'da yanlış alarm oranı tohuma göre %2'den %49'a çıkabiliyor.
+  - O tohumda recall'un yükselmesi (0.733) ayırt edicilikten değil yanlış alarmdan geliyor.
+- **Pratik sonuç:** Yeniden oluşturma tabanlı modelde nicemlemeden sonra eşiğin yeniden kalibre edilmesi şart.
+- **Denetimli CNN'de** kayma yok.
+- **Q1'de** kayma yok: FPR değişimi ≤ 0.0006.
+
+**Ne göstermiyor:** Bu kaymanın neden bu kadar tohuma bağlı olduğunu. Kaydırılan skor dağılımı tohumdan tohuma
+değişiyor; bunun mekanizması incelenmedi.
+
+## 7.6 K-041 birim listesi (AS-1 birincil test kümesi)
+
+| Model | correlated_signal | max_speedometer | reverse_light_off | reverse_light_on |
+|---|---|---|---|---|
+| CNN | ✔ | ✔ | ✔ | ✘ |
+| conv-AE | ✘ | ✘ | ✘ | ✘ |
+| XGB | ✘ | ✔ | ✔ | ✘ |
+
+- **Kaynak:** `grid_k041_units.csv`.
+- **Sayılar:** 12 birimden 5'i tabanı geçiyor.
+- **XGB'ye dikkat:** XGB nicemlenmediği için ΔRecall'u yok. Tablodaki ✔, yalnızca taban kuralının mekanik
+  uygulamasıdır. XGB birimlerinin birincil teste nasıl girebileceği (ya da giremeyeceği) P6 planında
+  açıklanacak (K-056).
+- **Sonuç:** Nicemleme kaybını taşıyan birincil birimler pratikte CNN'in 3 çiftine iniyor. AS-1 birincil
+  testinin gücü bu yüzden çok sınırlı; P6'nın tasarım sorusu bu.
+
+## 7.7 Gecikme, boyut, bellek (yalnızca tohum 0, ana makine; K-049/K-050)
+
+| Çift | Q2/Q0 medyan gecikme (oturum 1 / 2) | Yön iki oturumda aynı mı | Yorum |
+|---|---|---|---|
+| CNN CH | 0.701 / 0.739 | ✔ (< 1) | INT8 medyan gecikmeyi azaltıyor |
+| CNN ROAD | 0.751 / 0.641 | ✔ (< 1) | aynı; aralık %25–36 azalma |
+| conv-AE CH | 1.080 / 1.053 | ✔ (> 1) | INT8 azaltmıyor |
+| conv-AE ROAD | 1.050 / 1.007 | ✔ (> 1) | aynı |
+
+Kaynak: `benchmark_ratios_host.csv`.
+
+- **Mutlak büyüklük mertebesi:** Derin modeller ~30–115 µs, XGB ~0.5 ms, RF ~9–10 ms (tek iş parçacığı).
+- **conv-AE açıklaması:** Sonuç K-044 ile uyumlu: iki ConvTranspose INT8 çekirdeksiz benzetimle çalışıyor. Bu
+  bir açıklama önerisi; ayrı bir deneyle doğrulanmadı.
+- **Boyut:** Q1/Q0 = 0.52, Q2/Q0 = 0.38 (K-042).
+- **Bellek:** INT8 tepe belleği azaltmıyor (Q2 ≈ Q0 + 0.2–0.7 MB). Belleğin çoğu ONNX Runtime'ın kendi
+  tahsisleri. Derin modeller 7.9–9.1 MB, XGB ~113 MB, RF 131–387 MB.
+
+**Ne göstermiyor:**
+- Gerçek bir ECU ya da Raspberry Pi davranışını; ölçüm dizüstü bilgisayarda yapıldı.
+- Q1'in gecikmesini; CPU'da fp16 çekirdeği yok.
+- p95 kuyruklarıyla ilgili hiçbir şeyi (K-050).
+- Gecikme farklarının kesin büyüklüğünü; oturumlar arası değişkenlik %16'ya kadar.
+
+---
+
+# 8. Kalan işler ve sıradaki adımlar
+
+## 8.1 P6 (plan F5): analiz ve istatistik — sıradaki faz, onay bekliyor
+
+1. **AS-1 test tasarımı** (K-056): 5 birimlik (pratikte CNN'in 3 birimi) eşleştirilmiş birincil test nasıl
+   kurulacak?
+   - Seçenekler P6 planında konuşulacak. Örnek: tohum × birim gözlemleri, Wilcoxon, eşleştirilmiş etki büyüklüğü.
+   - XGB birimlerinin durumu açıklanacak.
+   - K-041 kuralı **değişmeyecek**.
+2. **İkincil analiz:** Grup düzeyinde coarse–stealthy karşılaştırması (Mann–Whitney U, Cliff's delta,
+   Holm–Bonferroni). ΔRecall birincil, ΔF1 ikincil (K-037).
+3. **AS-2:**
+   - Boyut ve oturum içi gecikme oranlarıyla nitel bir ödünleşim (K-050).
+   - Q1'in CPU'da tanımsız olduğu bulgusu.
+4. **AS-3:** Denetimli (CNN) ve denetimsiz (conv-AE) ΔRecall ve kalibrasyon kayması karşılaştırması. XGB
+   deterministik olduğu için tohum bazlı istatistiğe girmez (K-055).
+5. **`analysis/aggregate.py`:** Planın tidy `all_results.csv`'si (`run_id, model, dataset, seed, quantization,
+   attack_type, metric, value`).
+6. **ΔRecall çözünürlüğü:** Pencere sayısı olarak da raporlamak; GPU/CPU sayısal farkının (0–4 karar) gürültü
+   tabanı olarak ele alınması (P4 açık sorunu 5).
+
+## 8.2 Sonra
+
+- **P7 (plan F6):** Şekiller ve tablolar.
+- **Makale:** Plan §5. Hedef konferanslar plan §5.3'te.
+- **Danışmana haftalık rapor:** `docs/reports/` hâlâ boş. Bildirilecek kararlar:
+  - K-002, K-012, K-016 … K-019, K-024, K-025, K-034 … K-039, K-041, K-043 … K-056;
+  - özellikle LSTM-AE → conv-AE, ΔF1 → ΔRecall, otokodlayıcı eşiğinin danışman yönlendirmesinden farklı
+    (train skorları yerine temiz val normalleri) belirlenmesi, uç cihaz ölçümünün yapılmaması.
+
+## 8.3 Açık sorunlar ve sınırlılıklar (makalede yazılacak)
+
+- Gizli grubun tamamı ROAD'un sentetik masquerade kayıtları; tek araç (K-014).
+- Car-Hacking'de zamansal blok ayrımı aynı sürüş oturumunun dilimleri (K-017). Car-Hacking'de tavan etkisi var.
+- Uç cihaz ölçümü yok (K-051); gecikme tekrarlanabilirliği sınırlı (K-050).
+- Q1 doğruluğu GPU fp16 benzetimi; ara toplamalar fp32 olabilir (K-043).
+- conv-AE eğitimi epoch sınırında (K-054). XGB deterministik (K-055).
+- Coolant (eğitimde görülmemiş tür) hiçbir modelce tespit edilemiyor: CNN recall 0.047 ± 0.047.
+- Budama (Q3) ve veri setleri arası genelleme yapılmadı (K-003, K-053, K-056).
+
+---
+
+# 9. Sunumda gelebilecek sorular ve cevapları
+
+**S1. Neden toplam doğruluk değil de saldırı türü bazında ölçüyorsunuz?**
+- Saldırı türleri tespit zorluğu bakımından homojen değil. Toplam skora sayıca baskın kolay türler hâkim olur
+  ve zor türdeki kayıp görünmez kalır.
+- Projenin sorusu tam olarak bu kaybın türe göre dağılımı. Yalnızca toplam skor raporlamak CLAUDE.md kural 6
+  ile yasak.
+
+**S2. Neden accuracy raporlamıyorsunuz?**
+- ROAD'da saldırı oranı %0.07–2.9. Her şeye "normal" diyen model %97'nin üstünde accuracy alır.
+- Precision, recall, F1, FPR, ROC-AUC ve AP raporlanıyor (K-027, K-029).
+
+**S3. Birincil ölçünüz neden F1 değil de recall?**
+- Eşik sabit bir yanlış alarm oranına (%1) kalibre ediliyor. Bu noktada recall yalnızca saldırı pencerelerine
+  bağlı ve türler arası saldırı oranı farkından etkilenmiyor.
+- F1, precision üzerinden normal pencere sayısına da bağlı. ROAD tür kümelerinde 103–973 normal pencere var.
+- F1 ikincil olarak raporlanıyor (K-037).
+
+**S4. Eşiği nasıl seçtiniz; test verisine baktınız mı?**
+- Hayır. Eşik, val kümesinin temiz normal pencerelerindeki skorların 0.99 kantili. Saldırı etiketleri ve test
+  hiç kullanılmıyor.
+- Kod val dışı skoru reddediyor (`calibrate_threshold`, K-035, K-038).
+
+**S5. Sızıntıyı nasıl önlediniz ve nasıl test ettiniz?**
+- **Ayrım:** Kayıt ve soy düzeyinde. Masquerade kopyaları kaynağıyla aynı kümede; ortak kuyruk tek kez
+  kullanılıyor.
+- **Normalizasyon, eşik ve INT8 kalibrasyonu:** Yalnızca uygun kümeden; kodda zorlanıyor.
+- **Testler:** 22 sızıntı testi. Örneğin kümeler arası ortak 32 çerçevelik dizi yok; pozitif kontrol bilinen
+  kopyaları yakalıyor; test stride'ı = pencere boyu (K-016 … K-023).
+
+**S6. Car-Hacking'de neredeyse %100 sonuç alıyorsunuz; bu sızıntı değil mi?**
+- İncelendi:
+  - Sızıntı testleri yeniden geçti.
+  - Train ile test zaman sıralı ve en az 10 s boşluklu.
+  - Tek bir öznitelikle kurulan, train'de uydurulup testte uygulanan karar kütüğü de F1 ≥ 0.9997 veriyor
+    (DoS/Fuzzy için görülmemiş kimlik payı, spoofing için min IAT).
+- Yani skor sızıntıdan değil veri setinin kaba imzalarından geliyor. Bu yüzden CH nicemleme kaybı için zayıf bir
+  zemin; bunu sınırlılık olarak yazıyoruz.
+
+**S7. Neden Car-Hacking'de dosya düzeyinde ayrım yapmadınız? Kural "dosya düzeyinde" diyor.**
+- Her saldırı türü tek dosyada. Dosya düzeyinde ayrım her türü ya eğitimden ya testten tamamen düşürürdü.
+- Yerine zamansal blok kullanıldı: patlama 1–180 / 183–240 / 243–300, ≥ 10 s boşluk, kesimlerde patlama
+  atıldı (K-017).
+- Bu, dosya ayrımından zayıf bir bağımsızlık; sınırlılık olarak raporlanıyor ve danışmana bildirilecek.
+
+**S8. Planınızda spoofing "gizli" idi; neden değiştirdiniz?**
+- Kural metriklerden önce yazıldı (K-009) ve veri şunu gösterdi:
+  - CH spoofing hedef kimlik hızını ×6.5–7 artırıyor.
+  - ROAD fabrication hızı tam ×2 yapıyor.
+- Yani bu saldırılar trafiği bozuyor. Yalnızca masquerade zamanlamayı koruyor.
+- Gizliyi ada göre tanımlamak AS-1'in test ettiği mekanizmayı bulanıklaştırırdı (K-011, K-012).
+
+**S9. Eşleştirilmiş tasarımın avantajı nedir?**
+- Fabrication ve masquerade aynı kaynak kayıttan geliyor; aynı enjekte yük baytlarını taşıyorlar.
+- Tek fark zamanlama izi. Böylece araç, sürüş durumu ve yük değeri sabit tutuluyor.
+- ΔRecall farkı doğrudan "zamanlama ipucu yokken nicemleme daha çok zarar veriyor mu" sorusuna bağlanıyor (K-013).
+
+**S10. Masquerade kayıtları sentetik; bu sonuçlarınızı geçersiz kılmaz mı?**
+- Geçersiz kılmaz, ama genellenebilirliği sınırlar.
+- Kayıtlar, fabrication kaydından meşru çerçeveler silinerek üretilmiş (verimizle doğrulandı). Gerçek bir
+  saldırıda ECU susturulurken oluşabilecek zamanlama yan etkileri yok.
+- Bulgular tek araca ve tek veri setine dayanıyor; bunu açıkça yazıyoruz (K-014).
+
+**S11. LSTM otokodlayıcı planınızdaydı; neden conv-AE kullandınız?**
+- Sonuçlardan önce yazılmış bir protokol uygulandı (K-033):
+  - LSTM-AE ROAD'da val ROC-AUC 0.395.
+  - Bir kez ayarlı sürümü 0.372; eşik 0.6.
+  - conv-AE iki veri setinde de geçti (0.999 / 0.722).
+- "Geçen ilk aday" kuralı en iyiyi aramayı engelliyor. Test, seçimden sonra değerlendirildi (K-039).
+- Danışman yönlendirmesindeki yedek kuralıyla uyumlu.
+
+**S12. Otokodlayıcı eşiği neden eğitim skorlarından değil?**
+- Danışman yönlendirmesi ve plan "eğitim skor dağılımından" diyordu. Bütün modellerin aynı yanlış alarm
+  bütçesinde karşılaştırılması için eşik temiz val normallerinden seçildi (K-035, K-038).
+- Kural 3 train ve val'e izin veriyor. Test kullanılmıyor.
+- Sapma kayıtlı ve danışmana bildirilecek.
+
+**S13. float16 sonuçlarınız gerçek fp16 mı?**
+- Kısmen.
+  - ONNX Runtime'ın x86 CPU'sunda bu modeller için hiç fp16 çekirdeği yok (profilden ölçüldü, 0/5 ve 0/6).
+  - Doğruluk PyTorch'ta `.half()` ile CUDA'da hesaplandı: ağırlık, girdi ve aktivasyon fp16. Ancak
+    cuDNN/cuBLAS ara toplamaları fp32 tutabilir.
+  - CPU gecikmesi ölçülmedi (K-043).
+- Bu bir sınırlılık ve aynı zamanda bir bulgu: x86 CPU'da fp16'nın gecikme kazancı yok.
+
+**S14. INT8 nicemlemeyi nasıl yaptınız; hangi katmanlar float kaldı?**
+- ORT statik PTQ, QDQ biçimi:
+  - aktivasyon asimetrik uint8; ağırlık simetrik, kanal başına int8;
+  - MinMax kalibrasyonu, modelin kendi eğitim seçiminden 1000 pencere.
+- **Float kalanlar:** CNN'de Transpose, ReduceMean, Squeeze; conv-AE'de Transpose ve skor kuyruğu.
+- **conv-AE'nin iki ConvTranspose'u** INT8 çekirdeksiz benzetimle çalışıyor. Bunlar `quant_meta.json`'da kayıtlı
+  (K-042, K-044).
+
+**S15. Girdinin nicemlenmesi sonuçları bozmuyor mu?**
+- Girdi temsili tam bunun için yeniden tasarlandı:
+  - Kimlik sözlük indeksi K + 1 değer (CH 39, ROAD 107); baytlar 256 değer. Asimetrik uint8'de her biri kendi
+    seviyesinde, kayıpsız.
+  - IAT log ölçekte; 1 ms ile 10 ms arası 42–70 seviye.
+- Q2 modellerinde girdi nicemleyicisi ölçülüp doğrulandı: ölçek 1/255, sıfır noktası 0 (K-024, K-025, K-044).
+
+**S16. INT8 neden dosyayı ¼'e değil 0.38'e indiriyor?**
+- Model çok küçük (≈ 26–28 bin parametre).
+- int32 bias'lar, ölçekler, sıfır noktaları ve ≈ 11.5 KB'lik QDQ grafik ek yükü sabit maliyet olarak oranı
+  yükseltiyor. Tensör verisinin oranı 0.28 (K-042).
+
+**S17. Gecikme ölçümleriniz neden tutarsız ve buna rağmen ne söyleyebilirsiniz?**
+- Mikrosaniye düzeyindeki ölçümler, sabitleme ve güç modu sabitlemesine rağmen oturumdan oturuma %16'ya kadar
+  değişti. Kaynak belirlenemedi.
+- Önceden kayıtlı kural gereği yeniden ölçmedik. Yalnızca iki oturumda aynı yönde olan oturum içi medyan
+  oranlarından yönlü ifade kuruyoruz:
+  - CNN'de INT8 medyan gecikmeyi %25–36 azaltıyor;
+  - conv-AE'de azaltmıyor.
+- p95'ten sonuç çıkarmıyoruz (K-049, K-050).
+
+**S18. Neden Raspberry Pi ya da konteynerde ölçmediniz?**
+- Raspberry Pi yok. Docker konteyneri tanımlandı.
+- Ana makinede bile tekrarlanabilirlik sağlanamadığı için konteynerin (CPU kotası ve sanallaştırma) ek
+  değişkenlik getirip ek bilgi getirmeyeceğine karar verildi (K-051). Bu, makalede sınırlılık.
+
+**S19. Gecikmeyi neden her tohum için ölçmediniz?**
+- Gecikme mimariye ve nicemleme düzeyine bağlı. Tohumlar aynı grafiği, aynı şekilleri ve aynı çekirdekleri
+  kullanıyor; yalnızca ağırlık değerleri farklı.
+- Ayrıca oturum gürültüsü olası bir tohum etkisinden büyük (K-052).
+
+**S20. XGBoost'un üç tohumu neden aynı?**
+- `subsample` ve `colsample_bytree` 1.0. Satır/sütun örneklemesi olmadığı için tohum hiçbir rastgele seçimi
+  etkilemiyor; GPU `hist` bu veride deterministik.
+- Sonuç gördükten sonra hiperparametre değiştirmemek için dokunmadık. XGB nicemlenmeyen referans model; std = 0
+  olarak raporlanıyor (K-055, K-056).
+
+**S21. Tek tohumlu sonuçlar ile 3 tohumlu sonuçlar ne kadar farklı?**
+- Örnek: ROAD CNN recall'u tohum 0'da 0.611, üç tohumda 0.545 ± 0.059.
+- Tür bazında std 0.18'e kadar çıkıyor (reverse_light_off_masq).
+- Tek tohumla rapor vermenin yetersiz olduğunun ve kural 5'in neden gerektiğinin somut örneği.
+
+**S22. ΔRecall değerleriniz çok küçük; bunlar gürültü olmasın?**
+- Haklı bir soru.
+  - Küçük türlerde tek pencere 0.015 eder.
+  - Aynı float32 model GPU ile CPU arasında 0–4 test kararında ayrışıyor.
+- Δ'lar eşleştirilmiş (aynı ağırlıklardan türetilmiş sürümler) olduğu için tohum değişkenliği Δ'ya doğrudan
+  girmiyor. Ama pencere çözünürlüğü sınır koyuyor.
+- P6'da ΔRecall'u pencere sayısı olarak da raporlamayı ve bu gürültü tabanını dikkate almayı planlıyoruz.
+
+**S23. Kalibrasyon kayması bulgusu pratikte ne anlama geliyor?**
+- Bir otokodlayıcı INT8'e çevrilip eşiği yeniden kalibre edilmeden dağıtılırsa yanlış alarm oranı patlayabilir.
+  ROAD conv-AE'de val'de %1'den tohuma göre %2–49'a çıkıyor.
+- Yani nicemlemeden sonra eşik yeniden kalibrasyonu dağıtım sürecinin zorunlu adımı olmalı. CNN'de bu kayma görülmedi.
+
+**S24. Hipotezlerinizi doğruladınız mı?**
+- Henüz test etmedik; istatistiksel testler P6'da.
+- Tanımlayıcı tablolar INT8 kaybının tür bazında küçük olduğunu gösteriyor (H1'in "sınırlı" kısmıyla uyumlu).
+  Gizli ve kaba arasında belirgin bir desen göstermiyor.
+- AS-1 birincil testinin gücü sınırlı (5 birim). Önerinin de dediği gibi, hipotezin aksi çıkması da anlamlı bir
+  bulgu olur.
+
+**S25. Bu projenin katkısı tam olarak ne?**
+- Yeni bir mimari değil. Katkılar:
+  1. Saldırı türüne duyarlı ve sızıntısız bir değerlendirme protokolü: kayıt/soy düzeyinde ayrım, sabit FPR'a
+     kalibre eşik, eşleştirilmiş fabrication–masquerade tasarımı, çoklu tohum.
+  2. Nicemlemenin gerçekte nasıl yürütüldüğünün belgelenmesi: fp16'nın x86'da çalışmaması, ConvTranspose'un
+     INT8 benzetimi, kalibrasyon kayması.
+  3. Kaba/gizli ayrımının ada göre değil veriyle tanımlanması ve literatürdeki "spoofing gizlidir" varsayımının
+     bu iki veri setinde desteklenmediğinin gösterilmesi.
+
+**S26. Coolant türünü neden ayrı tuttunuz ve sonuç ne?**
+- Tek kaynak kaydı var; zamansal blokla testte 8 pencere kalıyordu. Bu yüzden çiftin tamamı testte ve eğitimde
+  görülmemiş tür olarak ayrı raporlanıyor (K-019).
+- Hiçbir model tespit edemiyor: CNN 0.047 ± 0.047, conv-AE 0. Denetimsiz modelin bile görülmemiş bu hedefli
+  saldırıyı yakalayamadığını gösteriyor.
+
+---
+
+# 10. Terimler sözlüğü
+
+| Terim | Açıklama |
+|---|---|
+| **AP (average precision)** | Precision–recall eğrisinin özeti; dengesiz sınıflarda sıralama kalitesi |
+| **AS-1/2/3** | Araştırma soruları (Bölüm 1.3) |
+| **Asimetrik nicemleme** | Sıfır noktalı afin nicemleme; [0, 1] aralığı 256 seviyeye eşlenir |
+| **Baskın saldırı türü** | Penceredeki en sık enjekte tür |
+| **Benchmark** | Gecikme, boyut ve bellek ölçümü (`src/benchmark.py`) |
+| **Birincil havuz (pooled)** | Coolant çifti hariç bütün test pencereleri; toplam metrikler (ikincil) |
+| **CAN** | Controller Area Network, araç içi veri yolu (ISO 11898) |
+| **Checkpoint** | Eğitim durumunun (ağırlık, optimizasyon, RNG) epoch başına kaydı; kesinti sonrası devam |
+| **Cliff's delta** | P(X > Y) − P(X < Y); parametrik olmayan etki büyüklüğü |
+| **Coarse / stealthy** | Kaba / gizli saldırı grubu; veri temelli kural C1–C4 (K-009) |
+| **conv-AE** | 1D evrişimli otokodlayıcı; projenin denetimsiz modeli (K-039) |
+| **DLC** | Data Length Code; yük bayt sayısı (0–8) |
+| **DoS** | Hizmet engelleme; yüksek öncelikli kimlik seli |
+| **ECU** | Electronic Control Unit; araç kontrol birimi |
+| **Erken durdurma** | Val ölçüsü iyileşmeyince eğitimi kesmek (patience 5) |
+| **Fabrication** | ROAD'da gerçek ECU susmadan sahte çerçeve eklenen saldırı; hız ×2 |
+| **FPR** | Yanlış pozitif oranı = FP / (FP + TN) |
+| **Fuzzing** | Rastgele kimlik/yük enjeksiyonu |
+| **IAT** | Inter-arrival time; aynı kimlikli çerçeveler arası süre |
+| **INT8 / PTQ** | 8 bitlik tamsayı nicemleme / eğitim sonrası nicemleme |
+| **JSD** | Jensen–Shannon ıraksaması; iki dağılım arasındaki simetrik uzaklık |
+| **K-xxx** | `docs/DECISIONS.md` karar numarası |
+| **Kalibrasyon (eşik)** | Val normallerinde FPR %1 olacak eşik seçimi (K-035, K-038) |
+| **Kalibrasyon (INT8)** | Aktivasyon aralıklarını belirlemek için train'den 1000 pencerelik örnek (K-042) |
+| **Kalibrasyon kayması** | Q0 eşiği nicemlenmiş modele aynen uygulandığında FPR/recall değişimi |
+| **Logit** | Sigmoid öncesi ham skor; sıralama olasılıkla aynı, doyma yok |
+| **Mann–Whitney U** | İki bağımsız grup için sıra tabanlı test |
+| **Masquerade** | Gerçek ECU çerçeveleri yerine sahte çerçeve; zamanlama korunur, imza yükte |
+| **MinMax kalibrasyonu** | Aktivasyon aralığını kalibrasyon kümesindeki min/max'tan belirleme |
+| **Nicemleme (quantization)** | Sayıları daha az bitle temsil etme (float32 → float16 → INT8) |
+| **ONNX / ONNX Runtime (ORT)** | Model değişim biçimi / çalışma zamanı; Q0/Q2 burada çalıştırılır |
+| **Oturum içi oran** | Aynı ölçüm oturumunda Q2 medyan gecikmesi / Q0 medyan gecikmesi |
+| **p95** | 95. persentil; kuyruk gecikmesi |
+| **Pencere** | 100 ardışık çerçeve; stride train 50, val/test 100 |
+| **Per-channel** | Ağırlıkta her çıkış kanalı için ayrı ölçek |
+| **Q0/Q1/Q2/Q3** | float32 / float16 / INT8 / budama (Q3 yapılmadı) |
+| **QDQ** | QuantizeLinear–DequantizeLinear düğüm çiftleriyle nicemlenmiş ONNX grafiği |
+| **QDQ benzetimi** | INT8 çekirdeği olmayan katmanın DQ → float → Q ile çalışması |
+| **Recall / TPR** | TP / (TP + FN); yakalanan saldırı oranı |
+| **ROC-AUC** | Eşikten bağımsız ayırt edicilik ölçüsü |
+| **ROC-TPR@%1** | Kümenin kendi ROC eğrisinde FPR ≤ %1'deki en yüksek TPR; yalnızca açıklayıcı (K-040) |
+| **run_id** | `<model>_<veri seti>_s<tohum>_<sha8>`; yapılandırmadan türetilen koşu kimliği |
+| **Seçmeli (hybrid) nicemleme** | Bazı düğümlerin float bırakılması |
+| **Simetrik nicemleme** | Sıfır noktası 0; [0, 1]'de 128 seviye |
+| **source_capture** | Bir kaydın kaynak kaydı; ayrım birimi (K-007) |
+| **Sızıntı (leakage)** | Test bilgisinin eğitime ya da seçime karışması |
+| **Spoofing** | Geçerli kimlikle sahte değer; Car-Hacking'de hız ×6.5–7 |
+| **Stride** | Ardışık pencere başlangıçları arasındaki çerçeve sayısı |
+| **Taban kuralı** | Q0 recall'u < 0.10 olan çift biriminin AS-1 birincil testinden çıkarılması (K-041) |
+| **Temiz val normalleri** | Val'de label 0, masquerade değil, enjeksiyona ±5 s'den uzak pencereler (K-038) |
+| **Tohum (seed)** | Rastgeleliği belirleyen başlangıç değeri; 0, 1, 2 |
+| **Wilcoxon işaretli sıra** | Eşleştirilmiş farklar için parametrik olmayan test |
+| **XGBoost / RF** | Gradyan artırmalı ağaçlar / rastgele orman; klasik referanslar (M0) |
+| **Zamansal blok ayrımı** | Tek dosyayı zaman sırasıyla train/val/test'e bölme (K-017) |
+| **ΔRecall / ΔF1** | Q0 − Qk; pozitif değer nicemleme kaybı |
