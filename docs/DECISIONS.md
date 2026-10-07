@@ -842,7 +842,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-055 — XGBoost tohumdan bağımsız: üç tohum aynı modeli veriyor (bulgu ve raporlama)
 
 - **Faz / tarih:** P5 · 2026-10-07
-- **Durum:** Geçerli (raporlama biçimi). Hiperparametre değişikliği yapılmadı; yapılıp yapılmayacağı kullanıcı kararıdır (P5 açık sorunu).
+- **Durum:** Geçerli. Açık bıraktığı soru (hiperparametre değişikliği) K-056 ile kapandı: XGBoost'a dokunulmaz.
 - **Bulgu:** XGBoost'un tohum 0, 1 ve 2 koşuları bit düzeyinde aynı modeli verdi.
   - Test skorlarının en büyük farkı 0.0; en iyi iterasyon aynı (CH 107, ROAD 42).
   - Neden: `subsample = 1.0` ve `colsample_bytree = 1.0` (`configs/models.yaml`, P3'ten beri a priori). Satır ve sütun örneklemesi olmadığı için `random_state` hiçbir rastgele seçimi etkilemiyor; GPU `hist` algoritması bu veride deterministik.
@@ -854,3 +854,17 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - K-041 birim listesinde XGBoost'un "3 tohum ortalaması" tek koşunun değeridir.
   - Makalede yöntem bölümünde belirtilir.
   - F5'te XGBoost için tohum bazlı istatistik (ör. tohumları bağımsız gözlem sayan testler) kullanılmaz.
+
+## K-056 — P5 kapanışında kullanıcı kararları: XGBoost deterministik kalır; AS-1 tasarımı P6'da; genelleme kapsam dışı
+
+- **Faz / tarih:** P5 (kapanış) · 2026-10-07
+- **Durum:** Geçerli (kullanıcı kararı). K-055'in açık sorusunu kapatır; K-053'ün genelleme maddesini teyit eder.
+- **Karar:**
+  1. **XGBoost'a dokunulmaz** (K-055). Hiperparametreleri (`subsample = colsample_bytree = 1.0`) değişmez, yeniden eğitilmez.
+     - XGBoost nicemlenmeyen referans modeldir (K-042). Projenin ana değişkeni olan nicemleme kaybını (ΔRecall) taşımaz. Bu yüzden tohumlar arası eğitim değişkenliğinin olmaması ana analizi etkilemez.
+     - Raporlamada XGBoost'un deterministik olduğu (üç tohumun aynı modeli verdiği, std = 0) açıkça yazılır.
+  2. **AS-1'in test tasarımı P6'nın (plan F5) planında konuşulacak.** Birincil testin gücü sınırlı: K-041 listesinde 12 birimden 5'i kalıyor (`grid_k041_units.csv`).
+     - P6'da şu da açıklanacak: XGBoost nicemlenmediği için ΔRecall'u yoktur. `grid_k041_units.csv`, K-041'in taban kuralını ızgaradaki her modele uyguladığı için XGBoost birimlerini de listeliyor (`in_primary_test = True` iki birim).
+     - Bu birimlerin ΔRecall'a dayalı birincil teste nasıl girebileceği (ya da giremeyeceği) P6 planında netleştirilecek. Tabloda bir değişiklik yapılmadı; sonuç elle düzeltilmez.
+  3. **Veri setleri arası genelleme deneyi kapsam dışı** (K-053 geçerli).
+- **Etkisi:** P5 açık sorunları 1 ve 2'nin durumu `docs/phase-logs/P5.md`'de güncellendi. P6 planı bu iki maddeyi ele alacak.
