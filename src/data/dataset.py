@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import dataclass
 
 import numpy as np
@@ -60,7 +61,14 @@ def segment_matrix(seg: SP.Segment, params: dict) -> np.ndarray:
             return x
     x, _ = F.segment_features(seg, params)
     path.parent.mkdir(parents=True, exist_ok=True)
-    np.save(path, x.astype(np.float32))
+    tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp.npy")   # atomic: parallel grid jobs never read half a file
+    np.save(tmp, x.astype(np.float32))
+    try:
+        os.replace(tmp, path)
+    except PermissionError:          # Windows: another job wrote the same cache file and is reading it
+        tmp.unlink(missing_ok=True)
+        if not path.exists():
+            raise
     return x
 
 

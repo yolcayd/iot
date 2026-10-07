@@ -791,3 +791,50 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 - **Etkisi:**
   - AS-2'nin gecikme boyutu yalnızca ana makine profiline dayanır ve nitel/yönlü kalır (K-050).
   - Bellek ve boyut ölçümleri bu karardan etkilenmez.
+
+## K-052 — Gecikme tohum başına ölçülmez; P4 tohum-0 ölçümleri kullanılır
+
+- **Faz / tarih:** P5 · 2026-10-07
+- **Durum:** Geçerli (kullanıcı kararı; ızgaranın hiçbir sonucu görülmeden)
+- **Karar:**
+  - Tam ızgarada (P5) benchmark adımı yoktur. Gecikme ve tepe bellek için P4'teki tohum-0 ana makine ölçümleri (K-049 protokolü, K-050 raporlama kuralı) kullanılır: `quant_pilot.csv`, `benchmark_host.csv`, `benchmark_ratios_host.csv`.
+  - Model dosya boyutu her tohum için `quant_meta.json`'dan raporlanır (ücretsiz, ölçüm değil).
+  - Konteyner profili K-051 gereği kapsam dışı kalır.
+- **Gerekçe:**
+  - Gecikme mimariye ve nicemleme düzeyine bağlıdır, tohuma değil. Tohumlar aynı grafiği, aynı tensör şekillerini ve aynı çekirdekleri kullanır; yalnızca ağırlık değerleri farklıdır. Q2'de float kalan düğümler ve INT8 çekirdek / QDQ benzetim ayrımı (K-044) de grafik yapısına bağlıdır.
+  - Ana makinede oturumlar arası değişkenlik (K-050: medyanda %16'ya kadar) olası bir tohum etkisinden büyük. Tohum başına ölçüm yeni bilgi getirmez, yalnızca oturum gürültüsü ekler.
+- **Etkisi:**
+  - `configs/grid.yaml → full.latency: reuse_seed0`. `grid_quant.csv`'nin `latency` sütunu bu kaynağa işaret eder.
+  - Makalede gecikme tohum-0 modellerine dayanır; bu durum yöntem bölümünde yazılır.
+  - CLAUDE.md kural 8 (≥ 1000 tekrar, ısınma hariç) P4 ölçümlerinde sağlanmıştır (10.000 ölçüm, ≥ 1 s ısınma).
+
+## K-053 — P5 tam ızgarasının kapsamı ve yürütülmesi
+
+- **Faz / tarih:** P5 · 2026-10-07
+- **Durum:** Geçerli (kapsam kullanıcı kararı; yürütme ayrıntıları bu fazda)
+- **Karar:**
+  - **Izgara:** {cnn1d, conv_ae (K-039), xgb} × {car_hacking, road} × tohum {0, 1, 2} = 18 eğitim koşusu (`configs/grid.yaml → full`).
+    - Derin modeller (12 koşu): Q0/Q1/Q2 ve K-036/K-045 değerlendirmesi. Q1 doğruluğu GPU'da fp16 (K-043).
+    - XGBoost nicemlenmez (K-042), yalnızca val/test değerlendirmesi.
+  - **RF ızgarada yok:** M0 referansı olarak XGBoost seçildi. RF yalnızca P3/P4'teki tohum-0 sonuçlarıyla referans olarak kalır; 3 tohumlu analizlere girmez.
+  - **Tohum 0 yeniden kullanılır:** run_id hiperparametre, veri özeti, tohum ve pencere boyundan türetildiği için (K-031) P3/P4'ün tohum-0 koşuları aynı run_id'yi taşır ve atlanır; yeniden eğitilmez ve yeniden nicemlenmez. Bu koşular kendi commit'lerini kayıtlı taşır (`30d9762`, `8fe34e4`; nicemleme `a341053`). Kural 7 koşu başına sağlanır.
+  - **Yürütme** (`src/run_grid.py`):
+    - İş birimi bir eğitim koşusudur. Adımlar: eğitim → val/test değerlendirmesi → nicemleme → K-036 değerlendirmesi. Çıktısı olan adım atlanır; yarım derin eğitim checkpoint'ten devam eder.
+    - Her iş ayrı alt süreçte koşar, en fazla `--workers` eşzamanlı. Çöken iş loglanır; ızgara durmaz.
+    - CPU iş parçacığı toplamı 4 (DRL deneyi aynı makinede): varsayılan 1 işçi × 4 iş parçacığı.
+    - Paralel çalışma sonucu değiştirmez: her süreç kendi tohumlamasını ve deterministik ayarlarını yapar (K-031).
+  - **K-041 birim listesi** ızgaradan sonra Q0 test recall'unun 3 tohum ortalamasından hesaplanır (`grid_k041_units.csv`). Derin modellerde Q0 = Q0-ONNX (K-045), XGBoost'ta yerel model.
+  - **Veri setleri arası genelleme deneyi kapsam dışı** (kullanıcı kararı). Izgaradan sonra zaman kalırsa ayrıca karar verilecek.
+- **Gerekçe:** Plan F4 ve CLAUDE.md kural 5 (en az 3 tohum). Tohum-0'ın yeniden eğitilmesi yalnızca aynı sonucu yeniden üretirdi (P3'te bit düzeyinde tekrar üretilebilirlik doğrulandı).
+
+## K-054 — conv-AE `max_epochs` değiştirilmez (P3 açık sorunu 2)
+
+- **Faz / tarih:** P5 · 2026-10-07
+- **Durum:** Geçerli (plan kullanıcı tarafından onaylandı; 1 ve 2. tohumların hiçbir sonucu görülmeden)
+- **Bağlam:** P3'te conv-AE iki veri setinde de en iyi epoch'u `max_epochs` = 30'da buldu; val kaybı hâlâ düşüyordu. P3 bunu "F4 öncesi karar; değiştirilecekse sonuçlara bakmadan" olarak bıraktı.
+- **Karar:** `max_epochs` 30'da kalır; conv-AE hiperparametreleri değişmez.
+- **Gerekçe:**
+  - Hiperparametreler a priori sabittir (`configs/models.yaml`). Tohum-0 test sonuçları P3/P4'te görüldü; şimdi değiştirmek sonuç görüldükten sonra yapılan bir ayar olurdu.
+  - Değişiklik run_id'yi değiştirir; tohum-0'ın yeniden eğitilmesi gerekir (K-053'e aykırı).
+  - Seçim protokolü (K-033) conv-AE'yi bu ayarla seçti; seçilen model değişmemeli.
+- **Etkisi:** Makalede sınırlılık: conv-AE eğitim bütçesinin sınırında; daha uzun eğitim yeniden oluşturma hatasını düşürebilirdi. Bu, nicemleme kaybının (ΔRecall) ölçümünü geçersiz kılmaz, çünkü Q0 ile Qk aynı ağırlıklardan türetilir.

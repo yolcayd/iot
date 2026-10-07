@@ -14,3 +14,12 @@ ae_feasibility:     # K-030, K-033: candidates 2 and 3 of the autoencoder protoc
   datasets: [car_hacking, road]
   seeds: [0]
   evaluate_splits: [val]      # test only after the protocol has selected a model
+
+full:               # P5 (plan F4), K-053: the full grid. Seed-0 runs have the run ids of the stages above and are
+                    # reused (DONE / quantized runs are skipped, never retrained).
+  models: [cnn1d, conv_ae, xgb]   # conv_ae = the autoencoder selected by K-033 on both datasets (K-039)
+  datasets: [car_hacking, road]
+  seeds: [0, 1, 2]
+  evaluate_splits: [val, test]
+  quantize: [cnn1d, conv_ae]      # Q0/Q1/Q2 + K-036 evaluation (src/quantize.py); xgb is not quantized (K-042)
+  latency: reuse_seed0            # K-052: no per-seed latency; the seed-0 host measurements of P4 (K-049/K-050)

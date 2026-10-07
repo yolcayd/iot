@@ -104,6 +104,7 @@ GENERATED_OUTPUTS = (
     "results/tables/quant_*.csv",              # src/quantize.py
     "results/tables/benchmark_*.csv",          # src/benchmark.py
     "results/tables/benchmark_manifest.json",  # src/quantize.py (benchmark targets)
+    "results/tables/grid_*.csv",               # src/run_grid.py --table / failures
 )
 
 

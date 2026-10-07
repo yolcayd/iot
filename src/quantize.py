@@ -724,6 +724,28 @@ def write_manifest(runs: dict[str, list[Path]]) -> list[dict]:
     return targets
 
 
+def quant_rows(run_dir: Path) -> pd.DataFrame | None:
+    """Attack-type, attack-free and pooled rows of one evaluated run's quant/metrics.csv (Q0/Q1/Q2, both threshold
+    modes) with the deltas Q0 - Qk and the file size of every level; None if the run is not evaluated."""
+    f = run_dir / QUANT_DIR / "metrics.csv"
+    if not f.exists():
+        return None
+    meta = json.loads((run_dir / QUANT_DIR / "quant_meta.json").read_text(encoding="utf-8"))
+    m = pd.read_csv(f)
+    m = m[m["level"].isin(PILOT_ROW_LEVELS)].copy()
+    keys = ["threshold_mode", "split", "level", "name"]
+    ref = m[m.quant == "q0"].set_index(keys)[list(DELTA_METRICS)]
+    j = m.join(ref, on=keys, rsuffix="_q0")
+    for k in DELTA_METRICS:
+        m[f"d_{k}"] = j[f"{k}_q0"] - j[k]           # Q0 - Qk: positive = loss (K-037)
+    for q in LEVELS:
+        lv = meta["levels"][q]
+        sel = m.quant == q
+        m.loc[sel, "size_mb"] = lv["size_bytes"] / 2**20
+        m.loc[sel, "size_ratio_vs_q0"] = lv.get("size_ratio_vs_q0", 1.0)
+    return m
+
+
 def pilot_table(runs: dict[str, list[Path]] | None = None, profile: str = "host", session: int = 1) -> pd.DataFrame:
     """quant_pilot.csv: per attack type (and attack-free / pooled rows) metrics of Q0/Q1/Q2 under both threshold
     modes, deltas Q0 - Qk, file size, and latency/memory of the given benchmark profile and session when
@@ -733,22 +755,13 @@ def pilot_table(runs: dict[str, list[Path]] | None = None, profile: str = "host"
     runs = runs or pilot_runs(load_qconfig())
     frames = []
     for r in runs["deep"]:
-        f = r / QUANT_DIR / "metrics.csv"
-        if not f.exists():
+        m = quant_rows(r)
+        if m is None:
             continue
         meta = json.loads((r / QUANT_DIR / "quant_meta.json").read_text(encoding="utf-8"))
-        m = pd.read_csv(f)
-        m = m[m["level"].isin(PILOT_ROW_LEVELS)].copy()
-        keys = ["threshold_mode", "split", "level", "name"]
-        ref = m[m.quant == "q0"].set_index(keys)[list(DELTA_METRICS)]
-        j = m.join(ref, on=keys, rsuffix="_q0")
-        for k in DELTA_METRICS:
-            m[f"d_{k}"] = j[f"{k}_q0"] - j[k]           # Q0 - Qk: positive = loss (K-037)
         for q in LEVELS:
             lv = meta["levels"][q]
             sel = m.quant == q
-            m.loc[sel, "size_mb"] = lv["size_bytes"] / 2**20
-            m.loc[sel, "size_ratio_vs_q0"] = lv.get("size_ratio_vs_q0", 1.0)
             res = B.load_result(r / QUANT_DIR, profile, session, q)
             unsupported = q == "q1" and lv["cpu_status"] != "cpu_fp16"
             m.loc[sel, "latency_profile"] = profile

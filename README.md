@@ -163,3 +163,22 @@ python -m src.benchmark --profile host --compare     # repeatability: median wit
 - The random forest predicts single-threaded (`n_jobs=1`): scikit-learn's threaded prediction races on the
   process-wide warning filters and then prints a warning per tree inside the timed loop (K-048). A measurement is
   rejected if any warning is shown during the timed inferences.
+
+### Full experiment grid (P5)
+
+`configs/grid.yaml → full`: {1D-CNN, convolutional autoencoder, XGBoost} × {Car-Hacking, ROAD} × seeds {0, 1, 2}
+(18 training runs; the seed-0 runs of P3/P4 have the same run ids and are reused). Every deep run is quantized
+and evaluated as in P4. Latency is not measured per seed; the seed-0 host measurements are used (K-052, K-053).
+
+```powershell
+python -m src.run_grid --stage full --dry-run                   # job list, state, estimated duration
+python -m src.run_grid --stage full --workers 1 --threads 4     # resumable; log: logs/grid_<date>.log
+python -m src.run_grid --stage full --status
+python -m src.run_grid --stage full --only <run_id> ...         # e.g. retry failed jobs
+python -m src.run_grid --stage full --table                     # grid_quant.csv, grid_classical.csv, grid_k041_units.csv
+```
+
+- One subprocess per training run; each step (train, evaluate, quantize, quantized evaluation) is skipped when its
+  output exists, and an interrupted deep training continues from its epoch checkpoint.
+- A failing job is logged and the grid goes on. Failures are listed at the end and in `results/tables/grid_failures.csv`.
+- CPU use = workers × threads. A lock file (`logs/grid.lock`) stops a second grid from starting.
