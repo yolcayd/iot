@@ -1,0 +1,6 @@
+source_capture,fabrication,masquerade,role,f1_fabrication,f1_masquerade,recall_fabrication,recall_masquerade,fpr_fabrication,fpr_masquerade
+road/correlated_signal_attack_3,road/correlated_signal_attack_3,road/correlated_signal_attack_3_masquerade,primary,0.14705882352941177,0.07643312101910828,0.07936507936507936,0.039735099337748346,0.0,0.0
+road/max_engine_coolant_temp_attack,road/max_engine_coolant_temp_attack,road/max_engine_coolant_temp_attack_masquerade,unseen,0.0,0.0,0.0,0.0,0.0,0.0
+road/max_speedometer_attack_3,road/max_speedometer_attack_3,road/max_speedometer_attack_3_masquerade,primary,0.06607369758576874,0.08015768725361366,0.03416557161629435,0.04175222450376454,0.0,0.0
+road/reverse_light_off_attack_3,road/reverse_light_off_attack_3,road/reverse_light_off_attack_3_masquerade,primary,0.0,0.0,0.0,0.0,0.0,0.0
+road/reverse_light_on_attack_3,road/reverse_light_on_attack_3,road/reverse_light_on_attack_3_masquerade,primary,0.003401360544217687,0.0,0.0017035775127768314,0.0,0.0,0.0

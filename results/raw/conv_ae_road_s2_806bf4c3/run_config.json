@@ -1,0 +1,106 @@
+{
+  "run_id": "conv_ae_road_s2_806bf4c3",
+  "model": "conv_ae",
+  "dataset": "road",
+  "seed": 2,
+  "smoke": false,
+  "hparams": {
+    "batch_size": 256,
+    "lr": 0.001,
+    "weight_decay": 0.0,
+    "max_epochs": 30,
+    "patience": 5,
+    "eval_batch_size": 2048,
+    "family": "autoencoder",
+    "channels": [
+      32,
+      64
+    ],
+    "latent_channels": 16
+  },
+  "overrides": {},
+  "decision_config": {
+    "rule": "val_normal_fpr",
+    "target_fpr": 0.01
+  },
+  "window_size": 100,
+  "data_hash": "8e302d6edf1553e2",
+  "train_windows": {
+    "n_windows": 295689,
+    "n_attack": 0,
+    "n_normal": 295689,
+    "n_captures": 10,
+    "digest": "8faf52dbfa53568d"
+  },
+  "val_windows": {
+    "n_windows": 50337,
+    "n_attack": 0,
+    "n_normal": 50337,
+    "n_captures": 7,
+    "digest": "76d609a0864ddb4d"
+  },
+  "git": {
+    "commit": "354e4b0d5d837a3f70ae335990bc01504c9cfe02",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json",
+      "results/tables/grid_*.csv"
+    ]
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_count": 16,
+    "threads": 4,
+    "device": "cuda",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "versions": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "pyarrow": "25.0.1",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.4.1",
+      "torch": "2.14.1+cu130",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "started_utc": "2026-10-07T09:01:23+00:00",
+  "finished_utc": "2026-10-07T09:04:17+00:00",
+  "duration_s": 174.5,
+  "meta": {
+    "best_epoch": 30,
+    "early_stopping": "val_loss",
+    "best_monitor_value": 0.013701026523989582,
+    "epochs_run": 30,
+    "stopped_early": false,
+    "resumed_at_epochs": [],
+    "train_score_quantiles": {
+      "0.5": 0.012833716347813606,
+      "0.9": 0.01602867990732193,
+      "0.99": 0.01886899583041668,
+      "0.999": 0.02111128345131874
+    },
+    "decision": {
+      "rule": "score > threshold",
+      "method": "val_normal_fpr",
+      "threshold": 0.019633157178759575,
+      "target_fpr": 0.01,
+      "realized_val_fpr": 0.009992649542086339,
+      "n_val_normal": 50337,
+      "fitted_on_split": "val",
+      "calibration_windows_digest": "76d609a0864ddb4d"
+    }
+  }
+}

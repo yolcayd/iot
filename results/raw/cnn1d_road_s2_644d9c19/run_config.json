@@ -1,0 +1,110 @@
+{
+  "run_id": "cnn1d_road_s2_644d9c19",
+  "model": "cnn1d",
+  "dataset": "road",
+  "seed": 2,
+  "smoke": false,
+  "hparams": {
+    "batch_size": 512,
+    "lr": 0.001,
+    "weight_decay": 0.0,
+    "max_epochs": 30,
+    "patience": 5,
+    "eval_batch_size": 2048,
+    "family": "supervised_deep",
+    "channels": [
+      32,
+      64,
+      64
+    ],
+    "kernels": [
+      5,
+      5,
+      3
+    ],
+    "hidden": 32,
+    "dropout": 0.2,
+    "pos_weight": "auto",
+    "early_stopping": "val_average_precision"
+  },
+  "overrides": {},
+  "decision_config": {
+    "rule": "val_normal_fpr",
+    "target_fpr": 0.01
+  },
+  "window_size": 100,
+  "data_hash": "8e302d6edf1553e2",
+  "train_windows": {
+    "n_windows": 305189,
+    "n_attack": 7236,
+    "n_normal": 297953,
+    "n_captures": 14,
+    "digest": "9d07f75329372bb0"
+  },
+  "val_windows": {
+    "n_windows": 58768,
+    "n_attack": 5542,
+    "n_normal": 53226,
+    "n_captures": 11,
+    "digest": "6e94b4126479bab2"
+  },
+  "git": {
+    "commit": "354e4b0d5d837a3f70ae335990bc01504c9cfe02",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json",
+      "results/tables/grid_*.csv"
+    ]
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_count": 16,
+    "threads": 4,
+    "device": "cuda",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "versions": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "pyarrow": "25.0.1",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.4.1",
+      "torch": "2.14.1+cu130",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "started_utc": "2026-10-07T09:06:31+00:00",
+  "finished_utc": "2026-10-07T09:07:29+00:00",
+  "duration_s": 58.6,
+  "meta": {
+    "best_epoch": 11,
+    "early_stopping": "val_average_precision",
+    "best_monitor_value": 0.7814941107208163,
+    "epochs_run": 16,
+    "stopped_early": true,
+    "resumed_at_epochs": [],
+    "pos_weight": 41.176478717523494,
+    "decision": {
+      "rule": "score > threshold",
+      "method": "val_normal_fpr",
+      "threshold": -10.357394218444824,
+      "target_fpr": 0.01,
+      "realized_val_fpr": 0.009992649542086339,
+      "n_val_normal": 50337,
+      "fitted_on_split": "val",
+      "calibration_windows_digest": "76d609a0864ddb4d"
+    }
+  }
+}

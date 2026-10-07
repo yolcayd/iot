@@ -1,0 +1,12 @@
+run_id,model,dataset,seed,split,level,name,group,role,captures,n_attack,n_normal,tp,fp,fn,tn,precision,recall,f1,fpr,roc_auc,average_precision,roc_tpr_at_fpr_0.01,attack_types
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,attack_type,dos,coarse,primary,car_hacking/DoS_dataset,2206,3999,2206,34,0,3965,0.9848214285714286,1.0,0.9923526765632029,0.008502125531382845,1.0,1.0,1.0,
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,attack_type,fuzzy,coarse,primary,car_hacking/Fuzzy_dataset,1962,3183,1962,28,0,3155,0.985929648241206,1.0,0.992914979757085,0.008796732642161484,1.0,0.9999999999999999,1.0,
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,attack_type,gear_spoofing,coarse,primary,car_hacking/gear_dataset,3814,3360,3814,22,0,3338,0.9942648592283628,1.0,0.9971241830065359,0.006547619047619048,0.9999999219666891,0.9999999312734142,1.0,
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,attack_type,rpm_spoofing,coarse,primary,car_hacking/RPM_dataset,4308,3333,4308,11,0,3322,0.9974531141467933,1.0,0.9987249333487886,0.0033003300330033004,0.9999999999999999,1.0,1.0,
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,attack_free,ambient,,fpr_only,car_hacking/normal_run_data,0,1684,0,15,0,1669,0.0,,,0.008907363420427554,,,,
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,attack_free_capture,car_hacking/normal_run_data,,fpr_only,car_hacking/normal_run_data,0,1684,0,15,0,1669,0.0,,,0.008907363420427554,,,,
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,capture,car_hacking/DoS_dataset,,primary,,2206,3999,2206,34,0,3965,0.9848214285714286,1.0,0.9923526765632029,0.008502125531382845,1.0,1.0,1.0,dos
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,capture,car_hacking/Fuzzy_dataset,,primary,,1962,3183,1962,28,0,3155,0.985929648241206,1.0,0.992914979757085,0.008796732642161484,1.0,0.9999999999999999,1.0,fuzzy
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,capture,car_hacking/RPM_dataset,,primary,,4308,3333,4308,11,0,3322,0.9974531141467933,1.0,0.9987249333487886,0.0033003300330033004,0.9999999999999999,1.0,1.0,rpm_spoofing
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,capture,car_hacking/gear_dataset,,primary,,3814,3360,3814,22,0,3338,0.9942648592283628,1.0,0.9971241830065359,0.006547619047619048,0.9999999219666891,0.9999999312734142,1.0,gear_spoofing
+xgb_car_hacking_s2_b03af041,xgb,car_hacking,2,test,pooled,primary_pool,,secondary,,12290,15559,12290,110,0,15449,0.9911290322580645,1.0,0.9955447549615228,0.007069863101741757,0.999999979081698,0.9999999735192838,1.0,

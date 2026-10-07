@@ -1,0 +1,35 @@
+{
+  "run_id": "xgb_car_hacking_s1_a40a1ae1",
+  "stage": "full",
+  "model": "xgb",
+  "dataset": "car_hacking",
+  "seed": 1,
+  "steps_run": [
+    "train",
+    "evaluate"
+  ],
+  "step_s": {
+    "train": 13.9,
+    "evaluate": 2.5
+  },
+  "wall_s": 16.6,
+  "started_utc": "2026-10-07T09:12:17+00:00",
+  "finished_utc": "2026-10-07T09:12:33+00:00",
+  "threads": 4,
+  "git": {
+    "commit": "354e4b0d5d837a3f70ae335990bc01504c9cfe02",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json",
+      "results/tables/grid_*.csv"
+    ]
+  },
+  "pid": 3492
+}

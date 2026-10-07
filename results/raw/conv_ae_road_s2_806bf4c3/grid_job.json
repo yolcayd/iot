@@ -1,0 +1,39 @@
+{
+  "run_id": "conv_ae_road_s2_806bf4c3",
+  "stage": "full",
+  "model": "conv_ae",
+  "dataset": "road",
+  "seed": 2,
+  "steps_run": [
+    "train",
+    "evaluate",
+    "quantize",
+    "quant_eval"
+  ],
+  "step_s": {
+    "train": 181.6,
+    "evaluate": 4.0,
+    "quantize": 3.0,
+    "quant_eval": 43.9
+  },
+  "wall_s": 232.6,
+  "started_utc": "2026-10-07T09:01:17+00:00",
+  "finished_utc": "2026-10-07T09:05:09+00:00",
+  "threads": 4,
+  "git": {
+    "commit": "354e4b0d5d837a3f70ae335990bc01504c9cfe02",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json",
+      "results/tables/grid_*.csv"
+    ]
+  },
+  "pid": 9364
+}

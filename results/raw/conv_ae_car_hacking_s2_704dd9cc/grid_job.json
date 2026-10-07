@@ -1,0 +1,39 @@
+{
+  "run_id": "conv_ae_car_hacking_s2_704dd9cc",
+  "stage": "full",
+  "model": "conv_ae",
+  "dataset": "car_hacking",
+  "seed": 2,
+  "steps_run": [
+    "train",
+    "evaluate",
+    "quantize",
+    "quant_eval"
+  ],
+  "step_s": {
+    "train": 23.1,
+    "evaluate": 2.1,
+    "quantize": 1.9,
+    "quant_eval": 21.6
+  },
+  "wall_s": 48.7,
+  "started_utc": "2026-10-07T09:08:45+00:00",
+  "finished_utc": "2026-10-07T09:09:34+00:00",
+  "threads": 4,
+  "git": {
+    "commit": "354e4b0d5d837a3f70ae335990bc01504c9cfe02",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json",
+      "results/tables/grid_*.csv"
+    ]
+  },
+  "pid": 8384
+}
