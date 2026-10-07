@@ -1,0 +1,16 @@
+dataset,model,source_capture,fabrication,masquerade,role,q0_source,n_seeds,q0_recall_fabrication_mean,q0_recall_masquerade_mean,in_primary_test,excluded_reason
+road,cnn1d,road/correlated_signal_attack_3,road/correlated_signal_attack_3,road/correlated_signal_attack_3_masquerade,primary,q0_onnx_cpu (K-045),3,0.900529,0.854305,True,
+road,cnn1d,road/max_engine_coolant_temp_attack,road/max_engine_coolant_temp_attack,road/max_engine_coolant_temp_attack_masquerade,unseen,q0_onnx_cpu (K-045),3,0.0465116,0.0852713,False,not in primary pool (K-019)
+road,cnn1d,road/max_speedometer_attack_3,road/max_speedometer_attack_3,road/max_speedometer_attack_3_masquerade,primary,q0_onnx_cpu (K-045),3,0.6417,0.71823,True,
+road,cnn1d,road/reverse_light_off_attack_3,road/reverse_light_off_attack_3,road/reverse_light_off_attack_3_masquerade,primary,q0_onnx_cpu (K-045),3,0.356398,0.539737,True,
+road,cnn1d,road/reverse_light_on_attack_3,road/reverse_light_on_attack_3,road/reverse_light_on_attack_3_masquerade,primary,q0_onnx_cpu (K-045),3,0.0880182,0.0963357,False,floor: mean Q0 recall < 0.1 (K-041)
+road,conv_ae,road/correlated_signal_attack_3,road/correlated_signal_attack_3,road/correlated_signal_attack_3_masquerade,primary,q0_onnx_cpu (K-045),3,0.0359788,0.0209713,False,floor: mean Q0 recall < 0.1 (K-041)
+road,conv_ae,road/max_engine_coolant_temp_attack,road/max_engine_coolant_temp_attack,road/max_engine_coolant_temp_attack_masquerade,unseen,q0_onnx_cpu (K-045),3,0,0,False,not in primary pool (K-019)
+road,conv_ae,road/max_speedometer_attack_3,road/max_speedometer_attack_3,road/max_speedometer_attack_3_masquerade,primary,q0_onnx_cpu (K-045),3,0.0692072,0.112708,False,floor: mean Q0 recall < 0.1 (K-041)
+road,conv_ae,road/reverse_light_off_attack_3,road/reverse_light_off_attack_3,road/reverse_light_off_attack_3_masquerade,primary,q0_onnx_cpu (K-045),3,0,0,False,floor: mean Q0 recall < 0.1 (K-041)
+road,conv_ae,road/reverse_light_on_attack_3,road/reverse_light_on_attack_3,road/reverse_light_on_attack_3_masquerade,primary,q0_onnx_cpu (K-045),3,0.000567859,0.00295508,False,floor: mean Q0 recall < 0.1 (K-041)
+road,xgb,road/correlated_signal_attack_3,road/correlated_signal_attack_3,road/correlated_signal_attack_3_masquerade,primary,native model,3,0.253968,0.0695364,False,floor: mean Q0 recall < 0.1 (K-041)
+road,xgb,road/max_engine_coolant_temp_attack,road/max_engine_coolant_temp_attack,road/max_engine_coolant_temp_attack_masquerade,unseen,native model,3,0.0930233,0.139535,False,not in primary pool (K-019)
+road,xgb,road/max_speedometer_attack_3,road/max_speedometer_attack_3,road/max_speedometer_attack_3_masquerade,primary,native model,3,0.485545,0.109514,True,
+road,xgb,road/reverse_light_off_attack_3,road/reverse_light_off_attack_3,road/reverse_light_off_attack_3_masquerade,primary,native model,3,0.624382,0.157804,True,
+road,xgb,road/reverse_light_on_attack_3,road/reverse_light_on_attack_3,road/reverse_light_on_attack_3_masquerade,primary,native model,3,0.214651,0.0177305,False,floor: mean Q0 recall < 0.1 (K-041)

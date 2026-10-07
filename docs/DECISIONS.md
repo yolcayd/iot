@@ -838,3 +838,19 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   - Değişiklik run_id'yi değiştirir; tohum-0'ın yeniden eğitilmesi gerekir (K-053'e aykırı).
   - Seçim protokolü (K-033) conv-AE'yi bu ayarla seçti; seçilen model değişmemeli.
 - **Etkisi:** Makalede sınırlılık: conv-AE eğitim bütçesinin sınırında; daha uzun eğitim yeniden oluşturma hatasını düşürebilirdi. Bu, nicemleme kaybının (ΔRecall) ölçümünü geçersiz kılmaz, çünkü Q0 ile Qk aynı ağırlıklardan türetilir.
+
+## K-055 — XGBoost tohumdan bağımsız: üç tohum aynı modeli veriyor (bulgu ve raporlama)
+
+- **Faz / tarih:** P5 · 2026-10-07
+- **Durum:** Geçerli (raporlama biçimi). Hiperparametre değişikliği yapılmadı; yapılıp yapılmayacağı kullanıcı kararıdır (P5 açık sorunu).
+- **Bulgu:** XGBoost'un tohum 0, 1 ve 2 koşuları bit düzeyinde aynı modeli verdi.
+  - Test skorlarının en büyük farkı 0.0; en iyi iterasyon aynı (CH 107, ROAD 42).
+  - Neden: `subsample = 1.0` ve `colsample_bytree = 1.0` (`configs/models.yaml`, P3'ten beri a priori). Satır ve sütun örneklemesi olmadığı için `random_state` hiçbir rastgele seçimi etkilemiyor; GPU `hist` algoritması bu veride deterministik.
+- **Karar:**
+  - Hiperparametreler değiştirilmez. Örnekleme oranlarını şimdi 1'in altına çekmek, sonuçlar görüldükten sonra yapılmış bir ayar olurdu.
+  - XGBoost için 3 tohum raporlanır (kural 5 biçimsel olarak sağlanıyor); standart sapma 0'dır ve tablolarda "deterministik, tohumdan bağımsız" diye işaretlenir. Bu, eğitim değişkenliğinin olmadığı anlamına gelir, ölçüm belirsizliğinin olmadığı anlamına gelmez.
+  - Tohumlar arası değişkenlik yorumları (ör. AS-3, AS-1'in tohum bazlı analizleri) yalnızca derin modeller için yapılır; XGBoost satırları bu karşılaştırmada etkin olarak tek gözlemdir.
+- **Etkisi:**
+  - K-041 birim listesinde XGBoost'un "3 tohum ortalaması" tek koşunun değeridir.
+  - Makalede yöntem bölümünde belirtilir.
+  - F5'te XGBoost için tohum bazlı istatistik (ör. tohumları bağımsız gözlem sayan testler) kullanılmaz.
