@@ -830,7 +830,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-054 — conv-AE `max_epochs` değiştirilmez (P3 açık sorunu 2)
 
 - **Faz / tarih:** P5 · 2026-10-07
-- **Durum:** Geçerli (plan kullanıcı tarafından onaylandı; 1 ve 2. tohumların hiçbir sonucu görülmeden)
+- **Durum:** Geçerli (kullanıcı kararı, 2026-10-07; 1 ve 2. tohumların hiçbir sonucu görülmeden)
 - **Bağlam:** P3'te conv-AE iki veri setinde de en iyi epoch'u `max_epochs` = 30'da buldu; val kaybı hâlâ düşüyordu. P3 bunu "F4 öncesi karar; değiştirilecekse sonuçlara bakmadan" olarak bıraktı.
 - **Karar:** `max_epochs` 30'da kalır; conv-AE hiperparametreleri değişmez.
 - **Gerekçe:**
