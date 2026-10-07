@@ -440,7 +440,7 @@ def run_full(stage: str, workers: int, threads: int, only: list[str] | None, all
         ref = reference_durations(stage_runs(stage))
         est = {r["run_id"]: ref.get((r["model"], r["dataset"]), (None, ""))[0] for r in todo}
         known = [v for v in est.values() if v is not None]
-        glog(f"{len(todo)} jobs to run; estimated {_fmt(makespan(known, workers) if known else None)}"
+        glog(f"{len(todo)} jobs to run; estimated {_fmt(makespan(known, workers))}"
              + ("" if len(known) == len(todo) else " (some jobs without estimate)"))
         failures = run_jobs(todo, workers, lambda r: job_command(r, threads, allow_dirty), glog, est)
         write_failures(failures)
