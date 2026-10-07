@@ -910,3 +910,328 @@ def pending_steps(r, raw=T.RAW_DIR):
   Kullanıcı kararı (K-056): XGBoost'a dokunulmaz; nicemlenmeyen referans model olduğu için deterministik
   olması raporlanır.
 - **K-054:** conv-AE her tohumda 30. epoch sınırına dayandı. `max_epochs` değiştirilmedi; kullanıcı onayladı.
+
+---
+
+# 6. Kararlar ve hikâyeleri
+
+## 6.1 Okuma kılavuzu
+
+- `docs/DECISIONS.md` projenin kalıcı karar kaydıdır.
+- **Kural:** Girdi silinmez. Bir karar değişirse yeni girdi eskisine atıf yapar ve eskinin durum satırı
+  "Geçersiz (K-xxx ile)" ya da "Kısmen geçersiz" olur.
+- Aşağıda her karar dört başlıkla özetlenir: **B** bağlam, **A** belgelerde geçen ya da planın öngördüğü
+  alternatif(ler), **S** seçilen yol, **G** gerekçe. Alternatif belgelenmemişse "planın öngördüğü" yazılır;
+  burada başka bir şey uydurulmamıştır.
+- **"Kullanıcı kararı"** ifadesi, kararın proje sahibi tarafından verildiğini ya da onaylandığını gösterir.
+
+## 6.2 Sonradan değişen kararlar (en önemli hikâyeler)
+
+| Konu | Önce | Sonra | Neden değişti | Sonuç görülmeden mi? |
+|---|---|---|---|---|
+| Kimlik özniteliği | K-020: ID / 0x7FF (CH), / 0xFFF (ROAD) | K-024: train sözlüğüne göre yoğun indeks | INT8'de bir seviyeye 8–16 kimlik düşüyordu; kayıp modelden değil girdiden gelirdi | Evet, model eğitiminden önce |
+| IAT özniteliği | K-021: doğrusal min(IAT, tavan)/tavan | K-025: log ölçek | INT8'de 1 ms–10 ms arası 3 seviyeydi | Evet |
+| Denetimli eşik | K-027: olasılık ≥ 0.5 | K-035: val normallerinde FPR %1 | ROAD'da 0.5 kayıtlar arasında aktarılmadı (CNN FPR ≈ 1.0) | v1 sonuçlarından sonra; v2 tamamen yeni kuralla koşuldu |
+| Otokodlayıcı eşiği | K-030: train normal skorlarının p99'u | K-035/K-038: temiz val normallerinde FPR %1 | Bütün modeller aynı yanlış alarm bütçesinde olsun | v1'den sonra, v2 ve hiçbir eşik sonucundan önce |
+| Kalibrasyon kümesi | K-035: val'deki bütün label-0 pencereleri | K-038: temiz alt küme (masquerade hariç, ±5 s pay) | Masquerade normalleri kopya; saldırıya yakın normaller geçiş etkisi taşıyabilir | v2'den önce |
+| CNN erken durdurma | K-027: ağırlıklı val kaybı | K-034: val AP | Kayıp dejenere 1. epoch'u seçti | v1'den sonra; inceleme raporuyla |
+| AS-1 ölçüsü | Plan: ΔF1 | K-037: kalibre eşikte ΔRecall | Recall saldırı oranından bağımsız | Nicemlenmiş sonuçlardan önce |
+| "Gizli" tanımı | Plan: ada göre (spoofing, malfunction, masquerade) | K-012: mekanizmaya göre | Veride spoofing/fabrication trafiği bozuyor | Kural metriklerden önce yazıldı |
+| Denetimsiz model | Plan: LSTM-AE | K-039: conv-AE | Önceden kayıtlı protokol (K-033) | Protokol sonuçlardan önce yazıldı |
+| Benchmark protokolü | K-046: 1000 ölçüm, 100 ısınma, RF n_jobs = T | K-048: RF n_jobs = 1; K-049: 10.000 ölçüm, ≥ 1 s ısınma, sabitleme, güç modu | Uyarı yarışı; oturumlar tutarsız | K-049 hiçbir ölçüm yapılmadan; K-050'nin yorum kısıtı sonuçlardan sonra (yalnızca kısıtlayıcı) |
+| Uç cihaz ölçümü | K-047: Docker konteyneri | K-051: kapsam dışı | Ana makinede bile tekrarlanabilirlik yok | Konteyner hiç çalıştırılmadı |
+
+**Ortak ilke:** Her değişiklikte kural, etkilediği sonuçlar görülmeden ya da en azından değişikliğin yönünü
+sonuçlara bakarak seçme serbestliği olmadan konuldu. Sonuçtan sonra yazılan tek yorum kısıtı (K-050 madde 4)
+iddiaları **kısıtlıyor**, güçlendirmiyor; bu durum karar kaydında açıkça yazılı.
+
+## 6.3 Kararların tamamı
+
+### Kurulum ve veri (P0–P1)
+
+**K-001 — Python 3.13**
+- **B:** Plan 3.11 diyor; makinede yalnızca 3.13 var.
+- **A:** Ayrı bir 3.11 kurulumu.
+- **S:** 3.13.
+- **G:** Bütün bağımlılıkların resmî wheel'i var, `pip check` temiz. Sürümler sabit ve her koşu sürümleri kaydediyor.
+
+**K-002 — Örtüşme yalnızca eğitimde**
+- **B:** Öneri formu %50 örtüşme diyor; plan ve CLAUDE.md test kümesinde örtüşmesiz pencere istiyor.
+- **A:** Her yerde %50 örtüşme.
+- **S:** Pencere 100; stride train'de 50, val ve test'te 100.
+- **G:** Örtüşmeli test pencereleri aynı olayı birden çok sayar ve skoru yapay olarak yükseltir.
+
+**K-003 — Budama (Q3) yalnızca zaman kalırsa**
+- **B:** Öneri formu budamayı kesin çıktı sayıyor; plan opsiyonel tutuyor.
+- **S:** Önce Q0–Q2.
+- **G:** Araştırma soruları Q0–Q2 ile yanıtlanabilir.
+
+**K-004 — `.gitignore` kökte `/data/`**
+- **B:** `data/` kuralı `src/data/` paketini de dışlıyordu.
+- **S:** Kurallar köke sabitlendi: `/data/`, `/logs/`.
+
+**K-005 — Kaynaklar ve ortak şema**
+- **S:** Car-Hacking HCRL'den, ROAD Zenodo'dan (MD5 doğrulamalı).
+- **S:** Kayıt başına bir parquet. Şema `timestamp, can_id, dlc, data[8], label, attack_type, source_file, source_capture`.
+- **G:** Kayıt başına dosya, kayıt düzeyinde ayrımı doğal kılar.
+
+**K-006 — ROAD çerçeve etiketi**
+- **B:** ROAD'da çerçeve etiketi yok; metadata alan adları readme'den farklı.
+- **S:** Kimlik ∧ desen ∧ zaman aralığı; fuzzing'de FF×8 ∧ zaman ≥ başlangıç.
+- **G:** Veriyle doğrulandı (hız ×2, çerçevelerin yarısı desene uyuyor).
+
+**K-007 — `source_capture` ve ayrım birimi**
+- **B:** Masquerade kayıtları türetilmiş.
+- **S:** Soy doğrulaması yapılır; ayrım birimi `source_capture`.
+- **G:** Aynı enjekte çerçeveler farklı kümelere düşerse sızıntı olur.
+
+**K-008 — Accelerator kayıtları dışlandı**
+- **B:** Enjeksiyon kayıttan önce yapılmış; çerçeve etiketi yok.
+- **A:** Normal olarak kullanmak (eğitimi kirletir) ya da saldırı saymak (etiket uydurmak).
+- **S:** Dışla.
+
+**K-009 — Veri temelli kaba/gizli kuralı (C1–C4)**
+- **B:** Plan ada göre grupluyor; kullanıcı mekanizmaya göre gruplamak istedi.
+- **S:** C1–C4 eşikleri metriklerden önce `eda.yaml`'a yazıldı.
+- **G:** Model sonucuna göre grup seçmek analizi döngüsel yapar.
+
+**K-010 — Kayıt boşlukları ve periyodiklik ölçütü**
+- **B:** İlk keşifsel analiz koşusunda dakikalarca süren veri yolu sessizlikleri hız hesabını bozdu.
+- **S:** > 1 s boşluklar hesaptan çıkarıldı; CV'nin yanına medyan tabanlı yayılım eklendi.
+- **G:** Eşikler ve gruplar değişmedi.
+
+**K-011 — Gruplama sonucu**
+- **S:** 10 coarse, 5 stealthy. 8 türde planla çelişki var (CH spoofing ve ROAD fabrication coarse çıktı).
+- **Kullanıcı onayı:** var.
+
+**K-012 — AS-1'de "gizli" mekanizmaya göre**
+- **A:** Planın ada dayalı listesi.
+- **G:** Ada dayalı liste, trafiği bozan saldırıları gizli sayıyordu.
+- **Kullanıcı kararı.**
+
+**K-013 — Eşleştirilmiş fabrication–masquerade tasarımı**
+- **A:** Plandaki grup düzeyi Mann–Whitney; bu ikincil analiz olarak kalıyor.
+- **S:** Birincil analiz aynı kaynaktan gelen çiftler.
+- **G:** Araç, sürüş ve yük sabit kalır; tek fark zamanlama izi.
+- **Kullanıcı kararı.**
+
+**K-014 — Gizli grup tamamen sentetik** (açık sorun, sınırlılık)
+- Gizli grubun hepsi ROAD masquerade kayıtları ve sonradan işlenmiş.
+- Gerçek bir saldırıda ECU susturulurken oluşabilecek zamanlama yan etkileri bu kayıtlarda yok.
+- Gizli grup için veri setleri arası genelleme yapılamaz.
+
+**K-015 — P2'ye devredilen sorunlar** (kapandı)
+- (a) 0xFFF kimliği → K-020, ardından K-024.
+- (b) Tek dosyada olan türler → K-017, K-019.
+- (c) Ayrım birimi → K-018.
+
+### Ayrım, öznitelik, alt kümeler (P2)
+
+**K-016 — Car-Hacking ortak kuyruğu tek kaynak**
+- **B:** Dört dosya aynı 891,068 çerçeveyle bitiyor.
+- **S:** Kuyruk bir kez, train'de kullanılır; P1 tabloları yeniden üretildi.
+- **G:** Aksi hâlde aynı mesajlar hem eğitimde hem testte olurdu.
+- **Kullanıcı onayı.**
+
+**K-017 — Car-Hacking zamansal blok ayrımı**
+- **B:** Her tür tek dosyada.
+- **A:** Dosya düzeyinde ayrım; tür ya eğitimden ya testten tamamen düşerdi.
+- **S:** Patlama 1–180 train, 183–240 val, 243–300 test; boşluklar ≥ 10 s.
+- **G:** Boşluk ≥ 10 × IAT tavanı. Sınırlılık: train ve test aynı sürüş oturumunun dilimleri.
+- **Kullanıcı onayı.**
+
+**K-018 — ROAD `_1/_2/_3` ve fuzzing istisnası**
+- **B:** Fuzzing için `_3` testte yalnızca 17 pencere bırakıyordu.
+- **S:** Fuzzing `_2` + `_3` testte, val yok.
+- **G:** İstisna yalnızca pozitif örnek sayısına dayanıyor, model çıktısına değil.
+- **Kullanıcı kararı.**
+
+**K-019 — Coolant çifti yalnızca testte**
+- **B:** Tek kaynak kayıt var; enjeksiyon 4.2 s.
+- **A:** Zamansal blok; testte 8 pencere kalırdı.
+- **S:** Çiftin tamamı testte; "eğitimde görülmemiş tür" olarak ayrı raporlanır, AS-1 birincil analizi dışında.
+- **Kullanıcı kararı.**
+
+**K-020 — ID / ID uzayı** → **K-024 ile geçersiz.**
+
+**K-021 — Doğrusal IAT** → **K-025 ile geçersiz.** Korunan kurallar: segment içi hesap, yalnızca train'den uydurma.
+
+**K-022 — Otokodlayıcı normal alt kümesi**
+- **S:** Train, label 0, enjekte çerçevelere ±5 s'den uzak, masquerade kayıtları hariç.
+- **G:** Saldırının geçiş etkisi eğitime girmesin.
+- **Kullanıcı onayı.**
+
+**K-023 — Sızıntı testinde mesaj kimliği = 32 çerçevelik dizi**
+- **B:** Mutlak zaman anahtarı tesadüfi eşleşme veriyordu ve kopyaları yakalayamıyordu.
+- **A:** Planın "ortak zaman damgası" testi.
+- **S:** Zamandan bağımsız dizi; pozitif kontrolle.
+- **G:** Daha sıkı ve kopyaları yakalıyor.
+
+**K-024 — Kimlik: yoğun sözlük indeksi**
+- **B:** INT8'de komşu kimlikler birleşiyordu.
+- **S:** Sözlük train normal çerçevelerinden çıkarılır (CH K = 38, ROAD K = 106); sözlük dışı kimlik 0.
+- **G:** K + 1 değer 256 seviyeye çakışmasız sığar. Sözlük bütün çerçevelerden çıkarılsaydı Fuzzy yüzünden CH'de
+  2,048 kimlik olurdu.
+- **Kullanıcı kararı;** eğitimden önce.
+
+**K-025 — IAT log ölçeği**
+- **B:** Doğrusal ölçekte 1 ms ile 10 ms arası 3 INT8 seviyesiydi.
+- **S:** Log ölçek; taban ve tavan train normal IAT'lerinin 0.001 ve 0.999 kantilleri.
+- **G:** Her büyüklük mertebesine eşit çözünürlük.
+- **Kullanıcı kararı.**
+
+**K-026 — Gözlem: Fuzzy dosyasında normal etiketli 0x7E8/0x7E9**
+- Bu kimlikler muhtemelen tanı yanıtları, yani saldırının dolaylı sonucu (varsayım, doğrulanmadı).
+- Etiketlere dokunulmadı.
+
+### Modeller, eşik, değerlendirme (P3)
+
+**K-027 — Sınıf dengesizliği**
+- **S:** `pos_weight` / `class_weight` / `scale_pos_weight` = N_neg/N_pos. Yeniden örnekleme yok. Accuracy raporlanmaz.
+- **Kısmen geçersiz:** Sabit 0.5 eşiği K-035 ile, ağırlıklı kayıpla erken durdurma K-034 ile değişti.
+
+**K-028 — Denetimli eğitimde masquerade normalleri hariç**
+- **B:** Bu pencereler fabrication eşlerinin kopyası.
+- **G:** Sızıntı değil, ama örnek ağırlığını bozar.
+
+**K-029 — Değerlendirme tanımları**
+- **S:** Tür kümesi = türün saldırı pencereleri + aynı kayıtların normal pencereleri. Ayrıca saldırısız
+  kayıtlarda FPR ve çift tablosu.
+- **G:** Bütün test normallerini her türe eklemek küçük türlerde precision'ı ortak FP sayısına bağlardı.
+- **Kullanıcı kararı.**
+
+**K-030 — Denetimsiz model: skor, eşik, go/no-go**
+- **S:** Skor yeniden oluşturma MSE'si. Fizibilite kararı val ROC-AUC ≥ 0.6 ile.
+- **G:** Test üzerinde model seçimi yasak.
+- **Kısmen geçersiz:** Train p99 eşiği K-035 ile değişti.
+
+**K-031 — Hesaplama ortamı ve determinizm**
+- **S:** Eğitim GPU'da; CPU iş parçacığı 4.
+- **S:** `run_id` hiperparametre, veri özeti, tohum ve pencere boyundan türetilir; iş parçacığı ve commit
+  run_id'ye girmez.
+- **S:** Tam tohumlama (`cudnn.deterministic`); kirli ağaçta eğitim reddedilir.
+
+**K-032 — Açık soru: nicemlenmiş otokodlayıcının eşiği**
+- **A:** (a) float32 eşiğini aynen kullanmak; (b) her sürüm için eşiği yeniden hesaplamak.
+- K-036 ile kapandı.
+
+**K-033 — Denetimsiz model protokolü ve çıkış kuralı**
+- **S:** Aday sırası; "iki veri setinde geçen ilk aday" seçilir. Hiçbiri geçmezse otokodlayıcı ROAD'dan çıkarılır.
+- **G:** Val üzerinde en iyi model aranmasını önlemek.
+- **Kullanıcı kararı;** sonuçlardan önce.
+
+**K-034 — CNN erken durdurma val AP ile**
+- **B:** Ağırlıklı kayıp dejenere 1. epoch'u seçti.
+- **G:** AP, dengesizlikte sıralama kalitesini ölçer ve kalibrasyondan bağımsızdır.
+- **Kullanıcı kararı.**
+
+**K-035 — Eşik: val normallerinde FPR %1, bütün modeller**
+- **A:** Sabit 0.5 eşiği; train p99.
+- **G:** Modeller aynı yanlış alarm bütçesinde karşılaştırılır; bu, araç içi IDS'in pratik kısıtına karşılık gelir.
+- Skor olarak logit ve ham marj kullanılır; doymuş olasılık bağ oluşturur.
+
+**K-036 — Nicemlenmiş sürümlerin eşiği**
+- **S:** (a) Birincil: her sürüm kendi val skorlarından yeniden kalibre edilir. (b) İkincil: Q0 eşiği aynen
+  uygulanır. (c) ΔROC-AUC ve ΔAP ayrıca raporlanır.
+- **G:** (a) ayırt edicilik kaybını, (b) dağıtımdaki kalibrasyon kaymasını, (c) eşikten bağımsız kontrolü ölçer.
+- **Kullanıcı kararı;** nicemlenmiş sonuçlardan önce.
+
+**K-037 — AS-1 birincil ölçüsü recall ve ΔRecall**
+- **A:** Plandaki ΔF1; ikincil ölçü olarak kalıyor.
+- **G:** Recall saldırı oranından bağımsız.
+- **Kullanıcı kararı;** danışmana bildirilecek.
+
+**K-038 — Kalibrasyon kümesi = temiz val normalleri**
+- **S:** Masquerade kayıtları ve ±5 s içi pencereler hariç.
+- **Yapısal sonuç:** CH'de kalibrasyon kümesi yalnızca normal dosyanın val bloğu (1,684 pencere). %1 eşiği
+  ≈ 17 pencerelik kuyruğa dayanıyor.
+
+**K-039 — conv-AE seçildi**
+- K-033'ün mekanik uygulaması; seçim serbestliği yok.
+- Çıkış kuralı tetiklenmedi; AS-3 iki veri setinde de yapılabilir.
+
+**K-040 — Açıklayıcı ROC-TPR@%1**
+- **B:** conv-AE testte ≈ %0.1 FPR'da çalışıyor.
+- **S:** Bu ölçü yalnızca açıklayıcıdır; hiçbir seçimde kullanılmaz.
+- **Kullanıcı kararı.**
+
+**K-041 — AS-1 taban kuralı**
+- **S:** Q0 recall'u (3 tohum ortalaması) < 0.10 olan çift birimi birincil testten çıkar.
+- **G:** Kural yalnızca Q0'a dayanır; ΔRecall'a bakılarak ayarlanamaz.
+- **Kullanıcı kararı;** nicemlenmiş sonuçlardan önce.
+
+### Nicemleme ve benchmark (P4)
+
+**K-042 — Araç zinciri ve kalibrasyon kümesi**
+- **S:** ORT 1.30; QDQ; aktivasyon asimetrik QUInt8; ağırlık simetrik kanal başına QInt8; MinMax kalibrasyonu.
+- **S:** Kalibrasyon kümesi modelin kendi eğitim seçiminden 1000 pencere.
+- **S:** RF ve XGB nicemlenmez.
+- **A:** Planda TFLite de geçiyordu; ORT ile yetinildi.
+
+**K-043 — Q1 CPU'da desteklenmiyor**
+- **B:** Hiçbir ağır katman fp16 çekirdeğiyle çalışmıyor.
+- **A:** Kullanıcıya sunulan seçenekler arasından (a) seçildi; diğer seçenekler faz günlüğünde ayrıntılı değil.
+- **S:** Doğruluk PyTorch fp16 benzetimiyle; gecikme ölçülmez.
+- **Kullanıcı kararı.**
+
+**K-044 — Q2 grafiği**
+- **S:** Skor grafiğin içinde; bias'lar initializer'a çevrildi; seçmeli nicemleme raporlanır.
+- **S:** INT8 çekirdek ile QDQ benzetimi ayrı ayrı kaydedilir; girdi nicemleyicisi doğrulanır.
+
+**K-045 — K-036'nın uygulanması**
+- **S:** Referans Q0-ONNX'in CPU sonucu; iki eşik kipi; Δ = Q0 − Qk (pozitif = kayıp).
+- **S:** P3 ile tutarlılık ayrıca kaydedilir.
+
+**K-046 — Benchmark protokolü v1**
+- **S:** Batch 1, 100 ısınma, 1000 ölçüm; alt süreç başına hedef; künye; tolerans %5 / %10.
+- **Kısmen geçersiz:** K-048 ve K-049 ile.
+
+**K-047 — Konteyner ve ana makine yaklaşımı**
+- **S:** 2 CPU / 2 GB'lık Docker konteyneri tanımlandı.
+- **Kısmen geçersiz:** K-051 ile ölçüm kapsam dışı.
+
+**K-048 — RF tek iş parçacığı ve uyarı koruması**
+- **B:** sklearn uyarı yarışı ölçümü kirletti.
+- **A:** Mesaja özgü filtre; yarış o filtreyi de sildi, testle gösterildi.
+- **S:** RF `n_jobs = 1`; ölçülen döngüde uyarı varsa ölçüm geçersiz.
+
+**K-049 — Protokol v2 ve önceden kayıtlı raporlama kuralı**
+- **S:** 10.000 ölçüm; ≥ 1 s ısınma; performans çekirdeklerine sabitleme; güç modu zorunlu.
+- **Önceden kayıtlı kural:** Tutarsızlık sürerse yeniden ölçüm yapılmaz.
+- **Kullanıcı kararı.**
+
+**K-050 — Kural 7'nin uygulanması**
+- **S:** İki oturum birlikte raporlanır; oranların iki oturumdaki aralığı verilir; yalnızca aynı yönlü medyan
+  oranlarından yönlü ifade kurulur.
+- **Kullanıcı onayı.**
+
+**K-051 — Konteyner ölçümü kapsam dışı**
+- **G:** Ana makinede bile tekrarlanabilirlik yok; konteyner ek değişkenlik getirir, ek bilgi getirmez.
+- **Kullanıcı kararı.**
+
+### Izgara (P5)
+
+**K-052 — Gecikme tohum başına ölçülmez**
+- **G:** Gecikme mimariye ve nicemleme düzeyine bağlı, tohuma değil. Ayrıca oturum gürültüsü olası bir tohum
+  etkisinden büyük.
+- **Kullanıcı kararı.**
+
+**K-053 — Izgara kapsamı**
+- **S:** {CNN, conv-AE, XGB} × 2 veri seti × 3 tohum. RF ızgarada yok.
+- **S:** Tohum 0 yeniden kullanılır; veri setleri arası genelleme kapsam dışı.
+- **Kullanıcı kararı.**
+
+**K-054 — conv-AE `max_epochs` değişmez**
+- **A:** Epoch sınırını artırmak; tohum 0'ın yeniden eğitilmesini gerektirirdi ve sonuçlar görüldükten sonra
+  yapılmış bir ayar olurdu.
+- **Kullanıcı kararı.**
+
+**K-055 — XGBoost tohumdan bağımsız**
+- **B:** `subsample = colsample = 1.0` olduğu için üç tohum bit düzeyinde aynı modeli veriyor.
+- **S:** Hiperparametre değişmez; standart sapma 0 olarak raporlanır.
+
+**K-056 — Kapanış kararları**
+- XGBoost'a dokunulmaz (nicemlenmeyen referans model).
+- AS-1 test tasarımı ve XGB birimlerinin K-041 listesindeki durumu P6 planında ele alınacak.
+- Veri setleri arası genelleme kapsam dışı.
+- **Kullanıcı kararı.**
