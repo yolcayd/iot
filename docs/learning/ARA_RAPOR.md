@@ -448,3 +448,465 @@ docker/                   konteyner tanımı (kullanılmadı, K-051)
 | Benchmark döngüsünde uyarı varsa ölçüm geçersiz | `benchmark` → `MeasurementInvalid` (K-048) |
 | Güç modu "En iyi performans" değilse ölçüm yok | `benchmark` (K-049) |
 | Aynı anda iki ızgara yok | `run_grid.acquire_lock` |
+
+---
+
+# 5. Faz faz ilerleme (P0 … P5)
+
+Her faz aynı disiplinle yürüdü:
+- **Aynı anda tek faz.** Faz sonunda `docs/phase-logs/<faz>.md` yazılır; kabul kriterleri ✔/✘ olarak işaretlenir.
+- **Kararlar** `docs/DECISIONS.md`'ye girer.
+- Faz bitince **durulur ve onay beklenir.**
+- **5 dakikadan uzun işleri** kullanıcı ayrı terminalde başlatır.
+
+| Faz | Plan karşılığı | Tarih | Ana çıktı | Test sayısı (faz sonunda) |
+|---|---|---|---|---:|
+| P0 | kurulum | 2026-10-05 | depo, ortam, belgeler | 34 |
+| P1 | F0 | 2026-10-05 | veri, okuyucular, keşifsel analiz, kaba/gizli gruplama | 57 |
+| P2 | F1 | 2026-10-05 | öznitelik, pencere, ayrım, sızıntı testleri, INT8 dostu girdi | 101 |
+| P3 | F2 | 2026-10-05 … 06 | modeller, eşik kuralı, denetimsiz model seçimi | 156 |
+| P4 | F3 | 2026-10-06 | nicemleme hattı, benchmark | 199 |
+| P5 | F4 | 2026-10-07 | 3 tohumlu ızgara | 207 |
+
+## 5.1 P0 — Kurulum (`docs/phase-logs/P0.md`)
+
+**Ne yapıldı:**
+- Ortam tespit edildi (`docs/ENVIRONMENT.md`). Plan ve öneri formu .docx'ten markdown'a çevrildi.
+- `CLAUDE.md` (değişmez kurallar) yazıldı.
+- Depo iskeleti kuruldu: yalnızca docstring'li yer tutucular.
+- `.venv` ve sabit sürümlü `requirements.txt`; git ve remote; smoke testleri.
+
+**Neden böyle:** Planın ilk kuralı fazların sırayla ve kabul kriteriyle ilerlemesi. Kurallar baştan yazıldı ki
+sonraki her adım onlara göre denetlensin:
+- sızıntı yasağı; test pencereleri örtüşmesiz;
+- eşik yalnızca train/val'den; INT8 kalibrasyonu yalnızca train'den;
+- 3 tohum; tür bazında metrik;
+- her koşunun commit'ini gömmesi; ≥ 1000 tekrarlı gecikme.
+
+**Sorunlar ve çözümleri:**
+- **Python sürümü:** Plan 3.11 diyordu, makinede 3.13 vardı. Bütün bağımlılıklar 3.13'te kuruldu; karar
+  K-001 olarak kaydedildi.
+- **`.gitignore`:** `data/` kuralı `src/data/` kaynak paketini de dışlıyordu. `/data/` olarak köke sabitlendi (K-004).
+- **Docker motoru kapalıydı:** Açık sorun olarak bırakıldı. Sonunda konteyner ölçümü kapsam dışı kaldı (K-051).
+- **Pencere örtüşmesi:** Öneri formu %50 örtüşme diyordu. Testte örtüşme sızıntı ürettiği için örtüşme yalnızca
+  eğitimde kullanılıyor (K-002).
+
+## 5.2 P1 — Veri edinme, okuyucular, keşifsel analiz (`P1.md`)
+
+**Ne yapıldı:**
+- İki veri seti indirildi; 106 dosyanın SHA-256'sı kaydedildi.
+- Okuyucudan önce gerçek formatlar incelendi. Car-Hacking'de DLC < 8 satırlar daha az sütunlu; ROAD
+  metadata alan adları readme'dekinden farklı.
+- Ortak şemaya dönüştürüldü. Keşifsel analiz ve veri temelli gruplama yapıldı.
+
+**Kritik kod — ROAD çerçeve etiketi** (`src/data/loaders.py: road_labels`, K-006):
+
+```python
+start, end = (int(round(x * 1e6)) for x in cap.meta["injection_interval"])
+if kind == "fuzzing":
+    return ((data == FUZZ_PAYLOAD).all(axis=1) & (rel_us >= start)).astype(np.int8)
+mask, value = parse_injection_pattern(cap.meta["injection_data_str"])
+target = int(cap.meta["injection_id"], 16)
+match = ((data & mask) == value).all(axis=1)
+inside = (rel_us >= start) & (rel_us <= end)
+return ((can_id == target) & match & inside).astype(np.int8)
+```
+
+- **Satır 1:** Enjeksiyon aralığı saniye cinsinden; **mikrosaniye tamsayıya** çevriliyor. Kayan nokta
+  karşılaştırmasında uçtaki çerçeveler yanlış tarafa düşmesin diye.
+- **Satır 2–3:** Fuzzing'de enjekte çerçeve = 8 baytın hepsi 0xFF **ve** zaman ≥ başlangıç. Üst sınır yok, çünkü
+  fuzzing_attack_2/3'te metadata bitişinden < 6 ms sonra birer FF×8 çerçevesi daha var.
+- **Satır 4:** `XXXX0CXXXXXXXXXX` gibi bir desen (X = joker yarım bayt) iki 8 baytlık diziye çevriliyor:
+  `mask` hangi bitlerin önemli olduğunu, `value` beklenen değeri tutar.
+- **Satır 6:** `(data & mask) == value` maskelenmiş bitler beklenen değere eşitse doğru olur; `all(axis=1)` 8
+  baytın hepsi için.
+- **Satır 8:** Üç koşulun birlikte sağlanması gerekir: doğru kimlik ∧ desen ∧ zaman aralığı.
+- **Doğrulama:** Aralık içinde hedef kimliğin hızı tam iki katına çıkıyor ve hedef kimlik çerçevelerinin tam
+  yarısı desene uyuyor. `reverse_light_off`'ta desene uyan meşru çerçeveler yalnızca aralık dışında; doğru
+  biçimde normal kalıyor.
+
+**Bulgular:**
+- **Masquerade kayıtları türetilmiş** (K-007): 13 masquerade kaydı, fabrication kaynağından aralık içi meşru
+  hedef-ID çerçeveleri silinerek üretilmiş (`capture_lineage.csv`; ör. max_speedometer_attack_3: 213,551 →
+  207,444 çerçeve, 6,107 silinen, 6,108 enjekte). Aynı enjekte çerçeveleri taşıyan iki kayıt farklı kümelere
+  düşerse sızıntı olur. Bu yüzden `source_capture` alanı eklendi.
+- **Accelerator kayıtları** (4 adet) çerçeve etiketsiz; dışlandı (K-008).
+- **Periyodiklik** (K-010):
+  - Car-Hacking: 27/27 kimlik IAT CV < 0.2.
+  - ROAD: std tabanlı CV ECU duraklamalarıyla şişiyor (18/106). Medyan tabanlı yayılımla 81/106 periyodik;
+    baskın kimlikler tam 10 ms veya 20 ms.
+- **Gruplama ve sezginin düzeltilmesi** (K-009, K-011): Kural metriklerden **önce** yazıldı. Sonuç
+  (`attack_signatures.csv`, P2 güncel değerleri):
+
+| Tür | C1 | C2 JSD | C3 hız oranı | C4 IAT oranı | Grup | Planın tahmini |
+|---|---:|---:|---:|---:|---|---|
+| CH dos | 0.545 | 0.349 | ∞ | ∞ | coarse | coarse |
+| CH fuzzy | 0.379 | 0.226 | — | — | coarse | coarse |
+| CH gear / rpm spoofing | 0 | 0.111 / 0.112 | 6.48 / 7.06 | 0.11 / 0.11 | **coarse** | stealthy ✘ |
+| ROAD fuzzing | 0.066 | 0.040 | — | — | coarse | coarse |
+| ROAD 5 fabrication | 0 | 0.006–0.011 | 2.00–2.03 | 0.36–0.50 | **coarse** | stealthy ✘ |
+| ROAD 5 masquerade | 0 | 0.005–0.006 | 1.00–1.03 | 1.00–1.14 | stealthy | stealthy |
+
+  C2 eşiği: CH 0.00059, ROAD 0.0769. Masquerade'in imzası yalnızca yükte: en büyük bayt medyan kayması
+  correlated_signal 252, speedometer 254, coolant 118, reverse_light_on 68, reverse_light_off 8 (P1).
+
+**Kullanıcı kararları:**
+- **K-012:** "Gizli" mekanizmaya göre tanımlanır.
+- **K-013:** AS-1'in birincil analizi eşleştirilmiş fabrication–masquerade tasarımı.
+- **K-014:** Gizli grubun tamamı sentetik ROAD masquerade kayıtları. Bu bir sınırlılık olarak raporlanacak.
+
+**Neden önemli:** Planın "spoofing gizlidir" varsayımıyla devam edilseydi AS-1, trafiği belirgin bozan
+saldırıları "gizli" sayacak ve test ettiği mekanizmayı (ince yük sapmasının nicemlemede kaybolması)
+bulanıklaştıracaktı.
+
+## 5.3 P2 — Öznitelik, pencere, ayrım, sızıntı testleri (`P2.md`)
+
+**Ne yapıldı:**
+- 10 boyutlu öznitelik, pencereleme, sabit ayrım ve otokodlayıcı normal alt kümesi.
+- 22 sızıntı testi.
+- Ortak kuyruk bulgusundan sonra P1 analizi yeniden üretildi.
+- "Ek" bölümünde girdi temsili INT8 için yeniden tasarlandı.
+
+**Ortak kuyruk bulgusu (K-016):**
+- Dört Car-Hacking saldırı dosyası aynı 891,068 çerçeveyle bitiyor (mutlak zaman damgaları, kimlikler, yükler
+  birebir aynı).
+- Bu kuyruk dosyalarla birlikte farklı kümelere gitseydi aynı mesajlar hem eğitimde hem testte olacaktı. Bir
+  kez, train'de kullanılıyor.
+- P1 tabloları yeniden üretildi. Gruplar değişmedi. Örneğin gear_spoofing'in yük kayması 196'dan 77'ye düştü;
+  eski değer kuyruktan geliyordu.
+
+**Kritik kod — öznitelikler** (`src/data/features.py`):
+
+```python
+def encode_ids(can_id, vocab):
+    k = len(vocab)
+    pos = np.searchsorted(vocab, can_id)
+    known = (pos < k) & (vocab[np.minimum(pos, k - 1)] == can_id)
+    return np.where(known, pos + 1, 0) / k
+```
+
+- `vocab` train'deki normal çerçevelerin sıralı kimlik listesi. `searchsorted` her kimliğin listede nereye
+  gireceğini bulur.
+- `known`: o konumdaki değer gerçekten aynı kimlik mi? Sözlük dışı bir kimlik de bir konuma "girer", bu yüzden
+  ayrıca kontrol edilir.
+- Bilinen kimlik 1..K sırasını, bilinmeyen 0'ı alır; K'ya bölünerek [0, 1]'e taşınır. K + 1 değer (CH 39,
+  ROAD 107) INT8'in 256 seviyesine çakışmasız sığar.
+
+```python
+def scale_iat(iat, floor, cap):
+    lo, hi = np.log10(floor), np.log10(cap)
+    v = (np.log10(np.clip(iat, floor, cap)) - lo) / (hi - lo)
+    return np.where(np.isnan(iat), 1.0, v)
+```
+
+- IAT önce [taban, tavan] aralığına kırpılır, sonra log ölçekte [0, 1]'e taşınır. Her büyüklük mertebesi eşit
+  çözünürlük alır.
+- `NaN` = kimliğin segmentteki ilk çerçevesi (önceki çerçeve yok); 1.0 alır. Böylece öznitelik segment
+  sınırının ötesine bakmaz.
+
+```python
+def fit_normalization(segments, floor_quantile, cap_quantile):
+    bad = [s.id for s in segments if s.split != "train"]
+    if bad:
+        raise ValueError(...)
+```
+
+- Normalizasyon parametreleri yalnızca train segmentlerinden uydurulabilir; başka bir şey verilirse kod durur.
+  Sızıntı kuralının kodda zorlanması budur.
+
+**Kritik kod — pencere etiketi** (`src/data/windows.py`):
+
+```python
+def injected_counts(label, starts, size):
+    cs = np.r_[0, np.cumsum(label.astype(np.int64))]
+    return cs[starts + size] - cs[starts]
+
+def window_labels(label, starts, size):
+    return (injected_counts(label, starts, size) > 0).astype(np.int8)
+```
+
+- Kümülatif toplam hilesi: `cs[i]`, ilk i çerçevedeki enjekte sayısıdır. `[start, start+size)` aralığındaki
+  enjekte sayısı `cs[start+size] − cs[start]` ile O(1)'de bulunur.
+- Pencerede ≥ 1 enjekte çerçeve varsa etiket 1.
+
+**Ayrım kararları:**
+- K-017: Car-Hacking zamansal blok.
+- K-018: ROAD `source_capture`; fuzzing istisnası.
+- K-019: Coolant yalnızca testte.
+- Bu kararlar Bölüm 3.2'de; sayılar Bölüm 3.3'te.
+
+**Sızıntı testi sorunu ve çözümü (K-023):**
+- **Sorun:** Planın testi "eğitim ve test pencereleri ortak zaman damgası içermiyor" diyordu. İlk sürüm
+  (zaman damgası, kimlik, yük) anahtarıyla ROAD'da 54 eşleşme verdi.
+- **İnceleme:** Bunlar, anonimleştirilmiş ve aynı yuvarlak değerden başlayan ilişkisiz kayıtlar arasındaki
+  tesadüfi, tekil eşleşmelerdi. Ayrıca yeniden zaman damgalanmış kopyalar (masquerade) mutlak zamanla hiç
+  yakalanamıyordu.
+- **Çözüm:** Mesaj kimliği "başlattığı 32 çerçevelik dizi" oldu: kimlikler, yükler ve çerçeveler arası µs
+  farkları; zamandan bağımsız. Pozitif kontrol eklendi: test bilinen kopyaları (soy çiftleri, ortak kuyruk)
+  yakalıyor mu?
+
+**Ek — INT8 dostu girdi (K-024, K-025; model eğitiminden ve hiçbir sonuç görülmeden önce):**
+- **Kimlik:** Eski ölçeklemede (ID / 0x7FF ya da / 0xFFF) bir INT8 seviyesine ≈ 8 (CH) ya da ≈ 16 (ROAD)
+  ardışık kimlik düşüyordu. Yoğun sözlük indeksiyle her kimlik kendi seviyesinde.
+- **IAT:** Doğrusal ölçekte 1 ms ile 10 ms arası 3 seviyeydi; log ölçekte CH 70, ROAD 42 seviye.
+- **Neden:** Ölçülen nicemleme kaybı girdi ölçeklemesinden değil modelin iç nicemlemesinden gelmeli; araştırma
+  sorusu ikincisi.
+
+**Otokodlayıcı normal alt kümesi (K-022):**
+- Kaynaklar: train, label 0, enjekte çerçevelere ±5 s'den uzak; masquerade kayıtları hariç.
+- CH 29,685 pencere (normal dosya 11,865 + kuyruk 17,820); ROAD 295,689.
+- CH saldırı bloklarında patlama arası 3 s olduğu için ±5 s payı sağlayan pencere yok.
+
+## 5.4 P3 — Baseline modeller ve fizibilite (`P3.md`)
+
+**Ne yapıldı:**
+- Dört model ailesinin kodu, eğitim/değerlendirme hattı, ızgara (`baseline`, `ae_feasibility` aşamaları),
+  akıl sağlığı kontrolleri.
+- Baseline **iki kez** koşuldu (v1, v2), çünkü v1'den sonra kurallar değişti.
+
+**Duman testinde bulunan hatalar:**
+- Çifti olmayan veri setinde `pairs_*.csv` sütunsuz yazılıyordu.
+- Yeniden yüklenen XGBoost CPU'da tahmin yapıyordu (1.2e-7 fark).
+- Checkpoint `map_location=cuda` ile yüklenip devamı bozacaktı.
+
+Üçü de düzeltildi. Süreci öldürüp devam ettirmek, kesintisiz koşuyla **bit düzeyinde aynı** ağırlıkları verdi.
+
+**v1'in sorunları ve hikâyesi:**
+1. **ROAD CNN dejenere modeli seçti:**
+   - Ağırlıklı val kaybıyla (pos_weight ≈ 41) erken durdurma 1. epoch'u seçti. Bu model her pencereye saldırı
+     diyor (FPR ≈ 1.0).
+   - İnceleme (`analysis/road_cnn_gap.py`): 2. epoch'tan sonra val kaybının %100'ü pozitiflerden geliyor; val
+     AUC 0.79 → 0.94 ve AP 0.33 → 0.81 artarken kayıp 9.8'den 22–37'ye çıkıyor.
+   - Yani kayıp sıralamayı değil olasılık ölçeğini izliyor. **K-034:** Erken durdurma val AP ile yapılır.
+2. **Sabit 0.5 eşiği kayıtlar arasında aktarılmadı:**
+   - CNN'de FPR ≈ 1.0; RF correlated_signal'da test AUC 0.955, F1 0.091.
+   - **K-035:** Bütün modellerde eşik, val normal pencerelerinde FPR %1 olacak biçimde seçilir.
+   - **K-038:** Kalibrasyon kümesi "temiz" val normalleri. Masquerade kayıtları ve saldırıya ±5 s'den yakın
+     pencereler hariç; masquerade normalleri fabrication'ın kopyası, saldırıya yakın normaller geçiş etkisi
+     taşıyabilir.
+3. **LSTM-AE ROAD'da başarısız:** Val ROC-AUC 0.394 < 0.6. Önceden kayıtlı protokol (K-033) işletildi.
+
+**Kritik kod — eşik** (`src/calibration.py`):
+
+```python
+def calibrate_threshold(scores, labels, split, target_fpr):
+    if split != "val":
+        raise ValueError(...)
+    normal = scores[labels == 0]                 # attack windows are ignored
+    thr = float(np.quantile(normal, 1.0 - target_fpr, method="higher"))
+    return {"rule": "score > threshold", "threshold": thr,
+            "realized_val_fpr": float((normal > thr).mean()), ...}
+```
+
+- **Satır 2–3:** Eşik yalnızca val'den. Test ya da train skorları verilirse durur (kural 3).
+- **Satır 4:** Saldırı pencereleri kullanılmaz; eşik etiketsiz normal trafiğe göre seçilir.
+- **Satır 5:** 0.99 kantili; `method="higher"` gerçek bir skor değerini seçer. Karar `skor > eşik` olduğu için
+  gerçekleşen FPR ≤ %1 olur; bağ varsa daha düşük.
+- **Satır 6–7:** Gerçekleşen val FPR kaydedilir.
+- **Skorlar neden logit:** `score_deep` olasılık değil logit döndürür. Sigmoid float32'de tam 1.0'a doyar ve
+  eşikte bağlar oluşturur; sıralama ise aynıdır.
+
+**Kritik kod — CNN'de val AP ile erken durdurma** (`src/train.py: train_deep`):
+
+```python
+monitor = -row["val_ap"] if use_ap else val
+state["epoch"] += 1
+if monitor < state["best_val"]:
+    state.update(best_val=monitor, best_epoch=state["epoch"], bad=0, best_state=...)
+else:
+    state["bad"] += 1
+...
+tmp = ckpt.with_suffix(".tmp"); torch.save({...}, tmp); os.replace(tmp, ckpt)
+```
+
+- **İzlenen değer:** "Küçük daha iyi" mantığı korunur; CNN'de −AP, otokodlayıcıda val kaybı. Otokodlayıcının
+  val kümesinde saldırı yok, AP tanımsız.
+- **Sabır:** İyileşme olursa en iyi ağırlıklar saklanır, yoksa sabır sayacı artar (patience 5, en fazla 30 epoch).
+- **Checkpoint:** Önce geçici dosyaya yazılır, sonra `os.replace` ile atomik olarak değiştirilir. Yazma
+  sırasında süreç ölürse önceki checkpoint sağlam kalır. Checkpoint ayrıca karıştırma üretecinin ve
+  CPU/CUDA rastgelelik durumlarını taşır; devam ettirilen koşu bit düzeyinde aynıdır.
+
+**Denetimsiz model seçimi (K-033 → K-039):**
+- **Protokol:** Sonuçlar görülmeden yazıldı. Aday sırası (1) LSTM-AE, (2) ayar denemesi LSTM-AE (gizli 128,
+  lr 3e-4, ≤ 60 epoch), (3) conv-AE.
+- **Seçim:** İki veri setinde de val ROC-AUC ≥ 0.6 olan **ilk** aday seçilir; en yüksek AUC aranmaz. Sonraki
+  aday yalnızca öncekinin başarısızlığında incelenir.
+
+| Aday | CH val ROC-AUC | ROAD val ROC-AUC |
+|---|---:|---:|
+| (1) LSTM-AE | 0.807 ✔ | 0.395 ✘ |
+| (2) LSTM-AE ayar denemesi | 0.809 ✔ | 0.372 ✘ |
+| (3) conv-AE | 0.999 ✔ | 0.722 ✔ |
+
+- **Sonuç:** İki veri setinde de conv-AE seçildi. Test yalnızca seçimden sonra değerlendirildi.
+- **Danışman uyumu:** Danışman yönlendirmesindeki "LSTM-AE başarısız olursa conv-AE yedek" kuralına uyuyor.
+
+**v2 baseline sonuçları** (test, tek tohum; `baseline_f1.csv`):
+- **Car-Hacking:** Denetimli modellerde bütün türlerde recall 1.000; conv-AE 0.954–0.996.
+- **ROAD, toplam recall:** CNN 0.611, RF 0.264, XGB 0.276, conv-AE 0.102.
+- **ROAD, ROC-AUC:** 0.888–0.923.
+- **Eşik aktarımı (K-040):** conv-AE testte FPR ≈ %0.1'de çalışıyor (CH %0.18, ROAD %0.11), yani hedeften on
+  kat sıkı. Bu yüzden açıklayıcı ölçü ROC-TPR@%1 eklendi.
+- **Sızıntı incelemesi:**
+  - CH'deki ≈ 1.0 skorlar tek öznitelikli bir karar kütüğüyle de elde ediliyor: DoS/Fuzzy için
+    `unseen_id_share`, gear/RPM için `iat_min`; F1 ≥ 0.9997.
+  - Yani yüksek skorlar sızıntıdan değil kaba imzalardan geliyor.
+  - Sızıntı testleri yeniden çalıştırıldı: 22/22 ✔.
+
+**K-041 taban kuralı:** Sonuçlar görülmeden yazıldı. Q0 recall'u < 0.10 olan bir çift birimi AS-1'in birincil
+testinden çıkar.
+
+## 5.5 P4 — Nicemleme hattı ve benchmark (`P4.md`)
+
+**Ne yapıldı:**
+- CNN ve conv-AE için Q0/Q1/Q2.
+- K-036'ya göre iki eşik kipiyle değerlendirme.
+- Benchmark kodu.
+- Pilot: dört tohum-0 koşusu.
+
+**Q1 sorunu (K-043):**
+- **Ölçüm:** ONNX Runtime profilinden okunan gerçek çekirdek türleri, x86 CPU sağlayıcısında bu modellerin
+  hiçbir ağır katmanı için fp16 çekirdeği olmadığını gösterdi (CNN 0/5, conv-AE 0/6).
+- **Sonuç:** ORT her ağır katmanın önüne fp32'ye dönüştürme ekliyor. CPU'daki "Q1" fp16'ya yuvarlanmış
+  ağırlıklarla fp32 hesap yapıyor.
+- **Önceden konmuş kural tetiklendi:** Ağır katmanların yarısından fazlası float32'de kalıyorsa iş durur ve
+  kullanıcıya sorulur (kodda `Q1CoverageError`).
+- **Kullanıcı kararı:** Doğruluk PyTorch fp16 ile CUDA'da ölçülür; CPU gecikmesi ölçülmez
+  (`cpu_unsupported`); boyut fp16 ONNX dosyasından alınır.
+
+**Kritik kod — fp16 benzetimi** (`src/quantize.py`):
+
+```python
+def fp16_scorer(module, device):
+    m16 = copy.deepcopy(module).to(device).half().eval()
+    def run(x):
+        with torch.no_grad():
+            return m16(torch.from_numpy(x).to(device).half()).float().cpu().numpy()
+    return run
+```
+
+- Modelin bir kopyası `.half()` ile ağırlıklarıyla birlikte fp16'ya çevrilir. Girdi de fp16'ya çevrilir; ara
+  aktivasyonlar fp16'da kalır.
+- Çıktı karşılaştırma için float32'ye geri çevrilir.
+- **Sınırlılık:** cuDNN/cuBLAS ara toplamaları genellikle fp32 tutar. Bu bir ECU'nun fp16 donanımıyla birebir
+  aynı değildir (K-043).
+
+**Kritik kod — INT8 kalibrasyon kümesi** (`src/quantize.py: calibration_selection`, kural 4):
+
+```python
+pool = D.ae_train(win, dataset) if model in T.AUTOENCODERS else D.supervised_train(win, dataset, segs)
+pool = check_calibration_selection(pool, n_min)
+idx = np.sort(np.random.default_rng(seed).choice(len(pool), min(n, len(pool)), replace=False))
+return check_calibration_selection(pool.iloc[idx].reset_index(drop=True), n_min)
+```
+
+- **Satır 1:** Havuz, modelin **kendi** eğitim seçimidir. Otokodlayıcı yalnızca normal pencerelerle
+  kalibre edilir; aktivasyon aralıkları saldırı görmez.
+- **Satır 2 ve 4:** `check_calibration_selection` havuzda ve örnekte train dışı pencere ya da 500'den az
+  pencere varsa durur.
+- **Satır 3:** Koşu tohumuyla 1000 pencere seçilir. Seçimin özeti (`digest`) `quant_meta.json`'a yazılır.
+
+**Kritik kod — iki eşik kipi** (`src/quantize.py: evaluate_run`):
+
+```python
+decisions[q] = {**C.calibrate_threshold(scores[q]["val"][cal_pos], cal["label"].to_numpy(), "val", target_fpr), ...}
+...
+for mode in THRESHOLD_MODES:
+    dec = decisions[q] if mode == "recalibrated" else decisions["q0"]   # (b): Q0 threshold unchanged
+```
+
+- Her sürüm (Q0, Q1, Q2) temiz val normallerinde kendi eşiğini alır; bu `recalibrated` kipidir.
+- `q0_threshold` kipinde Q0'ın eşiği Q1/Q2'ye aynen uygulanır.
+- Referans Q0, P3'ün PyTorch/GPU sonucu değil Q0-ONNX'in CPU sonucudur. Bütün Δ'lar aynı hatta hesaplanır
+  (K-045). P3 ile tutarlılık ayrıca kaydedilir: eşik göreli farkı ≤ 1.8e-4; test kararlarında 0–2 değişen
+  pencere.
+
+**Q2'nin yürütülmesi (K-044):**
+- **CNN:** 5/5 ağır katman INT8 çekirdekle çalışıyor.
+- **conv-AE:** 4/6. İki ConvTranspose, ORT CPU'da INT8 çekirdeği olmadığı için DQ → float → Q benzetimiyle
+  çalışıyor. Sayısal olarak int8 ama aritmetik ve gecikme float.
+- **Float kalan düğümler:** CNN'de Transpose, ReduceMean, Squeeze; conv-AE'de Transpose ×2 ve skor kuyruğu
+  (Sigmoid, Sub, Pow, ReduceMean).
+- **Girdi nicemleyicisi doğrulandı:** Ölçek 1/255, sıfır noktası 0, 256 seviye; kimlik ve bayt sütunları kayıpsız.
+
+**Boyut:**
+- Q1/Q0 = 0.52.
+- Q2/Q0 = 0.376–0.379. Plan ≈ ¼ bekliyordu. Model küçük (≈ 26–28 bin parametre) olduğu için int32 bias'lar,
+  ölçekler ve ≈ 11.5 KB'lik QDQ grafik ek yükü oranı yükseltiyor; tensör verisi oranı 0.28.
+
+**Benchmark hikâyesi (K-046 → K-048 → K-049 → K-050 → K-051):**
+1. **K-046 protokolü:** 100 ısınma, 1000 ölçüm, batch 1, alt süreç başına bir hedef; iki oturumda tutarlılık
+   toleransı medyan ≤ %5, p95 ≤ %10.
+2. **Session 1'de RF ROAD ölçümü bozuldu (K-048):**
+   - sklearn uyarısı ölçülen döngünün içinde 164,442 kez basıldı; medyan 23 ms'den 578 ms'ye fırladı.
+   - **Kök neden:** RF'nin çok iş parçacıklı tahmininde `warnings.catch_warnings()` iş parçacığı güvenli
+     değil. Süreç çapındaki uyarı filtre listesini boşaltan bir yarış oluşuyor. Ayrı süreçte yeniden üretildi.
+   - **Çözüm:** RF tek iş parçacığıyla tahmin yapar. Bütün hedeflere "döngüde uyarı varsa ölçüm geçersiz"
+     koruması eklendi.
+3. **Eski protokolle iki oturum: 12 hedeften 8'i tutarsız.** Oturum içi örnekleme hatası, oturumlar arası
+   farkın çok altındaydı; fark sistematik.
+4. **K-049 protokolü** (hiçbir ölçüm yapılmadan yazıldı):
+   - 10.000 ölçüm;
+   - ısınma ≥ 100 çıkarım ve ≥ 1 s;
+   - 4 performans çekirdeğine sabitleme (mantıksal işlemciler 2, 4, 6, 8);
+   - "En iyi performans" güç modu zorunlu;
+   - **önceden kayıtlı kural:** iki oturum yine tutarsızsa yeniden ölçüm yok, iki oturum birlikte raporlanır,
+     karşılaştırmalar oturum içi oranlara dayanır.
+5. **Sonuç: 12 hedeften 3'ü tutarlı.** Medyan farkı en çok %15.5, p95 farkı en çok %54. Kural uygulandı; K-050
+   yorum kısıtını ekledi:
+   - yalnızca iki oturumda aynı yönlü medyan oranları için yönlü ifade kullanılır;
+   - p95 oranlarından sonuç çıkarılmaz;
+   - mutlak değerler yalnızca büyüklük mertebesi olarak verilir.
+6. **K-051:** Ana makinede bile tekrarlanabilirlik sağlanamadığı için konteyner ölçümü kapsam dışı.
+7. **P4 kabul kriteri 12** ("benchmark iki kez tutarlı") **✘** olarak kaldı. Faz kullanıcı kararıyla kapatıldı.
+
+## 5.6 P5 — Tam ızgara (`P5.md`)
+
+**Ne yapıldı:**
+- `src/run_grid.py --stage full`: 3 model × 2 veri seti × 3 tohum.
+- 6 tohum-0 koşusu aynı run_id ile yeniden kullanıldı; 12 yeni koşu yapıldı.
+- Kullanıcı ızgarayı başlattı: 15 dk 16 s, 0 başarısız.
+- Tablolar: `grid_quant.csv`, `grid_classical.csv`, `grid_k041_units.csv`.
+
+**Kritik kod — devam ettirilebilirlik** (`src/run_grid.py`):
+
+```python
+def pending_steps(r, raw=T.RAW_DIR):
+    d = raw / r["run_id"]
+    out = []
+    if not (d / "DONE").exists():
+        out.append("train")
+    if any(not (d / f"metrics_{s}.csv").exists() for s in r["evaluate_splits"]):
+        out.append("evaluate")
+    if r.get("quantize"):
+        meta = _read_json(d / "quant" / "quant_meta.json")
+        if meta is None:
+            out.append("quantize")
+        if meta is None or "evaluated_utc" not in meta or not (d / "quant" / "metrics.csv").exists():
+            out.append("quant_eval")
+    return out
+```
+
+- Her adımın tamamlanmış sayılması bir dosyanın varlığına bağlıdır: `DONE` eğitim bitince en son yazılır;
+  `metrics_<split>.csv`; `quant_meta.json`.
+- `evaluated_utc`, nicemleme değerlendirmesinden **sonra** meta dosyasına yazılır. Değerlendirme yarıda kalırsa
+  `metrics.csv` var ama `evaluated_utc` yoktur ve adım yeniden yapılır.
+- **Tohum-0 yeniden kullanımı:** Tohum-0 koşularının bütün dosyaları zaten var. Bu yüzden "done" görünürler ve
+  hiç alt süreç açılmaz.
+
+**Diğer özellikler:**
+- İş başına ayrı alt süreç; `--workers`; çöken iş loglanır, ızgara devam eder.
+- Tek örnek kilidi; PROGRESS satırları ve bitiş tahmini.
+- `--dry-run`, `--status`, `--only`, `--table`.
+
+**Doğrulamalar:**
+- Yeni 12 koşunun hepsi temiz ağaçta, commit `354e4b0`.
+- Q0 ONNX çıktıları PyTorch'la `allclose` toleransı içinde.
+- INT8 kalibrasyonu train'den.
+- Tohum-0 satırları pilot tablosuyla birebir aynı (420/420).
+
+**Bulgular:**
+- **K-055:** XGBoost'un üç tohumu bit düzeyinde aynı modeli veriyor (`subsample = colsample = 1.0`).
+  Kullanıcı kararı (K-056): XGBoost'a dokunulmaz; nicemlenmeyen referans model olduğu için deterministik
+  olması raporlanır.
+- **K-054:** conv-AE her tohumda 30. epoch sınırına dayandı. `max_epochs` değiştirilmedi; kullanıcı onayladı.
