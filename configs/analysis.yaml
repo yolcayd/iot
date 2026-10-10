@@ -50,3 +50,4 @@ hypotheses:                     # K-062
   h1_pooled_df1_max: 0.05
   h2_coarse_types: {car_hacking: [dos, fuzzy], road: [fuzzing]}
   h2_coarse_recall_min: 0.90
+  h4_verdict_on_conflict: kısmen doğrulandı   # K-064: user decision after K-062 rule and K-063 check disagreed

@@ -1004,7 +1004,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-063 — AS-3: mutlak değer farkının yanlılığı; sağlamlık denetimleri (sonuç görüldükten sonra)
 
 - **Faz / tarih:** P6 · 2026-10-10
-- **Durum:** Geçerli. K-061 ve K-062'yi değiştirmez; onlara sağlamlık denetimi ekler. **H4'ün nihai hükmü kullanıcı kararına bırakıldı** (P6 kapanışı).
+- **Durum:** Geçerli. K-061 ve K-062'yi değiştirmez; onlara sağlamlık denetimi ekler. H4'ün nihai hükmü kullanıcı kararına bırakıldı; karar K-064'te.
 - **Zamanlama notu:** Bu girdi, `analysis.stats`'ın B = 200 replikli duman koşusunun AS-3 çıktısı görüldükten **sonra** yazıldı. Tam koşudan (B = 10.000) önce yazıldı. Önceden kayıtlı değildir.
 - **Bağlam:**
   - K-061'in birincil istatistiği tür başına d_t = |Δ_AE,t| − |Δ_CNN,t|; Δ, 3 tohumun ortalaması.
@@ -1021,3 +1021,20 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
      - Tohum ortalaması ± std raporlanır. Betimleyicidir; test yapılmaz.
   4. **FINDINGS'te H4 için:** K-062 kuralının sonucu, bu iki denetimin sonucu ve yanlılık açıklaması birlikte yazılır. İki sonuç çelişirse hüküm "kullanıcı kararı bekliyor" olarak işaretlenir.
 - **Gerekçe:** Önceden kayıtlı kuralın sonucu gizlenmemeli; ancak istatistiğin bilinen bir yanlılığı varsa, sonucu tek başına hüküm olarak sunmak yanıltıcı olur. Denetimler, mutlak değer kullanmayan ölçülerle aynı soruyu sorar.
+
+## K-064 — H4'ün nihai hükmü: kısmen doğrulandı (kullanıcı kararı)
+
+- **Faz / tarih:** P6 (kapanış) · 2026-10-10
+- **Durum:** Geçerli (kullanıcı kararı). K-063 madde 4'te açık bırakılan hükmü kapatır. K-062'nin H4 kuralı ve sonucu kayıtta olduğu gibi kalır; bu girdi onu silmez, yorumunu belirler.
+- **Bağlam** (B = 10.000; `results/tables/stats.csv`):
+  - **K-062 kuralı:** Q2'de |Δ_AE| − |Δ_CNN| ortalaması ΔAUC için 0.0062 [0.0048, 0.0272], ΔRecall için 0.0062 [0.0033, 0.0265]. Kurala göre hüküm "doğrulandı".
+  - **K-063 işaretli denetim:** Δ_AE − Δ_CNN ortalaması ΔAUC için 0.0025 [−0.0041, 0.0088], ΔRecall için −0.0002 [−0.0176, 0.0172]. Hüküm "doğrulanmadı".
+  - **K-063 çıktı denetimi:** ROAD'da Q0 ile Q2 skorları arasındaki Spearman korelasyonu conv-AE'de 0.973 (0.946–0.990), CNN'de 0.9997. Saldırı pencerelerinde karar değişimi conv-AE'de 0.0197, CNN'de 0.0075. Kalibrasyon kaymasında Q0 eşiğiyle val FPR 0.010 → 0.185.
+- **Karar:** H4'ün nihai hükmü **"kısmen doğrulandı"**.
+  - **Desteklenen kısım:** denetimsiz modelin çıktısı nicemlemeyle daha çok değişiyor (ROAD'da skor sırası, karar değişimi, kalibrasyon kayması).
+  - **Desteklenmeyen kısım:** yeniden kalibre edilmiş eşikte denetimsiz model denetimliden daha çok başarım kaybetmiyor.
+  - **Raporlama kuralı:** FINDINGS'te ve makalede önceden kayıtlı kuralın hükmü ("doğrulandı"), K-063'ün gerekçesi (mutlak değer yanlılığı) ve işaretli denetimin hükmü ("doğrulanmadı") nihai hükümle birlikte yazılır. Hiçbiri tek başına sunulmaz.
+- **Gerekçe:** Kayıtlı istatistik, gürültüsü büyük model lehine yukarı yanlıdır (K-063). Yanlılık içermeyen işaretli ölçü başarım kaybı farkı göstermiyor. Mekanizma ölçüleri ise çıktı düzeyinde gerçek bir duyarlılık farkı gösteriyor. "Kısmen" iki bulguyu birlikte doğru temsil eder.
+- **Etkisi:**
+  - `configs/analysis.yaml → hypotheses.h4_verdict_on_conflict`; `stats.csv`'nin H4 satırı nihai hükmü, kuralın hükmünü ve denetimin hükmünü birlikte taşır.
+  - **Zamanlama notu:** Hüküm, bütün sonuçlar görüldükten sonra kullanıcı tarafından verildi. Makalede böyle belirtilir.

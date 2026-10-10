@@ -794,7 +794,9 @@ def hypotheses(stats: pd.DataFrame, t_all: pd.DataFrame, delta: pd.DataFrame, pt
     s_auc = bool(sg.loc["mean_signed_diff_droc_auc", "ci_low"] > 0)
     s_rec = bool(sg.loc["mean_signed_diff_drecall", "ci_low"] > 0)
     v_signed = "doğrulandı" if s_auc and s_rec else "kısmen doğrulandı" if s_auc or s_rec else "doğrulanmadı"
-    final = v if v == v_signed else "kullanıcı kararı bekliyor (K-063)"
+    # the K-062 rule and the K-063 signed check disagree -> the user decision of K-064 (none -> pending)
+    final = v if v == v_signed else (f"{h['h4_verdict_on_conflict']} (K-064)" if h.get("h4_verdict_on_conflict")
+                                     else "kullanıcı kararı bekliyor (K-063)")
     rows.append(row("hypothesis", unit="H4", statistic="verdict", estimate=float(auc_up and rec_up),
                     note=f"{final}; K-062 rule: {v}: mean(|dAUC_AE| - |dAUC_CNN|)(Q2) = {a3.loc['mean_abs_diff_droc_auc', 'estimate']:.4g} "
                          f"[{a3.loc['mean_abs_diff_droc_auc', 'ci_low']:.4g}, {a3.loc['mean_abs_diff_droc_auc', 'ci_high']:.4g}]: {auc_up}; "
