@@ -282,7 +282,8 @@
      "road": [
       "fuzzing"
      ]
-    }
+    },
+    "h4_verdict_on_conflict": "k\u0131smen do\u011fruland\u0131"
    },
    "pareto": {
     "budgets": {
@@ -343,10 +344,10 @@
    "split": "test",
    "stage": "full"
   },
-  "created_utc": "2026-10-10T09:44:50+00:00",
-  "elapsed_s": 2.2,
+  "created_utc": "2026-10-10T16:34:37+00:00",
+  "elapsed_s": 4.5,
   "git": {
-   "commit": "1233f001eb2cf1c4f9daea719d89fae38227320b",
+   "commit": "88eed36225ce7cac19f49058d88343a37caa489b",
    "dirty": false,
    "dirty_files": [],
    "excluded_from_dirty_check": [
@@ -444,7 +445,7 @@
    "results/tables/decision_churn.csv": "9f56c4998f437ac623da23acc6b1b7902b6bd1a34496d5d0fea2b3d02f24dbac",
    "results/tables/pareto.csv": "64c149434999fe2e60769bf8256c59c8317226fe58c91f577b94018b05e6645a",
    "results/tables/per_type_delta.csv": "759d422cdd6dde250c8aee93d8a0cb7022bf001acb1406f4bb53be172bcefa8d",
-   "results/tables/stats.csv": "daa6dc9bee6c0042fa6e303fa6db917d92e23673aa323deb06e3a871cbfae015"
+   "results/tables/stats.csv": "92fbc8dd3eca25c8c45efe5cb90022b061a9de17da0c877f1b59c5b38c574ff1"
   },
   "threads": 4,
   "versions": {

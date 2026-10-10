@@ -3,7 +3,7 @@
 **Tarih:** 2026-10-10.
 **Kaynaklar:**
 - `results/tables/stats.csv`, `as1_pairs.csv`, `per_type_delta.csv`, `pareto.csv`, `calibration_shift.csv`, `decision_churn.csv`, `delta_f1.csv`, `all_results.csv`;
-- üretim: `python -m analysis.aggregate`, `python -m analysis.stats` (B = 10.000, commit `1233f00`, kirli değil; `analysis_manifest.json`).
+- üretim: `python -m analysis.aggregate`, `python -m analysis.stats` (B = 10.000; aggregate commit `1233f00`, stats commit `88eed36`; ikisi de kirli değil; `analysis_manifest.json`). Bütün sayısal çıktılar `1233f00`'dan beri aynı; `88eed36` yalnızca H4 satırının hüküm metnini değiştirdi (K-064).
 
 **Kararlar:** K-057 … K-063 (`docs/DECISIONS.md`).
 
@@ -26,7 +26,7 @@
 | **H1** — toplam kayıp sınırlı, türler arasında eşit dağılmıyor | **Doğrulandı** (kurala göre). Ancak eşitsizlik ihmal edilebilir büyüklükte. | (a) Toplam ΔF1(Q2) en fazla 0.0029 (ROAD CNN), sınır 0.05. (b) 26 birincil tür × model satırının 3'ünde ΔRecall(Q2) aralığı 0'ın üstünde (CNN ROAD, ≈ 0.007); 22'sinde aralık 0'ı içeriyor. |
 | **H2** — gizli saldırılarda kayıp daha büyük; kaba saldırılar INT8'de de yüksek başarımla tespit ediliyor | **Doğrulanmadı** | (a) Birincil birimlerde D (Q2) = 0.0006 [−0.0035, 0.0057]. (b) conv-AE ROAD fuzzing recall'u Q2'de 0.539 < 0.90; bu değer zaten Q0'da 0.564, yani nicemlemeden kaynaklanmıyor. |
 | **H3** — float16 en dengeli nokta; INT8 en yüksek kazancı veriyor ama gizli saldırılarda belirgin kayıp yaratıyor | **Kısmen doğrulandı** | Q1'de \|ΔRecall\| Q2'dekinden küçük; Q1 dosyası Q0'ın 0.52'si. Q1'in gecikme kazancı test edilemedi (K-043). INT8'de gizli saldırılara özgü kayıp yok (H2 a). |
-| **H4** — denetimsiz model nicemlemeye daha duyarlı | **Kullanıcı kararı bekliyor** (K-063) | K-062 kuralı: doğrulandı. Mutlak değer farkı ΔAUC(Q2) 0.0062 [0.0048, 0.0272]. İşaretli sağlamlık denetimi: doğrulanmadı. ΔAUC_AE − ΔAUC_CNN = 0.0025 [−0.0041, 0.0088]. Ayrıntı aşağıda. |
+| **H4** — denetimsiz model nicemlemeye daha duyarlı | **Kısmen doğrulandı** (K-064, kullanıcı kararı) | Önceden kayıtlı kural (K-062): **doğrulandı**; mutlak değer farkı ΔAUC(Q2) 0.0062 [0.0048, 0.0272]. Bu istatistik gürültülü model lehine yanlı (K-063). K-063 işaretli denetimi: **doğrulanmadı**; ΔAUC_AE − ΔAUC_CNN = 0.0025 [−0.0041, 0.0088]. Çıktı değişimi conv-AE'de daha büyük (ROAD Spearman 0.973 ve 0.9997). Üç aşama birlikte aşağıda. |
 
 ## AS-1 — Nicemleme kaybı saldırı türüne göre farklı mı?
 
@@ -172,8 +172,26 @@ K-062 kuralına göre H4 doğrulanıyor: Q2'de iki ölçünün aralığı da 0'�
 
 - **"Denetimsiz model nicemlemeyle daha çok başarım kaybeder"** (yönlü okuma): veri desteklemiyor (denetim a).
 - **"Denetimsiz modelin çıktısı nicemlemeyle daha çok değişir"** (büyüklük okuması): ROAD'da destekleniyor (denetim b, kalibrasyon kayması). Ancak bu değişim yeniden kalibre edilmiş eşikte net bir kayba dönüşmüyor.
-- K-062 kuralı "doğrulandı", K-063 işaretli denetimi "doğrulanmadı" diyor.
-- **Önerim:** "kısmen doğrulandı" (çıktı duyarlılığı var, başarım kaybı farkı yok). **Nihai hüküm kullanıcı kararıdır** (K-063 madde 4).
+### H4'ün hükmü: üç aşama birlikte (K-062 → K-063 → K-064)
+
+| Aşama | Ne zaman yazıldı | Ölçü (Q2) | Sonuç | Hüküm |
+|---|---|---|---|---|
+| **1. Önceden kayıtlı kural (K-062)** | P6 aralıklarından önce (P5 betimleyicilerinden sonra) | Mutlak değer farkı \|Δ_AE\| − \|Δ_CNN\|: ΔAUC 0.0062 [0.0048, 0.0272]; ΔRecall 0.0062 [0.0033, 0.0265] | İki aralık da 0'ın üstünde | **Doğrulandı** |
+| **2. Düzeltme / sağlamlık denetimi (K-063)** | B = 200 duman koşusu görüldükten sonra, tam koşudan önce | İşaretli fark Δ_AE − Δ_CNN: ΔAUC 0.0025 [−0.0041, 0.0088]; ΔRecall −0.0002 [−0.0176, 0.0172]. Çıktı ölçüleri (ROAD): Spearman 0.973 ve 0.9997; saldırı pencerelerinde karar değişimi 0.0197 ve 0.0075 | Başarım kaybı farkı yok; çıktı değişimi farkı var | **Doğrulanmadı** (yönlü okuma) |
+| **3. Nihai hüküm (K-064)** | Bütün sonuçlar görüldükten sonra, kullanıcı kararı | — | — | **Kısmen doğrulandı** |
+
+**Neden kayıtlı kuralın hükmü tek başına kabul edilmedi?**
+- Kuralın istatistiği mutlak değer farkıdır. Mutlak değerin beklenen değeri, gerçek etki sıfır olsa bile gürültüyle büyür.
+- conv-AE'nin Δ'sı tohumlar arasında CNN'inkinden çok daha değişken. Örneğin ROAD ΔAUC(Q2) tohum std'si correlated_signal'da 0.071 ve 0.0002, max_speedometer'da 0.017 ve 0.003 (`per_type_delta.csv`). Bu yüzden istatistik, gerçek bir fark olmasa da conv-AE'yi "daha duyarlı" gösterme eğilimindedir.
+- Belirtisi: nokta tahmini aralığın alt ucunda, aralık sağa doğru uzanıyor.
+- Bu bir yöntem özelliğidir, veriye bakılarak seçilmiş bir yorum değildir (birim test: `tests/test_stats.py::test_absolute_difference_is_biased_upward_for_the_noisier_model`).
+- Yine de kural sonuçlardan önce kaydedildiği için hükmü silinmedi; burada ve `stats.csv`'nin H4 satırında nihai hükümle birlikte duruyor.
+
+**"Kısmen"in içeriği:**
+- **Desteklenen:** INT8, denetimsiz modelin çıktısını denetimli modelinkinden daha çok değiştiriyor. ROAD'da skor sırası daha çok bozuluyor, kararlar daha çok değişiyor ve float32 eşiği kullanılırsa yanlış alarm oranı büyük ölçüde kayıyor (kalibrasyon kayması).
+- **Desteklenmeyen:** eşik nicemlenmiş modelin kendi val skorlarıyla yeniden kalibre edildiğinde, denetimsiz model denetimliden daha çok başarım (recall, ROC-AUC) kaybetmiyor.
+
+**Zamanlama:** K-063 sonuç görüldükten sonra eklendi; nihai hüküm (K-064) bütün sonuçlar görüldükten sonra kullanıcı tarafından verildi. Makalede bu sıra açıkça yazılacak.
 
 ## Kalibrasyon kayması (K-036 b: Q0 eşiği Qk'ye aynen uygulandığında)
 
@@ -208,7 +226,7 @@ K-062 kuralına göre H4 doğrulanıyor: Q2'de iki ölçünün aralığı da 0'�
 
 ## Kapsam ve dürüstlük notları
 
-- **Önceden kayıtlı olmayanlar:** H1–H4 hüküm kuralları (K-062) P5 betimleyici sonuçlarından sonra, P6 aralıklarından önce yazıldı. K-063 ise P6 duman koşusundan sonra yazıldı.
+- **Önceden kayıtlı olmayanlar:** H1–H4 hüküm kuralları (K-062) P5 betimleyici sonuçlarından sonra, P6 aralıklarından önce yazıldı. K-063 ise P6 duman koşusundan sonra yazıldı. H4'ün nihai hükmü (K-064) bütün sonuçlar görüldükten sonra kullanıcı tarafından verildi.
 - **Bu fazda bulunan hesaplama hataları** (sonuçlar raporlanmadan önce düzeltildi; P6 günlüğünde ayrıntılı):
   - Q1 eşiklerinin `metrics.csv`'deki 16 haneli yuvarlaması;
   - aralık sınırlarındaki kayan nokta artığı.
