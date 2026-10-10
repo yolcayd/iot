@@ -1000,3 +1000,24 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
     - ikisinin de aralığı 0'ı içeriyor ya da 0'ın altındaysa doğrulanmadı.
     - Kalibrasyon kayması hükme girmez, ayrıca yorumlanır.
 - **Gerekçe:** Hükümler sayısal ve yeniden üretilebilir olmalı. Kurallar aralıkların hesaplanmasından önce sabitlenir.
+
+## K-063 — AS-3: mutlak değer farkının yanlılığı; sağlamlık denetimleri (sonuç görüldükten sonra)
+
+- **Faz / tarih:** P6 · 2026-10-10
+- **Durum:** Geçerli. K-061 ve K-062'yi değiştirmez; onlara sağlamlık denetimi ekler. **H4'ün nihai hükmü kullanıcı kararına bırakıldı** (P6 kapanışı).
+- **Zamanlama notu:** Bu girdi, `analysis.stats`'ın B = 200 replikli duman koşusunun AS-3 çıktısı görüldükten **sonra** yazıldı. Tam koşudan (B = 10.000) önce yazıldı. Önceden kayıtlı değildir.
+- **Bağlam:**
+  - K-061'in birincil istatistiği tür başına d_t = |Δ_AE,t| − |Δ_CNN,t|; Δ, 3 tohumun ortalaması.
+  - Mutlak değer, sıfır çevresinde doğrusal olmayan bir fonksiyondur. Gerçek Δ = 0 olsa bile E|Δ̂| > 0'dır ve bu fark, Δ̂'nin gürültüsüyle (tohum ve pencere değişkenliği) büyür.
+  - conv-AE'nin Δ'sı tohumlar arasında CNN'inkinden çok daha değişken (P5 açık sorunu 4; örnek: ROAD fuzzing ΔRecall Q2 0.025 ± 0.095). Bu yüzden d_t, AE lehine yukarı yanlıdır.
+  - Aynı nedenle, |θ|'nın yüzdelik bootstrap aralığı θ = 0 yakınında tutarsızdır ve yukarı kayar.
+  - Duman koşusunda nokta tahmini aralığın alt ucuna yakın çıktı (Q2 ΔAUC: 0.0062, aralık [0.0046, 0.0202]). Bu, yanlılığın işaretidir.
+- **Karar:**
+  1. **K-061 analizi ve K-062 H4 kuralı aynen hesaplanır ve raporlanır.** Değiştirilmez.
+  2. **Sağlamlık denetimi (a) — işaretli fark:** tür başına Δ_AE,t − Δ_CNN,t (pozitif: AE daha çok kaybediyor). Ortalaması ve K-058 hiyerarşik bootstrap aralığı verilir; aynı birimler ve aynı ölçüler kullanılır (ΔAUC, taban kısıtlı ΔRecall). Düzgün (smooth) bir istatistiktir; mutlak değer yanlılığı yoktur. H4'ün yönlü okuması ("AE nicemlemeyle daha çok kaybeder") bununla sınanır.
+  3. **Sağlamlık denetimi (b) — karar değişimi ve sıra korunumu** (doğrudan ölçüm; iki gürültülü tahminin farkı değildir):
+     - her (model, veri seti, tohum, k) için, birincil havuzun test pencerelerinde Q0 ile Qk kararı (kendi yeniden kalibre eşikleriyle) farklı olan pencerelerin payı;
+     - Q0 ile Qk skorları arasındaki Spearman sıra korelasyonu.
+     - Tohum ortalaması ± std raporlanır. Betimleyicidir; test yapılmaz.
+  4. **FINDINGS'te H4 için:** K-062 kuralının sonucu, bu iki denetimin sonucu ve yanlılık açıklaması birlikte yazılır. İki sonuç çelişirse hüküm "kullanıcı kararı bekliyor" olarak işaretlenir.
+- **Gerekçe:** Önceden kayıtlı kuralın sonucu gizlenmemeli; ancak istatistiğin bilinen bir yanlılığı varsa, sonucu tek başına hüküm olarak sunmak yanıltıcı olur. Denetimler, mutlak değer kullanmayan ölçülerle aynı soruyu sorar.
