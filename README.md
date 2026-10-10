@@ -16,8 +16,8 @@ quantization **per attack type**, together with inference latency, model size an
   different attack types? Is the F1 loss on stealthy attacks significantly larger than on coarse attacks?
 - **RQ2:** Under a given inference-latency budget, which model/quantization combination offers the best
   trade-off between detection performance, latency and model size?
-- **RQ3:** Do supervised (1D-CNN) and unsupervised (LSTM autoencoder) detectors differ in their
-  robustness to quantization?
+- **RQ3:** Do supervised (1D-CNN) and unsupervised (autoencoder; the convolutional autoencoder after the
+  feasibility protocol, see below) detectors differ in their robustness to quantization?
 
 ## Data
 
@@ -182,3 +182,28 @@ python -m src.run_grid --stage full --table                     # grid_quant.csv
   output exists, and an interrupted deep training continues from its epoch checkpoint.
 - A failing job is logged and the grid goes on. Failures are listed at the end and in `results/tables/grid_failures.csv`.
 - CPU use = workers × threads. A lock file (`logs/grid.lock`) stops a second grid from starting.
+
+### Aggregation and statistics (P6)
+
+The analysis reads `results/raw` only (window-level test scores, thresholds, metrics, benchmark results); nothing
+is trained or re-scored. Settings: `configs/analysis.yaml`; decisions `docs/DECISIONS.md` K-057 ... K-063; findings
+in Turkish in `docs/FINDINGS.md`.
+
+```powershell
+python -m analysis.aggregate                  # all_results.csv, delta_f1.csv, missing_cells.csv (seconds)
+python -m analysis.stats --threads 4          # stats.csv and detail tables (~3 min for 10,000 replicates)
+python -m analysis.stats --n-boot 200 --out <dir>   # quick check into another directory
+```
+
+- `all_results.csv` is tidy (`run_id, model, dataset, seed, quantization, attack_type, attack_group, metric, value`
+  plus the keys `split, threshold_mode, level, role`). Every expected cell is present or listed in
+  `missing_cells.csv` with a structural reason (e.g. no Q1 latency, K-043; latency on seed 0 only, K-052);
+  a missing cell without such a reason makes the command fail.
+- Deltas are Q0 − Qk (positive = loss). The recomputed point estimates must match `metrics.csv` exactly before any
+  interval is computed.
+- Intervals: hierarchical bootstrap over seeds and test windows (moving blocks of ⌈n^(1/3)⌉ windows per
+  segment and label; one common window resample for every seed, level and model), 95 % percentile (K-058).
+- AS-1 is exploratory (3 primary units; no test can reach p < 0.25, K-057). The group-level Mann-Whitney test is
+  reported with its minimum attainable p (K-059). Pareto fronts follow the two-session latency rule (K-050, K-060).
+- Bootstrap replicates are cached in `data/processed/analysis_cache/`; a rerun reuses them (`--force` recomputes).
+  Provenance (commit, versions, input hashes) goes to `results/tables/analysis_manifest.json`.

@@ -1,0 +1,52 @@
+# P6 (plan F5) analysis settings. Decisions: docs/DECISIONS.md K-057 ... K-062. Written before any P6 analysis ran.
+# The analysis reads results/raw only (plus the P1 message-rate table for the latency budgets, K-060); nothing is
+# trained or re-scored.
+
+stage: full                     # configs/grid.yaml stage whose run ids are analysed (K-053: 18 runs)
+quantized_models: [cnn1d, conv_ae]
+reference_models: [xgb]         # not quantized (K-042); no delta, not an AS-1 unit (K-057)
+primary_threshold_mode: recalibrated   # K-036 (a) / K-045 (a); q0_threshold = calibration shift (K-036 b)
+split: test
+
+bootstrap:                      # K-058
+  n_boot: 10000
+  ci: 0.95                      # percentile interval
+  rng_seed: 20261010
+  block_length: cube_root       # moving blocks of ceil(n^(1/3)) windows per (segment, label) stratum
+  sensitivity_block_length: 1   # iid windows; AS-1 only
+  chunk: 500                    # replicates per chunk (memory bound)
+
+as1:                            # K-057
+  floor: 0.10                   # K-041 (same value as src/run_grid.K041_FLOOR)
+  primary_role: primary         # coolant pair (role unseen, K-019) is reported apart
+
+group_test:                     # K-059
+  dataset: road
+  coarse_sensitivity_add: car_hacking
+
+as3:                            # K-061
+  recall_floor: 0.10            # both models' mean Q0 recall >= floor for the delta-recall comparison
+  wilcoxon_zero_method: pratt
+
+pareto:                         # K-060
+  candidates:
+    - {model: cnn1d, quantization: q0}
+    - {model: cnn1d, quantization: q2}
+    - {model: conv_ae, quantization: q0}
+    - {model: conv_ae, quantization: q2}
+    - {model: xgb, quantization: native}
+  size_only_candidates:         # no CPU latency (K-043): only on the size-recall front
+    - {model: cnn1d, quantization: q1}
+    - {model: conv_ae, quantization: q1}
+  latency_reference: {model: cnn1d, quantization: q0}
+  profile: host
+  sessions: [1, 2]
+  budgets:
+    message_rate_source: results/tables/data_profile.csv   # median msg_rate_per_s of non-excluded ambient captures
+    window_messages: 100        # (i) window budget: one non-overlapping window (stride = N)
+    strict_messages: 1          # (ii) strict budget: one message interval (sliding detection on every frame)
+
+hypotheses:                     # K-062
+  h1_pooled_df1_max: 0.05
+  h2_coarse_types: {car_hacking: [dos, fuzzy], road: [fuzzing]}
+  h2_coarse_recall_min: 0.90

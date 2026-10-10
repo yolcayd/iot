@@ -105,6 +105,17 @@ GENERATED_OUTPUTS = (
     "results/tables/benchmark_*.csv",          # src/benchmark.py
     "results/tables/benchmark_manifest.json",  # src/quantize.py (benchmark targets)
     "results/tables/grid_*.csv",               # src/run_grid.py --table / failures
+    # analysis/aggregate.py and analysis/stats.py (P6)
+    "results/tables/all_results.csv",
+    "results/tables/delta_f1.csv",
+    "results/tables/missing_cells.csv",
+    "results/tables/analysis_manifest.json",
+    "results/tables/stats.csv",
+    "results/tables/as1_pairs.csv",
+    "results/tables/per_type_delta.csv",
+    "results/tables/pareto.csv",
+    "results/tables/calibration_shift.csv",
+    "results/tables/decision_churn.csv",
 )
 
 

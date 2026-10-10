@@ -1,0 +1,486 @@
+analysis,model,dataset,quantization,unit,statistic,estimate,ci_low,ci_high,n_units,n_seeds,seed_values,p_value,p_holm,holm_family,min_attainable_p,block,note,n_boot
+as1_pair,cnn1d,road,q1,correlated_signal,dR_fab,0,0,0,1,3,0;0;0,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,correlated_signal,dR_masq,0,0,0,1,3,0;0;0,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,correlated_signal,D_R,0,0,0,1,3,0;0;0,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,correlated_signal,D_R,0,0,0,1,3,0;0;0,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q1,correlated_signal,dF1_fab,0,0,0,1,3,0;0;0,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,correlated_signal,dF1_masq,0,0,0,1,3,0;0;0,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,correlated_signal,D_F1,0,0,0,1,3,0;0;0,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,correlated_signal,D_F1,0,0,0,1,3,0;0;0,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q2,correlated_signal,dR_fab,0.0021164,-0.0042328,0.00952381,1,3,0.00634921;-0.0031746;0.0031746,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,correlated_signal,dR_masq,0.00220751,-0.00441501,0.013245,1,3,0;-0.00331126;0.00993377,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,correlated_signal,D_R,9.11034e-05,-0.00952381,0.0112197,1,3,-0.00634921;-0.000136655;0.00675917,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,correlated_signal,D_R,9.11034e-05,-0.00952381,0.010992,1,3,-0.00634921;-0.000136655;0.00675917,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q2,correlated_signal,dF1_fab,0.00129455,-0.00233334,0.00594616,1,3,0.00390549;-0.0016848;0.00166297,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,correlated_signal,dF1_masq,0.00121989,-0.00261451,0.00743634,1,3,0;-0.00186886;0.00552854,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,correlated_signal,D_F1,-7.46605e-05,-0.0057689,0.00640737,1,3,-0.00390549;-0.00018406;0.00386557,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,correlated_signal,D_F1,-7.46605e-05,-0.00584795,0.00607777,1,3,-0.00390549;-0.00018406;0.00386557,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q1,max_engine_coolant_temp,dR_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q1,max_engine_coolant_temp,dR_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q1,max_engine_coolant_temp,D_R,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q1,max_engine_coolant_temp,D_R,0,0,0,1,3,0;0;0,,,,,iid,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q1,max_engine_coolant_temp,dF1_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q1,max_engine_coolant_temp,dF1_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q1,max_engine_coolant_temp,D_F1,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q1,max_engine_coolant_temp,D_F1,0,0,0,1,3,0;0;0,,,,,iid,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q2,max_engine_coolant_temp,dR_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q2,max_engine_coolant_temp,dR_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q2,max_engine_coolant_temp,D_R,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q2,max_engine_coolant_temp,D_R,0,0,0,1,3,0;0;0,,,,,iid,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q2,max_engine_coolant_temp,dF1_fab,-0.0009132,-0.00404313,0,1,3,0;-0.00160966;-0.00112994,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q2,max_engine_coolant_temp,dF1_masq,-0.00149741,-0.00548719,0,1,3,0;-0.00201207;-0.00248016,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q2,max_engine_coolant_temp,D_F1,-0.00058421,-0.00462286,0.00299384,1,3,0;-0.000402414;-0.00135022,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q2,max_engine_coolant_temp,D_F1,-0.00058421,-0.00498482,0.00277782,1,3,0;-0.000402414;-0.00135022,,,,,iid,reported only: not in the primary pool (K-019),10000
+as1_pair,cnn1d,road,q1,max_speedometer,dR_fab,0.00021901,0,0.00131406,1,3,0;0;0.00065703,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,max_speedometer,dR_masq,0.000912617,0,0.00273785,1,3,0.000684463;0;0.00205339,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,max_speedometer,D_R,0.000693607,-0.000401444,0.0025097,1,3,0.000684463;0;0.00139636,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,max_speedometer,D_R,0.000693607,-0.000401444,0.0025097,1,3,0.000684463;0;0.00139636,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q1,max_speedometer,dF1_fab,0.000161812,0,0.000922613,1,3,0;0;0.000485435,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,max_speedometer,dF1_masq,0.00059573,0,0.00188676,1,3,0.00040278;0;0.00138441,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,max_speedometer,D_F1,0.000433918,-0.000308977,0.001657,1,3,0.00040278;0;0.000898974,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,max_speedometer,D_F1,0.000433918,-0.000322372,0.00157081,1,3,0.00040278;0;0.000898974,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q2,max_speedometer,dR_fab,0.00678931,0.00262812,0.0111695,1,3,0.00788436;0.00394218;0.00854139,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,max_speedometer,dR_masq,0.00707278,0.00273785,0.011864,1,3,0.00752909;0.00410678;0.00958248,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,max_speedometer,D_R,0.000283469,-0.00482714,0.00569516,1,3,-0.000355273;0.000164595;0.00104108,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,max_speedometer,D_R,0.000283469,-0.00455371,0.00515701,1,3,-0.000355273;0.000164595;0.00104108,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q2,max_speedometer,dF1_fab,0.00432036,0.00112938,0.00773228,1,3,0.00337446;0.00324644;0.00634016,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,max_speedometer,dF1_masq,0.00416914,0.00110704,0.0077244,1,3,0.0028288;0.00319046;0.00648817,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,max_speedometer,D_F1,-0.000151213,-0.00401369,0.00388578,1,3,-0.000545656;-5.59867e-05;0.000148004,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,max_speedometer,D_F1,-0.000151213,-0.0038182,0.00352558,1,3,-0.000545656;-5.59867e-05;0.000148004,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q1,reverse_light_off,dR_fab,0,0,0,1,3,0;0;0,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,reverse_light_off,dR_masq,0.00228702,0,0.00686106,1,3,0;0;0.00686106,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,reverse_light_off,D_R,0.00228702,0,0.00686106,1,3,0;0;0.00686106,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,reverse_light_off,D_R,0.00228702,0,0.00800457,1,3,0;0;0.00686106,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q1,reverse_light_off,dF1_fab,0,0,0,1,3,0;0;0,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,reverse_light_off,dF1_masq,0.00257942,0,0.00804556,1,3,0;0;0.00773825,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,reverse_light_off,D_F1,0.00257942,0,0.00804556,1,3,0;0;0.00773825,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q1,reverse_light_off,D_F1,0.00257942,0,0.00939424,1,3,0;0;0.00773825,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q2,reverse_light_off,dR_fab,0.00658979,0.0010983,0.0137287,1,3,0.0131796;0.00329489;0.00329489,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,reverse_light_off,dR_masq,0.00800457,-0.00228702,0.0222985,1,3,0.0205832;0;0.00343053,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,reverse_light_off,D_R,0.00141479,-0.00665817,0.0139256,1,3,0.00740362;-0.00329489;0.000135639,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,reverse_light_off,D_R,0.00141479,-0.00713893,0.012346,1,3,0.00740362;-0.00329489;0.000135639,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q2,reverse_light_off,dF1_fab,0.00652333,0.000859722,0.0133247,1,3,0.0122497;0.00356485;0.00375546,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,reverse_light_off,dF1_masq,0.00604095,-0.00211532,0.0161991,1,3,0.0148907;0;0.00323214,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,reverse_light_off,D_F1,-0.000482374,-0.00758047,0.00889307,1,3,0.00264104;-0.00356485;-0.000523315,,,,,block,primary unit,10000
+as1_pair,cnn1d,road,q2,reverse_light_off,D_F1,-0.000482374,-0.00804641,0.0079036,1,3,0.00264104;-0.00356485;-0.000523315,,,,,iid,primary unit,10000
+as1_pair,cnn1d,road,q1,reverse_light_on,dR_fab,0.000567859,0,0.00340716,1,3,0;0;0.00170358,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q1,reverse_light_on,dR_masq,0.000591017,0,0.0035461,1,3,0;0;0.00177305,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q1,reverse_light_on,D_R,2.31574e-05,-0.00227144,0.00236407,1,3,0;0;6.94721e-05,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q1,reverse_light_on,D_R,2.31574e-05,-0.00227144,0.00236407,1,3,0;0;6.94721e-05,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q1,reverse_light_on,dF1_fab,0.000921022,0,0.00530473,1,3,0;0;0.00276306,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q1,reverse_light_on,dF1_masq,0.000846292,0,0.00490342,1,3,0;0;0.00253888,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q1,reverse_light_on,D_F1,-7.47299e-05,-0.00373533,0.00338606,1,3,0;0;-0.00022419,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q1,reverse_light_on,D_F1,-7.47299e-05,-0.00374575,0.00338667,1,3,0;0;-0.00022419,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q2,reverse_light_on,dR_fab,0.00511073,0,0.0124929,1,3,0.0102215;0;0.00511073,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q2,reverse_light_on,dR_masq,0.0070922,-0.000591017,0.0159574,1,3,0.00886525;0;0.0124113,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q2,reverse_light_on,D_R,0.00198147,-0.00646695,0.0107778,1,3,-0.00135622;0;0.00730061,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q2,reverse_light_on,D_R,0.00198147,-0.00632974,0.0108004,1,3,-0.00135622;0;0.00730061,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q2,reverse_light_on,dF1_fab,0.00857794,0,0.0210031,1,3,0.0174192;0;0.00831466,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q2,reverse_light_on,dF1_masq,0.0111762,-0.00127315,0.0244394,1,3,0.0155956;0;0.017933,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q2,reverse_light_on,D_F1,0.00259823,-0.0109453,0.0154939,1,3,-0.00182359;0;0.0096183,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,cnn1d,road,q2,reverse_light_on,D_F1,0.00259823,-0.0106005,0.015788,1,3,-0.00182359;0;0.0096183,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,correlated_signal,dR_fab,0.0010582,0,0.00634921,1,3,0;0;0.0031746,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,correlated_signal,dR_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,correlated_signal,D_R,-0.0010582,-0.00634921,0,1,3,0;0;-0.0031746,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,correlated_signal,D_R,-0.0010582,-0.00634921,0,1,3,0;0;-0.0031746,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,correlated_signal,dF1_fab,0.00182197,0,0.010525,1,3,0;0;0.0054659,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,correlated_signal,dF1_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,correlated_signal,D_F1,-0.00182197,-0.010525,0,1,3,0;0;-0.0054659,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,correlated_signal,D_F1,-0.00182197,-0.0105861,0,1,3,0;0;-0.0054659,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,correlated_signal,dR_fab,-0.00846561,-0.031746,0.010582,1,3,-0.00634921;0.00952381;-0.0285714,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,correlated_signal,dR_masq,-0.00441501,-0.0220751,0.00662252,1,3,0;0.00331126;-0.0165563,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,correlated_signal,D_R,0.0040506,-0.0128351,0.0230982,1,3,0.00634921;-0.00621255;0.0120151,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,correlated_signal,D_R,0.0040506,-0.0126984,0.0215868,1,3,0.00634921;-0.00621255;0.0120151,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,correlated_signal,dF1_fab,-0.0138835,-0.0527029,0.020796,1,3,-0.0123821;0.0185153;-0.0477836,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,correlated_signal,dF1_masq,-0.00786424,-0.0388453,0.0131579,1,3,0;0.00655723;-0.03015,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,correlated_signal,D_F1,0.00601923,-0.0251015,0.0384364,1,3,0.0123821;-0.011958;0.0176336,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,correlated_signal,D_F1,0.00601923,-0.0248824,0.0358141,1,3,0.0123821;-0.011958;0.0176336,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,max_engine_coolant_temp,dR_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q1,max_engine_coolant_temp,dR_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q1,max_engine_coolant_temp,D_R,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q1,max_engine_coolant_temp,D_R,0,0,0,1,3,0;0;0,,,,,iid,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q1,max_engine_coolant_temp,dF1_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q1,max_engine_coolant_temp,dF1_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q1,max_engine_coolant_temp,D_F1,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q1,max_engine_coolant_temp,D_F1,0,0,0,1,3,0;0;0,,,,,iid,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q2,max_engine_coolant_temp,dR_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q2,max_engine_coolant_temp,dR_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q2,max_engine_coolant_temp,D_R,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q2,max_engine_coolant_temp,D_R,0,0,0,1,3,0;0;0,,,,,iid,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q2,max_engine_coolant_temp,dF1_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q2,max_engine_coolant_temp,dF1_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q2,max_engine_coolant_temp,D_F1,0,0,0,1,3,0;0;0,,,,,block,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q2,max_engine_coolant_temp,D_F1,0,0,0,1,3,0;0;0,,,,,iid,reported only: not in the primary pool (K-019),10000
+as1_pair,conv_ae,road,q1,max_speedometer,dR_fab,0.00043802,0,0.00175208,1,3,0.00131406;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,max_speedometer,dR_masq,0.000456308,0,0.00159708,1,3,0.000684463;0.000684463;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,max_speedometer,D_R,1.82883e-05,-0.00131406,0.00136893,1,3,-0.000629598;0.000684463;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,max_speedometer,D_R,1.82883e-05,-0.00131406,0.00136893,1,3,-0.000629598;0.000684463;0,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,max_speedometer,dF1_fab,0.000675704,0,0.00275351,1,3,0.00202711;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,max_speedometer,dF1_masq,0.000683436,-6.73338e-05,0.00244824,1,3,0.000888711;0.0011616;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,max_speedometer,D_F1,7.7317e-06,-0.00214339,0.00228181,1,3,-0.0011384;0.0011616;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,max_speedometer,D_F1,7.7317e-06,-0.00213433,0.00229466,1,3,-0.0011384;0.0011616;0,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,max_speedometer,dR_fab,-0.00284713,-0.0157687,0.0111695,1,3,-0.00919842;0.0118265;-0.0111695,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,max_speedometer,dR_masq,0.000228154,-0.0219028,0.0257814,1,3,-0.0184805;0.028063;-0.00889802,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,max_speedometer,D_R,0.00307529,-0.0138262,0.0197404,1,3,-0.00928207;0.0162364;0.0022715,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,max_speedometer,D_R,0.00307529,-0.0126139,0.0183619,1,3,-0.00928207;0.0162364;0.0022715,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,max_speedometer,dF1_fab,-0.00404996,-0.0263123,0.0214619,1,3,-0.0139121;0.0223719;-0.0206097,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,max_speedometer,dF1_masq,0.00388068,-0.0298244,0.0474311,1,3,-0.023854;0.0516925;-0.0161965,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,max_speedometer,D_F1,0.00793064,-0.0168317,0.0361575,1,3,-0.00994191;0.0293206;0.00441324,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,max_speedometer,D_F1,0.00793064,-0.015379,0.0334347,1,3,-0.00994191;0.0293206;0.00441324,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_off,dR_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_off,dR_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_off,D_R,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_off,D_R,0,0,0,1,3,0;0;0,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_off,dF1_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_off,dF1_masq,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_off,D_F1,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_off,D_F1,0,0,0,1,3,0;0;0,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_off,dR_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_off,dR_masq,-0.000571755,-0.00343053,0,1,3,0;0;-0.00171527,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_off,D_R,-0.000571755,-0.00343053,0,1,3,0;0;-0.00171527,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_off,D_R,-0.000571755,-0.00343053,0,1,3,0;0;-0.00171527,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_off,dF1_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_off,dF1_masq,-0.00114155,-0.00682594,0,1,3,0;0;-0.00342466,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_off,D_F1,-0.00114155,-0.00682594,0,1,3,0;0;-0.00342466,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_off,D_F1,-0.00114155,-0.00682594,0,1,3,0;0;-0.00342466,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_on,dR_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_on,dR_masq,0.000591017,0,0.0035461,1,3,0.00177305;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_on,D_R,0.000591017,0,0.0035461,1,3,0.00177305;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_on,D_R,0.000591017,0,0.0035461,1,3,0.00177305;0;0,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_on,dF1_fab,0,0,0,1,3,0;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_on,dF1_masq,0.0011675,0,0.00693186,1,3,0.0035025;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_on,D_F1,0.0011675,0,0.00693186,1,3,0.0035025;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q1,reverse_light_on,D_F1,0.0011675,0,0.00693156,1,3,0.0035025;0;0,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_on,dR_fab,-0.000567859,-0.00340716,0,1,3,-0.00170358;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_on,dR_masq,-0.00118203,-0.00531915,0.00177305,1,3,-0.00177305;-0.00177305;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_on,D_R,-0.000614174,-0.00472813,0.00340716,1,3,-6.94721e-05;-0.00177305;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_on,D_R,-0.000614174,-0.00413712,0.00340716,1,3,-6.94721e-05;-0.00177305;0,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_on,dF1_fab,-0.00113379,-0.00677966,0,1,3,-0.00340136;0;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_on,dF1_masq,-0.00233917,-0.0103973,0.00345376,1,3,-0.00349019;-0.00352731;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_on,D_F1,-0.00120538,-0.00916165,0.00677966,1,3,-8.88249e-05;-0.00352731;0,,,,,block,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pair,conv_ae,road,q2,reverse_light_on,D_F1,-0.00120538,-0.00817254,0.00677966,1,3,-8.88249e-05;-0.00352731;0,,,,,iid,reported only: floor: mean Q0 recall < 0.1 (K-041),10000
+as1_pooled,cnn1d,road,q1,correlated_signal;max_speedometer;reverse_light_off,mean_D_R,0.000993543,0,0.00290155,3,3,0.000228154;0;0.00275247,,,,0.25,block,exploratory; no test: Wilcoxon with n units cannot reach p below min_attainable_p (K-057),10000
+as1_pooled,cnn1d,road,q1,correlated_signal;max_speedometer;reverse_light_off,mean_D_R,0.000993543,0,0.00321376,3,3,0.000228154;0;0.00275247,,,,0.25,iid,exploratory; no test: Wilcoxon with n units cannot reach p below min_attainable_p (K-057),10000
+as1_pooled,cnn1d,road,q1,correlated_signal;max_speedometer;reverse_light_off,mean_D_F1,0.00100444,0,0.00304439,3,3,0.00013426;0;0.00287907,,,,0.25,block,exploratory; no test: Wilcoxon with n units cannot reach p below min_attainable_p (K-057),10000
+as1_pooled,cnn1d,road,q1,correlated_signal;max_speedometer;reverse_light_off,mean_D_F1,0.00100444,0,0.00339953,3,3,0.00013426;0;0.00287907,,,,0.25,iid,exploratory; no test: Wilcoxon with n units cannot reach p below min_attainable_p (K-057),10000
+as1_pooled,cnn1d,road,q2,correlated_signal;max_speedometer;reverse_light_off,mean_D_R,0.000596454,-0.00354689,0.0057018,3,3,0.000233046;-0.00108898;0.0026453,,,,0.25,block,exploratory; no test: Wilcoxon with n units cannot reach p below min_attainable_p (K-057),10000
+as1_pooled,cnn1d,road,q2,correlated_signal;max_speedometer;reverse_light_off,mean_D_R,0.000596454,-0.00374636,0.00508584,3,3,0.000233046;-0.00108898;0.0026453,,,,0.25,iid,exploratory; no test: Wilcoxon with n units cannot reach p below min_attainable_p (K-057),10000
+as1_pooled,cnn1d,road,q2,correlated_signal;max_speedometer;reverse_light_off,mean_D_F1,-0.000236083,-0.00331119,0.00353786,3,3,-0.000603367;-0.0012683;0.00116342,,,,0.25,block,exploratory; no test: Wilcoxon with n units cannot reach p below min_attainable_p (K-057),10000
+as1_pooled,cnn1d,road,q2,correlated_signal;max_speedometer;reverse_light_off,mean_D_F1,-0.000236083,-0.00350696,0.00313762,3,3,-0.000603367;-0.0012683;0.00116342,,,,0.25,iid,exploratory; no test: Wilcoxon with n units cannot reach p below min_attainable_p (K-057),10000
+per_type_delta,cnn1d,car_hacking,q1,dos,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,dos,d_f1,6.92748e-05,0,0.00041029,1,3,0;0.000207824;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,dos,d_roc_auc,-1.88926e-08,-3.77852e-07,3.02282e-07,1,3,-5.66778e-08;5.66778e-08;-5.66778e-08,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,dos,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,dos,d_f1,-0.00388266,-0.00730301,-0.000223352,1,3,0;-0.00459508;-0.00705291,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,dos,d_roc_auc,-6.6502e-06,-3.25146e-05,0,1,3,-1.706e-05;2.26711e-07;-3.11728e-06,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,dos,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,dos,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,dos,d_roc_auc,1.32248e-07,-1.11466e-06,1.39805e-06,1,3,-3.40067e-07;-5.66778e-08;7.93489e-07,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,dos,d_recall,0.000151103,0,0.000906618,1,3,0;0.000453309;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,dos,d_f1,7.71343e-05,0,0.000460693,1,3,0;0.000231403;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,dos,d_roc_auc,-1.59831e-05,-5.26017e-05,6.34792e-06,1,3,-2.98125e-05;5.66778e-07;-1.87037e-05,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,fuzzy,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,fuzzy,d_f1,0.000156695,0,0.000543427,1,3,0;0.000232683;0.000237403,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,fuzzy,d_roc_auc,-1.86815e-07,-1.60127e-06,8.2799e-07,1,3,-5.60444e-07;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,fuzzy,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,fuzzy,d_f1,-0.00388582,-0.00640272,-0.00125652,1,3,-0.00125209;-0.00491268;-0.0054927,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,fuzzy,d_roc_auc,1.02214e-05,-3.41884e-05,8.56259e-05,1,3,5.47634e-05;-2.28981e-05;-1.20095e-06,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,fuzzy,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,fuzzy,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,fuzzy,d_roc_auc,3.70074e-17,-8.5401e-07,7.20571e-07,1,3,2.4019e-07;-2.4019e-07;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,fuzzy,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,fuzzy,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,fuzzy,d_roc_auc,-1.92152e-06,-2.09246e-05,1.46783e-05,1,3,1.0088e-05;-2.72216e-06;-1.31304e-05,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,gear_spoofing,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,gear_spoofing,d_f1,8.55033e-05,-0.000118198,0.000384115,1,3,0.00025651;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,gear_spoofing,d_roc_auc,1.43061e-07,-1.04044e-07,7.023e-07,1,3,4.29183e-07;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,gear_spoofing,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,gear_spoofing,d_f1,-0.00221469,-0.00437545,-0.000128238,1,3,-0.000128305;-0.00423974;-0.00227601,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,gear_spoofing,d_roc_auc,-3.55052e-06,-1.30706e-05,1.56067e-07,1,3,-6.86693e-06;-1.56067e-07;-3.62855e-06,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,gear_spoofing,d_recall,0.000699178,-0.000349589,0.00235973,1,3,-0.000262192;0.00209754;0.000262192,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,gear_spoofing,d_f1,0.000448077,-0.000182172,0.00148279,1,3,-0.000137379;0.00133578;0.000145826,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,gear_spoofing,d_roc_auc,-4.81205e-07,-2.91357e-06,1.82078e-06,1,3,-1.01443e-06;-1.36558e-06;9.364e-07,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,gear_spoofing,d_recall,-0.0241217,-0.0435239,-0.0107499,1,3,-0.0117986;-0.0157315;-0.0448348,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,gear_spoofing,d_f1,-0.0134737,-0.0237719,-0.00588044,1,3,-0.00614578;-0.00991853;-0.0243569,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,gear_spoofing,d_roc_auc,-3.33983e-05,-8.05564e-05,2.00292e-05,1,3,-1.19391e-05;-6.29729e-05;-2.52828e-05,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,rpm_spoofing,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,rpm_spoofing,d_f1,0.000145602,0,0.000433731,1,3,0.000113506;0.0003233;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q1,rpm_spoofing,d_roc_auc,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,rpm_spoofing,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,rpm_spoofing,d_f1,-0.00274105,-0.00402045,-0.0016636,1,3,-0.00204758;-0.00367929;-0.00249628,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,car_hacking,q2,rpm_spoofing,d_roc_auc,1.16075e-08,0,9.28598e-08,1,3,3.48224e-08;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,rpm_spoofing,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,rpm_spoofing,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q1,rpm_spoofing,d_roc_auc,2.32149e-07,-3.71729e-07,1.06789e-06,1,3,2.08935e-07;1.3929e-07;3.48224e-07,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,rpm_spoofing,d_recall,7.73754e-05,0,0.000464253,1,3,0;0;0.000232126,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,rpm_spoofing,d_f1,3.89449e-05,0,0.000233343,1,3,0;0;0.000116835,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,car_hacking,q2,rpm_spoofing,d_roc_auc,-6.50019e-06,-2.51894e-05,3.50546e-06,1,3,-9.26276e-06;-3.34295e-06;-6.89484e-06,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,correlated_signal,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,correlated_signal,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,correlated_signal,d_roc_auc,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,correlated_signal,d_recall,0.0021164,-0.0042328,0.00952381,1,3,0.00634921;-0.0031746;0.0031746,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,correlated_signal,d_f1,0.00129455,-0.00233334,0.00594616,1,3,0.00390549;-0.0016848;0.00166297,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,correlated_signal,d_roc_auc,4.62321e-05,-0.000184928,0.000318488,1,3,1.54107e-05;-9.24642e-05;0.00021575,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,correlated_signal,d_recall,0.0010582,0,0.00634921,1,3,0;0;0.0031746,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,correlated_signal,d_f1,0.00182197,0,0.010525,1,3,0;0;0.0054659,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,correlated_signal,d_roc_auc,-0.000159244,-0.000724303,0.000400678,1,3,0.000169518;-0.000508553;-0.000138696,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,correlated_signal,d_recall,-0.00846561,-0.031746,0.010582,1,3,-0.00634921;0.00952381;-0.0285714,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,correlated_signal,d_f1,-0.0138835,-0.0527029,0.020796,1,3,-0.0123821;0.0185153;-0.0477836,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,correlated_signal,d_roc_auc,0.0238866,-0.025366,0.0993689,1,3,-0.0119587;0.105348;-0.0217291,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,correlated_signal_masquerade,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,correlated_signal_masquerade,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,correlated_signal_masquerade,d_roc_auc,1.60741e-05,0,6.42963e-05,1,3,1.60741e-05;1.60741e-05;1.60741e-05,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,correlated_signal_masquerade,d_recall,0.00220751,-0.00441501,0.013245,1,3,0;-0.00331126;0.00993377,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,correlated_signal_masquerade,d_f1,0.00121989,-0.00261451,0.00743634,1,3,0;-0.00186886;0.00552854,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,correlated_signal_masquerade,d_roc_auc,0.000150025,-0.000160741,0.000546518,1,3,8.03703e-05;-8.03703e-05;0.000450074,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,correlated_signal_masquerade,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,correlated_signal_masquerade,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,correlated_signal_masquerade,d_roc_auc,-1.0716e-05,-0.000659037,0.000723467,1,3,0.00051437;-0.000498296;-4.82222e-05,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,correlated_signal_masquerade,d_recall,-0.00441501,-0.0220751,0.00662252,1,3,0;0.00331126;-0.0165563,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,correlated_signal_masquerade,d_f1,-0.00786424,-0.0388453,0.0131579,1,3,0;0.00655723;-0.03015,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,correlated_signal_masquerade,d_roc_auc,0.016342,-0.028678,0.0884741,1,3,-0.0223751;0.0937118;-0.0223108,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,fuzzing,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,fuzzing,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,fuzzing,d_roc_auc,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,fuzzing,d_recall,-0.00490196,-0.0147059,0,1,3,0;-0.0147059;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,fuzzing,d_f1,-0.00246835,-0.00739979,0,1,3,0;-0.00740506;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,fuzzing,d_roc_auc,1.26666e-05,0,5.06663e-05,1,3,0;0;3.79997e-05,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,fuzzing,d_recall,-0.00490196,-0.0294118,0,1,3,-0.0147059;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,fuzzing,d_f1,-0.00407308,-0.0239859,0,1,3,-0.0122192;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,fuzzing,d_roc_auc,-1.26666e-05,-0.000189998,7.59994e-05,1,3,-3.79997e-05;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,fuzzing,d_recall,0.0245098,-0.0882353,0.132353,1,3,0.132353;-0.0441176;-0.0147059,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,fuzzing,d_f1,0.0218945,-0.0886282,0.120165,1,3,0.121429;-0.0466819;-0.00906304,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,fuzzing,d_roc_auc,0.00160865,-0.00722058,0.0112989,1,3,0.0118559;-0.00611795;-0.000911993,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,max_engine_coolant_temp,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,cnn1d,road,q1,max_engine_coolant_temp,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,cnn1d,road,q1,max_engine_coolant_temp,d_roc_auc,7.40202e-05,-0.00045758,0.000585433,1,3,-4.03747e-05;0.000484496;-0.000222061,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,cnn1d,road,q2,max_engine_coolant_temp,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,cnn1d,road,q2,max_engine_coolant_temp,d_f1,-0.0009132,-0.00404313,0,1,3,0;-0.00160966;-0.00112994,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,cnn1d,road,q2,max_engine_coolant_temp,d_roc_auc,-0.00022879,-0.00441447,0.00369445,1,3,-0.00377503;0.00236192;0.000726744,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,conv_ae,road,q1,max_engine_coolant_temp,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,conv_ae,road,q1,max_engine_coolant_temp,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,conv_ae,road,q1,max_engine_coolant_temp,d_roc_auc,6.0562e-05,-0.000733642,0.00083441,1,3,0.000222061;-0.000242248;0.000201873,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,conv_ae,road,q2,max_engine_coolant_temp,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,conv_ae,road,q2,max_engine_coolant_temp,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,conv_ae,road,q2,max_engine_coolant_temp,d_roc_auc,0.0225425,-0.0223948,0.0906149,1,3,-0.0115472;0.0935885;-0.0144138,,,,,block,group=coarse; role=unseen,10000
+per_type_delta,cnn1d,road,q1,max_engine_coolant_temp_masquerade,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,cnn1d,road,q1,max_engine_coolant_temp_masquerade,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,cnn1d,road,q1,max_engine_coolant_temp_masquerade,d_roc_auc,-6.74082e-05,-0.00049882,0.0003303,1,3,-0.000262892;6.06673e-05;0,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,cnn1d,road,q2,max_engine_coolant_temp_masquerade,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,cnn1d,road,q2,max_engine_coolant_temp_masquerade,d_f1,-0.00149741,-0.00548719,0,1,3,0;-0.00201207;-0.00248016,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,cnn1d,road,q2,max_engine_coolant_temp_masquerade,d_roc_auc,-0.0024941,-0.00650506,0.00174604,1,3,-0.00552073;0.000788675;-0.00275025,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,conv_ae,road,q1,max_engine_coolant_temp_masquerade,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,conv_ae,road,q1,max_engine_coolant_temp_masquerade,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,conv_ae,road,q1,max_engine_coolant_temp_masquerade,d_roc_auc,-6.74082e-05,-0.00092366,0.000788675,1,3,0;0.000202224;-0.000404449,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,conv_ae,road,q2,max_engine_coolant_temp_masquerade,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,conv_ae,road,q2,max_engine_coolant_temp_masquerade,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,conv_ae,road,q2,max_engine_coolant_temp_masquerade,d_roc_auc,0.0216785,-0.0286097,0.0978797,1,3,-0.0203033;0.100222;-0.0148837,,,,,block,group=stealthy; role=unseen,10000
+per_type_delta,cnn1d,road,q1,max_speedometer,d_recall,0.00021901,0,0.00131406,1,3,0;0;0.00065703,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,max_speedometer,d_f1,0.000161812,0,0.000922613,1,3,0;0;0.000485435,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,max_speedometer,d_roc_auc,0.000135229,7.55638e-05,0.000206867,1,3,0.00010236;0.000176316;0.000127012,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,max_speedometer,d_recall,0.00678931,0.00262812,0.0111695,1,3,0.00788436;0.00394218;0.00854139,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,max_speedometer,d_f1,0.00432036,0.00112938,0.00773228,1,3,0.00337446;0.00324644;0.00634016,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,max_speedometer,d_roc_auc,0.00148002,-0.00121824,0.00405206,1,3,-0.00133657;0.00158363;0.00419299,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,max_speedometer,d_recall,0.00043802,0,0.00175208,1,3,0.00131406;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,max_speedometer,d_f1,0.000675704,0,0.00275351,1,3,0.00202711;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,max_speedometer,d_roc_auc,2.96539e-05,-9.77194e-05,0.000156487,1,3,-8.78899e-05;8.57462e-05;9.11053e-05,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,max_speedometer,d_recall,-0.00284713,-0.0157687,0.0111695,1,3,-0.00919842;0.0118265;-0.0111695,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,max_speedometer,d_f1,-0.00404996,-0.0263123,0.0214619,1,3,-0.0139121;0.0223719;-0.0206097,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,max_speedometer,d_roc_auc,0.00321459,-0.0141025,0.0184205,1,3,0.0184435;0.00596686;-0.0147666,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,max_speedometer_masquerade,d_recall,0.000912617,0,0.00273785,1,3,0.000684463;0;0.00205339,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,max_speedometer_masquerade,d_f1,0.00059573,0,0.00188676,1,3,0.00040278;0;0.00138441,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,max_speedometer_masquerade,d_roc_auc,4.39188e-05,-3.90803e-06,9.04429e-05,1,3,5.52706e-05;5.80621e-05;1.84235e-05,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,max_speedometer_masquerade,d_recall,0.00707278,0.00273785,0.011864,1,3,0.00752909;0.00410678;0.00958248,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,max_speedometer_masquerade,d_f1,0.00416914,0.00110704,0.0077244,1,3,0.0028288;0.00319046;0.00648817,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,max_speedometer_masquerade,d_roc_auc,0.0010226,-0.000692851,0.00275516,1,3,-0.000789979;0.00102223;0.00283555,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,max_speedometer_masquerade,d_recall,0.000456308,0,0.00159708,1,3,0.000684463;0.000684463;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,max_speedometer_masquerade,d_f1,0.000683436,-6.73338e-05,0.00244824,1,3,0.000888711;0.0011616;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,max_speedometer_masquerade,d_roc_auc,1.33989e-05,-0.000123382,0.000162839,1,3,-0.000116124;3.62888e-05;0.000120032,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,max_speedometer_masquerade,d_recall,0.000228154,-0.0219028,0.0257814,1,3,-0.0184805;0.028063;-0.00889802,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,max_speedometer_masquerade,d_f1,0.00388068,-0.0298244,0.0474311,1,3,-0.023854;0.0516925;-0.0161965,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,max_speedometer_masquerade,d_roc_auc,0.00454596,-0.00665272,0.014845,1,3,0.00850498;0.0122433;-0.00711037,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_off,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_off,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_off,d_roc_auc,0.000118948,7.19858e-06,0.00027766,1,3,3.9078e-05;2.67376e-05;0.000291028,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_off,d_recall,0.00658979,0.0010983,0.0137287,1,3,0.0131796;0.00329489;0.00329489,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_off,d_f1,0.00652333,0.000859722,0.0133247,1,3,0.0122497;0.00356485;0.00375546,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_off,d_roc_auc,0.000443227,-5.27982e-05,0.000879264,1,3,0.000685922;0.00035273;0.000291028,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_off,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_off,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_off,d_roc_auc,-0.000151856,-0.000397979,9.04964e-05,1,3,-0.000235496;4.93617e-05;-0.000269433,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_off,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_off,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_off,d_roc_auc,0.00317012,-0.0149604,0.015815,1,3,0.013558;-0.0119702;0.00792255,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_off_masquerade,d_recall,0.00228702,0,0.00686106,1,3,0;0;0.00686106,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_off_masquerade,d_f1,0.00257942,0,0.00804556,1,3,0;0;0.00773825,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_off_masquerade,d_roc_auc,2.71245e-05,-1.74881e-05,9.03049e-05,1,3,1.71312e-05;-9.63633e-06;7.38785e-05,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_off_masquerade,d_recall,0.00800457,-0.00228702,0.0222985,1,3,0.0205832;0;0.00343053,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_off_masquerade,d_f1,0.00604095,-0.00211532,0.0161991,1,3,0.0148907;0;0.00323214,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_off_masquerade,d_roc_auc,-1.0707e-05,-0.000397945,0.000267702,1,3,0.000125272;3.10504e-05;-0.000188444,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_off_masquerade,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_off_masquerade,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_off_masquerade,d_roc_auc,-0.000122774,-0.000396874,0.000172758,1,3,-0.000235555;-0.000253757;0.000120989,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_off_masquerade,d_recall,-0.000571755,-0.00343053,0,1,3,0;0;-0.00171527,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_off_masquerade,d_f1,-0.00114155,-0.00682594,0,1,3,0;0;-0.00342466,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_off_masquerade,d_roc_auc,0.0116603,-0.00134496,0.0300071,1,3,-0.00091438;0.0260491;0.00984618,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_on,d_recall,0.000567859,0,0.00340716,1,3,0;0;0.00170358,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_on,d_f1,0.000921022,0,0.00530473,1,3,0;0;0.00276306,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_on,d_roc_auc,0.000105343,-1.02133e-05,0.000246286,1,3,6.82832e-05;0.000229361;1.83839e-05,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_on,d_recall,0.00511073,0,0.0124929,1,3,0.0102215;0;0.00511073,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_on,d_f1,0.00857794,0,0.0210031,1,3,0.0174192;0;0.00831466,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_on,d_roc_auc,0.00285856,-0.000226772,0.00752435,1,3,6.12798e-06;0.00058741;0.00798213,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_on,d_recall,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_on,d_f1,0,0,0,1,3,0;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_on,d_roc_auc,-6.18634e-05,-0.000218572,0.000114688,1,3,-0.000165455;-6.47815e-05;4.46467e-05,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_on,d_recall,-0.000567859,-0.00340716,0,1,3,-0.00170358;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_on,d_f1,-0.00113379,-0.00677966,0,1,3,-0.00340136;0;0,,,,,block,group=coarse; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_on,d_roc_auc,-0.0157037,-0.064617,0.0185335,1,3,0.0190598;-0.0694764;0.00330561,,,,,block,group=coarse; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_on_masquerade,d_recall,0.000591017,0,0.0035461,1,3,0;0;0.00177305,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_on_masquerade,d_f1,0.000846292,0,0.00490342,1,3,0;0;0.00253888,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q1,reverse_light_on_masquerade,d_roc_auc,4.64674e-05,-7.38011e-05,0.000167647,1,3,0.000106602;0.000109335;-7.65345e-05,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_on_masquerade,d_recall,0.0070922,-0.000591017,0.0159574,1,3,0.00886525;0;0.0124113,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_on_masquerade,d_f1,0.0111762,-0.00127315,0.0244394,1,3,0.0155956;0;0.017933,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,cnn1d,road,q2,reverse_light_on_masquerade,d_roc_auc,0.00146114,-0.000670292,0.00424691,1,3,-9.84015e-05;-0.000161269;0.00464309,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_on_masquerade,d_recall,0.000591017,0,0.0035461,1,3,0.00177305;0;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_on_masquerade,d_f1,0.0011675,0,0.00693186,1,3,0.0035025;0;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q1,reverse_light_on_masquerade,d_roc_auc,-3.91784e-05,-0.000214114,0.000143054,1,3,-0.000190425;-2.27781e-05;9.56681e-05,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_on_masquerade,d_recall,-0.00118203,-0.00531915,0.00177305,1,3,-0.00177305;-0.00177305;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_on_masquerade,d_f1,-0.00233917,-0.0103973,0.00345376,1,3,-0.00349019;-0.00352731;0,,,,,block,group=stealthy; role=primary,10000
+per_type_delta,conv_ae,road,q2,reverse_light_on_masquerade,d_roc_auc,-0.00828,-0.0389149,0.0168759,1,3,0.0177505;-0.0418079;-0.000782657,,,,,block,group=stealthy; role=primary,10000
+group_mwu,cnn1d,road,q1,stealthy n=4 vs coarse n=5,cliffs_delta_drecall,0.65,0,0.75,9,3,,0.134921,0.444444,group_road_drecall,0.015873,block,"U=16.5; mean drecall stealthy=0.000947664, coarse=0.000157374; primary; primary family (K-059); Holm-adjusted min attainable p = 0.06349",10000
+group_mwu,cnn1d,road,q2,stealthy n=4 vs coarse n=5,cliffs_delta_drecall,0.7,-0.3,0.9,9,3,,0.111111,0.444444,group_road_drecall,0.015873,block,"U=17; mean drecall stealthy=0.00609426, coarse=0.00314085; primary; primary family (K-059); Holm-adjusted min attainable p = 0.06349",10000
+group_mwu,conv_ae,road,q1,stealthy n=4 vs coarse n=5,cliffs_delta_drecall,0.2,-0.2,0.5,9,3,,0.68254,1,group_road_drecall,0.015873,block,"U=12; mean drecall stealthy=0.000261831, coarse=-0.000681148; primary; primary family (K-059); Holm-adjusted min attainable p = 0.06349",10000
+group_mwu,conv_ae,road,q2,stealthy n=4 vs coarse n=5,cliffs_delta_drecall,-0.1,-0.5,0.5,9,3,,0.904762,1,group_road_drecall,0.015873,block,"U=9; mean drecall stealthy=-0.00148516, coarse=0.00252584; primary; primary family (K-059); Holm-adjusted min attainable p = 0.06349",10000
+group_mwu,cnn1d,road,q1,stealthy n=4 vs coarse n=5,cliffs_delta_df1,0.45,0,0.75,9,3,,0.301587,1,group_road_df1,0.015873,block,"U=14.5; mean df1 stealthy=0.00100536, coarse=0.000216567; primary; secondary family (K-059); Holm-adjusted min attainable p = 0.06349",10000
+group_mwu,cnn1d,road,q2,stealthy n=4 vs coarse n=5,cliffs_delta_df1,0.1,-0.3,0.7,9,3,,0.904762,1,group_road_df1,0.015873,block,"U=11; mean df1 stealthy=0.00565154, coarse=0.00364956; primary; secondary family (K-059); Holm-adjusted min attainable p = 0.06349",10000
+group_mwu,conv_ae,road,q1,stealthy n=4 vs coarse n=5,cliffs_delta_df1,0.2,-0.4,0.5,9,3,,0.68254,1,group_road_df1,0.015873,block,"U=12; mean df1 stealthy=0.000462734, coarse=-0.000315081; primary; secondary family (K-059); Holm-adjusted min attainable p = 0.06349",10000
+group_mwu,conv_ae,road,q2,stealthy n=4 vs coarse n=5,cliffs_delta_df1,-0.1,-0.5,0.5,9,3,,0.904762,1,group_road_df1,0.015873,block,"U=9; mean df1 stealthy=-0.00186607, coarse=0.000565464; primary; secondary family (K-059); Holm-adjusted min attainable p = 0.06349",10000
+group_mwu,cnn1d,road+car_hacking_coarse,q1,stealthy n=4 vs coarse n=9,cliffs_delta_drecall,0.694444,0,0.75,13,3,,0.0181818,0.0615385,group_road+car_hacking_coarse_drecall,0.0027972,block,"U=30.5; mean drecall stealthy=0.000947664, coarse=8.74299e-05; sensitivity (dataset confounded); primary family (K-059); Holm-adjusted min attainable p = 0.01119",10000
+group_mwu,cnn1d,road+car_hacking_coarse,q2,stealthy n=4 vs coarse n=9,cliffs_delta_drecall,0.833333,-0.0555556,0.944444,13,3,,0.0153846,0.0615385,group_road+car_hacking_coarse_drecall,0.0027972,block,"U=33; mean drecall stealthy=0.00609426, coarse=0.00174492; sensitivity (dataset confounded); primary family (K-059); Holm-adjusted min attainable p = 0.01119",10000
+group_mwu,conv_ae,road+car_hacking_coarse,q1,stealthy n=4 vs coarse n=9,cliffs_delta_drecall,0.166667,-0.222222,0.5,13,3,,0.716084,1,group_road+car_hacking_coarse_drecall,0.0027972,block,"U=21; mean drecall stealthy=0.000261831, coarse=-0.000300729; sensitivity (dataset confounded); primary family (K-059); Holm-adjusted min attainable p = 0.01119",10000
+group_mwu,conv_ae,road+car_hacking_coarse,q2,stealthy n=4 vs coarse n=9,cliffs_delta_drecall,-0.111111,-0.5,0.444444,13,3,,0.795804,1,group_road+car_hacking_coarse_drecall,0.0027972,block,"U=16; mean drecall stealthy=-0.00148516, coarse=-0.00125155; sensitivity (dataset confounded); primary family (K-059); Holm-adjusted min attainable p = 0.01119",10000
+group_mwu,cnn1d,road+car_hacking_coarse,q1,stealthy n=4 vs coarse n=9,cliffs_delta_df1,0.472222,-0.444444,0.694444,13,3,,0.198601,0.794406,group_road+car_hacking_coarse_df1,0.0027972,block,"U=26.5; mean df1 stealthy=0.00100536, coarse=0.000171101; sensitivity (dataset confounded); secondary family (K-059); Holm-adjusted min attainable p = 0.01119",10000
+group_mwu,cnn1d,road+car_hacking_coarse,q2,stealthy n=4 vs coarse n=9,cliffs_delta_df1,0.5,0.194444,0.833333,13,3,,0.198601,0.794406,group_road+car_hacking_coarse_df1,0.0027972,block,"U=27; mean df1 stealthy=0.00565154, coarse=0.000613733; sensitivity (dataset confounded); secondary family (K-059); Holm-adjusted min attainable p = 0.01119",10000
+group_mwu,conv_ae,road+car_hacking_coarse,q1,stealthy n=4 vs coarse n=9,cliffs_delta_df1,0.277778,-0.416667,0.5,13,3,,0.448951,0.897902,group_road+car_hacking_coarse_df1,0.0027972,block,"U=23; mean df1 stealthy=0.000462734, coarse=-0.000125259; sensitivity (dataset confounded); secondary family (K-059); Holm-adjusted min attainable p = 0.01119",10000
+group_mwu,conv_ae,road+car_hacking_coarse,q2,stealthy n=4 vs coarse n=9,cliffs_delta_df1,-0.111111,-0.555556,0.472222,13,3,,0.795804,0.897902,group_road+car_hacking_coarse_df1,0.0027972,block,"U=16; mean df1 stealthy=-0.00186607, coarse=-0.00117004; sensitivity (dataset confounded); secondary family (K-059); Holm-adjusted min attainable p = 0.01119",10000
+as3,conv_ae-cnn1d,car_hacking+road,q1,13 types,mean_abs_diff_droc_auc,8.36486e-06,1.85553e-06,0.000124578,13,3,,0.892578,1,as3,0.000244141,block,"primary (K-061); units=car_hacking/dos;car_hacking/fuzzy;car_hacking/gear_spoofing;car_hacking/rpm_spoofing;road/correlated_signal;road/correlated_signal_masquerade;road/fuzzing;road/max_speedometer;road/max_speedometer_masquerade;road/reverse_light_off;road/reverse_light_off_masquerade;road/reverse_light_on;road/reverse_light_on_masquerade; mean signed d: conv_ae=-3.96432e-05, cnn1d=3.79263e-05; Cliff's delta(|d_conv_ae| vs |d_cnn1d|)=0.1953; Wilcoxon zero_method=pratt, 13 non-zero differences",10000
+as3,conv_ae-cnn1d,car_hacking+road,q2,13 types,mean_abs_diff_droc_auc,0.006228,0.00477206,0.0272153,13,3,,0.000732422,0.00292969,as3,0.000244141,block,"primary (K-061); units=car_hacking/dos;car_hacking/fuzzy;car_hacking/gear_spoofing;car_hacking/rpm_spoofing;road/correlated_signal;road/correlated_signal_masquerade;road/fuzzing;road/max_speedometer;road/max_speedometer_masquerade;road/reverse_light_off;road/reverse_light_off_masquerade;road/reverse_light_on;road/reverse_light_on_masquerade; mean signed d: conv_ae=0.00310667, cnn1d=0.000574137; Cliff's delta(|d_conv_ae| vs |d_cnn1d|)=0.5503; Wilcoxon zero_method=pratt, 13 non-zero differences",10000
+as3,conv_ae-cnn1d,car_hacking+road,q1,6 types,mean_abs_diff_drecall,0.000857472,-0.000251614,0.00483726,6,3,,0.5,1,as3,0.03125,block,"floor 0.1 in both models (K-061); units=car_hacking/dos;car_hacking/fuzzy;car_hacking/gear_spoofing;car_hacking/rpm_spoofing;road/fuzzing;road/max_speedometer_masquerade; mean signed d: conv_ae=-0.000624412, cnn1d=0.000152103; Cliff's delta(|d_conv_ae| vs |d_cnn1d|)=0.3056; Wilcoxon zero_method=pratt, 3 non-zero differences",10000
+as3,conv_ae-cnn1d,car_hacking+road,q2,6 types,mean_abs_diff_drecall,0.00618556,0.00329529,0.0265246,6,3,,0.25,0.75,as3,0.03125,block,"floor 0.1 in both models (K-061); units=car_hacking/dos;car_hacking/fuzzy;car_hacking/gear_spoofing;car_hacking/rpm_spoofing;road/fuzzing;road/max_speedometer_masquerade; mean signed d: conv_ae=0.000140797, cnn1d=0.000361803; Cliff's delta(|d_conv_ae| vs |d_cnn1d|)=0.4444; Wilcoxon zero_method=pratt, 5 non-zero differences",10000
+as3_signed_diff,conv_ae-cnn1d,car_hacking+road,q1,13 types,mean_signed_diff_droc_auc,-7.75695e-05,-0.000155603,-2.43676e-07,13,3,,,,,,block,"robustness check, written after the B=200 smoke run (K-063); positive = conv_ae loses more",10000
+as3_signed,conv_ae,car_hacking+road,q1,13 types,mean_droc_auc,-3.96432e-05,-0.000116224,3.65758e-05,13,3,,,,,,block,descriptive (K-061),10000
+as3_signed,cnn1d,car_hacking+road,q1,13 types,mean_droc_auc,3.79263e-05,2.52624e-05,5.21568e-05,13,3,,,,,,block,descriptive (K-061),10000
+as3_signed_diff,conv_ae-cnn1d,car_hacking+road,q2,13 types,mean_signed_diff_droc_auc,0.00253253,-0.00406041,0.00876561,13,3,,,,,,block,"robustness check, written after the B=200 smoke run (K-063); positive = conv_ae loses more",10000
+as3_signed,conv_ae,car_hacking+road,q2,13 types,mean_droc_auc,0.00310667,-0.00344264,0.00928188,13,3,,,,,,block,descriptive (K-061),10000
+as3_signed,cnn1d,car_hacking+road,q2,13 types,mean_droc_auc,0.000574137,-8.49067e-05,0.0015007,13,3,,,,,,block,descriptive (K-061),10000
+as3_signed_diff,conv_ae-cnn1d,car_hacking+road,q1,6 types,mean_signed_diff_drecall,-0.000776515,-0.00484945,0.000396508,6,3,,,,,,block,"robustness check, written after the B=200 smoke run (K-063); positive = conv_ae loses more",10000
+as3_signed,conv_ae,car_hacking+road,q1,6 types,mean_drecall,-0.000624412,-0.00472395,0.000507365,6,3,,,,,,block,descriptive (K-061),10000
+as3_signed,cnn1d,car_hacking+road,q1,6 types,mean_drecall,0.000152103,0,0.000456308,6,3,,,,,,block,descriptive (K-061),10000
+as3_signed_diff,conv_ae-cnn1d,car_hacking+road,q2,6 types,mean_signed_diff_drecall,-0.000221007,-0.0176224,0.0172268,6,3,,,,,,block,"robustness check, written after the B=200 smoke run (K-063); positive = conv_ae loses more",10000
+as3_signed,conv_ae,car_hacking+road,q2,6 types,mean_drecall,0.000140797,-0.0166194,0.0179744,6,3,,,,,,block,descriptive (K-061),10000
+as3_signed,cnn1d,car_hacking+road,q2,6 types,mean_drecall,0.000361803,-0.00121617,0.00197734,6,3,,,,,,block,descriptive (K-061),10000
+calib_shift,cnn1d,car_hacking,q1,ambient,fpr_val_qk,0.00969913,0.00950119,0.010095,,3,0.00950119;0.00950119;0.010095,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q1,ambient,fpr_test_qk,0.0142518,0.0106888,0.0172209,,3,0.0106888;0.0172209;0.0148456,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q1,ambient,fpr_val_q0,0.00950119,0.00950119,0.00950119,,3,0.00950119;0.00950119;0.00950119,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q1,ambient,fpr_test_q0,0.0146477,0.0112827,0.0178147,,3,0.0112827;0.0178147;0.0148456,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q1,primary_pool,pooled_recall_qk,0.999702,0.999675,0.999756,,3,0.999675;0.999756;0.999675,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q1,primary_pool,pooled_recall_q0,0.999702,0.999675,0.999756,,3,0.999675;0.999756;0.999675,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q2,ambient,fpr_val_qk,0.0091053,0.00890736,0.00950119,,3,0.00950119;0.00890736;0.00890736,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q2,ambient,fpr_test_qk,0.0128662,0.010095,0.0148456,,3,0.010095;0.013658;0.0148456,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q2,ambient,fpr_val_q0,0.00950119,0.00950119,0.00950119,,3,0.00950119;0.00950119;0.00950119,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q2,ambient,fpr_test_q0,0.0146477,0.0112827,0.0178147,,3,0.0112827;0.0178147;0.0148456,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q2,primary_pool,pooled_recall_qk,0.999702,0.999675,0.999756,,3,0.999675;0.999756;0.999675,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,car_hacking,q2,primary_pool,pooled_recall_q0,0.999702,0.999675,0.999756,,3,0.999675;0.999756;0.999675,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q1,ambient,fpr_val_qk,0.00969913,0.00890736,0.010095,,3,0.00890736;0.010095;0.010095,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q1,ambient,fpr_test_qk,0.00197941,0.00178147,0.0023753,,3,0.00178147;0.0023753;0.00178147,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q1,ambient,fpr_val_q0,0.00950119,0.00950119,0.00950119,,3,0.00950119;0.00950119;0.00950119,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q1,ambient,fpr_test_q0,0.00197941,0.00178147,0.0023753,,3,0.00178147;0.0023753;0.00178147,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q1,primary_pool,pooled_recall_qk,0.955248,0.922539,0.980879,,3,0.980879;0.922539;0.962327,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q1,primary_pool,pooled_recall_q0,0.955194,0.922783,0.980879,,3,0.980879;0.922783;0.96192,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q2,ambient,fpr_val_qk,0.0124703,0.0124703,0.0124703,,3,0.0124703;0.0124703;0.0124703,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q2,ambient,fpr_test_qk,0.00277118,0.0023753,0.00296912,,3,0.00296912;0.0023753;0.00296912,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q2,ambient,fpr_val_q0,0.00950119,0.00950119,0.00950119,,3,0.00950119;0.00950119;0.00950119,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q2,ambient,fpr_test_q0,0.00197941,0.00178147,0.0023753,,3,0.00178147;0.0023753;0.00178147,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q2,primary_pool,pooled_recall_qk,0.970518,0.945321,0.986249,,3,0.986249;0.945321;0.979984,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,car_hacking,q2,primary_pool,pooled_recall_q0,0.955194,0.922783,0.980879,,3,0.980879;0.922783;0.96192,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q1,ambient,fpr_val_qk,0.0094912,0.00927379,0.00966105,,3,0.00927379;0.00953876;0.00966105,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q1,ambient,fpr_test_qk,0.0207553,0.0121256,0.0263359,,3,0.0121256;0.0238045;0.0263359,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q1,ambient,fpr_val_q0,0.00950479,0.00925341,0.00964067,,3,0.00925341;0.00962028;0.00964067,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q1,ambient,fpr_test_q0,0.0208617,0.0121256,0.0263785,,3,0.0121256;0.024081;0.0263785,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q1,primary_pool,pooled_recall_qk,0.544017,0.496755,0.61125,,3,0.61125;0.496755;0.524047,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q1,primary_pool,pooled_recall_q0,0.544572,0.497587,0.61125,,3,0.61125;0.497587;0.524879,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q2,ambient,fpr_val_qk,0.0093757,0.00837698,0.0102114,,3,0.00953876;0.00837698;0.0102114,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q2,ambient,fpr_test_qk,0.0200533,0.0121043,0.0279527,,3,0.0121043;0.020103;0.0279527,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q2,ambient,fpr_val_q0,0.00950479,0.00925341,0.00964067,,3,0.00925341;0.00962028;0.00964067,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q2,ambient,fpr_test_q0,0.0208617,0.0121256,0.0263785,,3,0.0121256;0.024081;0.0263785,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q2,primary_pool,pooled_recall_qk,0.539247,0.477284,0.61358,,3,0.61358;0.477284;0.526876,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,cnn1d,road,q2,primary_pool,pooled_recall_q0,0.544572,0.497587,0.61125,,3,0.61125;0.497587;0.524879,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q1,ambient,fpr_val_qk,0.0102929,0.0102725,0.0103133,,3,0.0103133;0.0102725;0.0102929,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q1,ambient,fpr_test_qk,0.000921829,0.000468005,0.00117001,,3,0.00112747;0.000468005;0.00117001,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q1,ambient,fpr_val_q0,0.0102385,0.0102317,0.0102521,,3,0.0102521;0.0102317;0.0102317,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q1,ambient,fpr_test_q0,0.000914738,0.000468005,0.00117001,,3,0.00110619;0.000468005;0.00117001,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q1,primary_pool,pooled_recall_qk,0.0547512,0.0276252,0.102513,,3,0.102513;0.0276252;0.0341155,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q1,primary_pool,pooled_recall_q0,0.0545848,0.0276252,0.102014,,3,0.102014;0.0276252;0.0341155,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q2,ambient,fpr_val_qk,0.184892,0.0195463,0.486191,,3,0.0489371;0.486191;0.0195463,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q2,ambient,fpr_test_qk,0.0616987,0.00199966,0.174204,,3,0.0088921;0.174204;0.00199966,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q2,ambient,fpr_val_q0,0.0102385,0.0102317,0.0102521,,3,0.0102521;0.0102317;0.0102317,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q2,ambient,fpr_test_q0,0.000914738,0.000468005,0.00117001,,3,0.00110619;0.000468005;0.00117001,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q2,primary_pool,pooled_recall_qk,0.363455,0.070228,0.732901,,3,0.287236;0.732901;0.070228,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+calib_shift,conv_ae,road,q2,primary_pool,pooled_recall_q0,0.0545848,0.0276252,0.102014,,3,0.102014;0.0276252;0.0341155,,,,,,Q0 threshold applied to Qk (K-036 b); ci_low/ci_high = min/max over seeds,10000
+pareto,cnn1d,car_hacking,q0,pooled_recall,robust_front,0,,,,,,,,,,,"latency s1/s2 = 0.0421/0.0403 ms (order of magnitude only, K-050); size 0.1032 MB; pooled_recall_mean 0.9997; window budget 52.6 ms, strict 0.526 ms",10000
+pareto,cnn1d,car_hacking,q2,pooled_recall,robust_front,1,,,,,,,,,,,"latency s1/s2 = 0.0295/0.0298 ms (order of magnitude only, K-050); size 0.03914 MB; pooled_recall_mean 0.9997; window budget 52.6 ms, strict 0.526 ms",10000
+pareto,conv_ae,car_hacking,q0,pooled_recall,robust_front,0,,,,,,,,,,,"latency s1/s2 = 0.102/0.11 ms (order of magnitude only, K-050); size 0.1112 MB; pooled_recall_mean 0.9552; window budget 52.6 ms, strict 0.526 ms",10000
+pareto,conv_ae,car_hacking,q2,pooled_recall,robust_front,0,,,,,,,,,,,"latency s1/s2 = 0.11/0.116 ms (order of magnitude only, K-050); size 0.04176 MB; pooled_recall_mean 0.9626; window budget 52.6 ms, strict 0.526 ms",10000
+pareto,xgb,car_hacking,native,pooled_recall,robust_front,1,,,,,,,,,,,"latency s1/s2 = 0.518/0.489 ms (order of magnitude only, K-050); size 0.2054 MB; pooled_recall_mean 1; window budget 52.6 ms, strict 0.526 ms",10000
+pareto,cnn1d,car_hacking,q1,pooled_recall,size_front,0,,,,,,,,,,,"latency s1/s2 = nan/nan ms (order of magnitude only, K-050); size 0.05387 MB; pooled_recall_mean 0.9997; window budget 52.6 ms, strict 0.526 ms",10000
+pareto,conv_ae,car_hacking,q1,pooled_recall,size_front,0,,,,,,,,,,,"latency s1/s2 = nan/nan ms (order of magnitude only, K-050); size 0.0582 MB; pooled_recall_mean 0.955; window budget 52.6 ms, strict 0.526 ms",10000
+pareto,cnn1d,road,q0,stealthy_recall,robust_front,1,,,,,,,,,,,"latency s1/s2 = 0.0398/0.0465 ms (order of magnitude only, K-050); size 0.1032 MB; stealthy_recall_mean 0.5522; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,cnn1d,road,q0,pooled_recall,robust_front,1,,,,,,,,,,,"latency s1/s2 = 0.0398/0.0465 ms (order of magnitude only, K-050); size 0.1032 MB; pooled_recall_mean 0.5446; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,cnn1d,road,q2,stealthy_recall,robust_front,1,,,,,,,,,,,"latency s1/s2 = 0.0299/0.0298 ms (order of magnitude only, K-050); size 0.03914 MB; stealthy_recall_mean 0.5461; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,cnn1d,road,q2,pooled_recall,robust_front,1,,,,,,,,,,,"latency s1/s2 = 0.0299/0.0298 ms (order of magnitude only, K-050); size 0.03914 MB; pooled_recall_mean 0.5384; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,conv_ae,road,q0,stealthy_recall,robust_front,0,,,,,,,,,,,"latency s1/s2 = 0.102/0.107 ms (order of magnitude only, K-050); size 0.1112 MB; stealthy_recall_mean 0.03416; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,conv_ae,road,q0,pooled_recall,robust_front,0,,,,,,,,,,,"latency s1/s2 = 0.102/0.107 ms (order of magnitude only, K-050); size 0.1112 MB; pooled_recall_mean 0.05458; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,conv_ae,road,q2,stealthy_recall,robust_front,0,,,,,,,,,,,"latency s1/s2 = 0.107/0.108 ms (order of magnitude only, K-050); size 0.04176 MB; stealthy_recall_mean 0.03564; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,conv_ae,road,q2,pooled_recall,robust_front,0,,,,,,,,,,,"latency s1/s2 = 0.107/0.108 ms (order of magnitude only, K-050); size 0.04176 MB; pooled_recall_mean 0.05586; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,xgb,road,native,stealthy_recall,robust_front,0,,,,,,,,,,,"latency s1/s2 = 0.5/0.484 ms (order of magnitude only, K-050); size 0.2736 MB; stealthy_recall_mean 0.08865; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,xgb,road,native,pooled_recall,robust_front,0,,,,,,,,,,,"latency s1/s2 = 0.5/0.484 ms (order of magnitude only, K-050); size 0.2736 MB; pooled_recall_mean 0.2763; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,cnn1d,road,q1,stealthy_recall,size_front,1,,,,,,,,,,,"latency s1/s2 = nan/nan ms (order of magnitude only, K-050); size 0.05387 MB; stealthy_recall_mean 0.5512; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,cnn1d,road,q1,pooled_recall,size_front,1,,,,,,,,,,,"latency s1/s2 = nan/nan ms (order of magnitude only, K-050); size 0.05387 MB; pooled_recall_mean 0.544; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,conv_ae,road,q1,stealthy_recall,size_front,0,,,,,,,,,,,"latency s1/s2 = nan/nan ms (order of magnitude only, K-050); size 0.0582 MB; stealthy_recall_mean 0.0339; window budget 41.9 ms, strict 0.419 ms",10000
+pareto,conv_ae,road,q1,pooled_recall,size_front,0,,,,,,,,,,,"latency s1/s2 = nan/nan ms (order of magnitude only, K-050); size 0.0582 MB; pooled_recall_mean 0.05431; window budget 41.9 ms, strict 0.419 ms",10000
+as3_churn,cnn1d,car_hacking,q1,primary_pool,churn_all,0.000143632,3.59079e-05,0.000251356,,3,0.000143632;0.000251356;3.59079e-05,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000108",10000
+as3_churn,cnn1d,car_hacking,q1,primary_pool,churn_attack,0,0,0,,3,0;0;0,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0",10000
+as3_churn,cnn1d,car_hacking,q1,primary_pool,churn_normal,0.000257086,6.42715e-05,0.0004499,,3,0.000257086;0.0004499;6.42715e-05,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000193",10000
+as3_churn,cnn1d,car_hacking,q1,primary_pool,spearman_q0_qk,0.999999,0.999999,1,,3,0.999999;1;0.999999,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=4.91e-07",10000
+as3_churn,cnn1d,car_hacking,q2,primary_pool,churn_all,0.00335141,0.00201084,0.0045244,,3,0.00201084;0.0045244;0.00351898,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.00127",10000
+as3_churn,cnn1d,car_hacking,q2,primary_pool,churn_attack,0,0,0,,3,0;0;0,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0",10000
+as3_churn,cnn1d,car_hacking,q2,primary_pool,churn_normal,0.00599867,0.0035992,0.00809821,,3,0.0035992;0.00809821;0.00629861,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.00226",10000
+as3_churn,cnn1d,car_hacking,q2,primary_pool,spearman_q0_qk,0.998813,0.997839,0.999687,,3,0.997839;0.999687;0.998912,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000928",10000
+as3_churn,conv_ae,car_hacking,q1,primary_pool,churn_all,0.000119693,3.59079e-05,0.000287263,,3,3.59079e-05;0.000287263;3.59079e-05,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000145",10000
+as3_churn,conv_ae,car_hacking,q1,primary_pool,churn_attack,0.000271223,8.1367e-05,0.000650936,,3,8.1367e-05;0.000650936;8.1367e-05,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000329",10000
+as3_churn,conv_ae,car_hacking,q1,primary_pool,churn_normal,0,0,0,,3,0;0;0,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0",10000
+as3_churn,conv_ae,car_hacking,q1,primary_pool,spearman_q0_qk,0.999999,0.999999,0.999999,,3,0.999999;0.999999;0.999999,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=1.59e-07",10000
+as3_churn,conv_ae,car_hacking,q2,primary_pool,churn_all,0.00372246,0.0017954,0.00617616,,3,0.0017954;0.00319581;0.00617616,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.00224",10000
+as3_churn,conv_ae,car_hacking,q2,primary_pool,churn_attack,0.00840792,0.00398698,0.0139951,,3,0.00398698;0.00724166;0.0139951,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.0051",10000
+as3_churn,conv_ae,car_hacking,q2,primary_pool,churn_normal,2.14238e-05,0,6.42715e-05,,3,6.42715e-05;0;0,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=3.71e-05",10000
+as3_churn,conv_ae,car_hacking,q2,primary_pool,spearman_q0_qk,0.999396,0.999223,0.999639,,3,0.999326;0.999639;0.999223,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000217",10000
+as3_churn,cnn1d,road,q1,primary_pool,churn_all,0.000142733,3.4256e-05,0.00025692,,3,3.4256e-05;0.000137024;0.00025692,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000111",10000
+as3_churn,cnn1d,road,q1,primary_pool,churn_attack,0.000610196,0,0.00166417,,3,0.000166417;0;0.00166417,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000917",10000
+as3_churn,cnn1d,road,q1,primary_pool,churn_normal,8.9101e-05,1.90931e-05,0.000152745,,3,1.90931e-05;0.000152745;9.54654e-05,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=6.71e-05",10000
+as3_churn,cnn1d,road,q1,primary_pool,spearman_q0_qk,0.999999,0.999999,0.999999,,3,0.999999;0.999999;0.999999,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=1.71e-07",10000
+as3_churn,cnn1d,road,q2,primary_pool,churn_all,0.00162145,0.00137024,0.00203823,,3,0.00203823;0.00137024;0.00145588,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000363",10000
+as3_churn,cnn1d,road,q2,primary_pool,churn_attack,0.00754424,0.00549176,0.00931935,,3,0.00931935;0.00549176;0.0078216,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.00193",10000
+as3_churn,cnn1d,road,q2,primary_pool,churn_normal,0.000941925,0.000725537,0.00120286,,3,0.00120286;0.000897375;0.000725537,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000242",10000
+as3_churn,cnn1d,road,q2,primary_pool,spearman_q0_qk,0.999727,0.999676,0.999771,,3,0.999771;0.999734;0.999676,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=4.83e-05",10000
+as3_churn,conv_ae,road,q1,primary_pool,churn_all,5.70933e-05,3.4256e-05,0.000102768,,3,0.000102768;3.4256e-05;3.4256e-05,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=3.96e-05",10000
+as3_churn,conv_ae,road,q1,primary_pool,churn_attack,0.000388306,0.000166417,0.000832085,,3,0.000832085;0.000166417;0.000166417,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000384",10000
+as3_churn,conv_ae,road,q1,primary_pool,churn_normal,1.90931e-05,1.90931e-05,1.90931e-05,,3,1.90931e-05;1.90931e-05;1.90931e-05,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0",10000
+as3_churn,conv_ae,road,q1,primary_pool,spearman_q0_qk,0.999994,0.999993,0.999994,,3,0.999994;0.999994;0.999993,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=7.57e-07",10000
+as3_churn,conv_ae,road,q2,primary_pool,churn_all,0.00239792,0.00140449,0.00332283,,3,0.00332283;0.00246643;0.00140449,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000961",10000
+as3_churn,conv_ae,road,q2,primary_pool,churn_attack,0.0196927,0.0106507,0.0276252,,3,0.0276252;0.0208021;0.0106507,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.00854",10000
+as3_churn,conv_ae,road,q2,primary_pool,churn_normal,0.000413683,0.000343675,0.000534606,,3,0.000534606;0.000362768;0.000343675,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.000105",10000
+as3_churn,conv_ae,road,q2,primary_pool,spearman_q0_qk,0.972931,0.946404,0.990068,,3,0.982321;0.946404;0.990068,,,,,,"robustness check (K-063 b), descriptive; ci_low/ci_high = min/max over seeds; std=0.0233",10000
+hypothesis,,,,H1,verdict,1,,,,,,,,,,,"doğrulandı; (a) pooled dF1(Q2) seed means cnn1d/car_hacking=-0.003083; cnn1d/road=0.002943; conv_ae/car_hacking=-0.00385; conv_ae/road=-0.001583 <= 0.05: True; (b) types with dRecall(Q2) interval > 0: 3, containing 0: 22 of 26: True",10000
+hypothesis,,,,H2,verdict,0,,,,,,,,,,,"doğrulanmadı; (a) mean D_R(Q2) cnn1d=0.0005965 [-0.003547, 0.005702]: False; (b) Q2 recall cnn1d/car_hacking/dos=0.9995; conv_ae/car_hacking/dos=0.9829; cnn1d/car_hacking/fuzzy=0.9992; conv_ae/car_hacking/fuzzy=0.9959; cnn1d/road/fuzzing=1; conv_ae/road/fuzzing=0.5392 >= 0.9: False",10000
+hypothesis,,,,H3,verdict,0,,,,,,,,,,,"kısmen doğrulandı (latency gain of Q1 not testable, K-043); (a) mean |dRecall| Q1 vs Q2 cnn1d/car_hacking=0 vs 0; cnn1d/road=0.0005086 vs 0.005543; conv_ae/car_hacking=0.0001748 vs 0.006088; conv_ae/road=0.0008273 vs 0.004754: True; (b) size Q1/Q0 cnn1d/car_hacking=0.522; cnn1d/road=0.522; conv_ae/car_hacking=0.524; conv_ae/road=0.524: True; (c) INT8 stealthy loss = H2 (a): False",10000
+hypothesis,,,,H4,verdict,1,,,,,,,,,,,"kullanıcı kararı bekliyor (K-063); K-062 rule: doğrulandı: mean(|dAUC_AE| - |dAUC_CNN|)(Q2) = 0.006228 [0.004772, 0.02722]: True; mean(|dR_AE| - |dR_CNN|)(Q2) = 0.006186 [0.003295, 0.02652]: True; K-063 signed check: doğrulanmadı: mean(dAUC_AE - dAUC_CNN)(Q2) = 0.002533 [-0.00406, 0.008766]; mean(dR_AE - dR_CNN)(Q2) = -0.000221 [-0.01762, 0.01723]",10000
