@@ -362,7 +362,7 @@ def fig3_main(d: Data, save) -> None:
     q0 = d.q0_recall()
     pt = d.stat("per_type_delta", statistic="d_recall", dataset="road")
     fig = plt.figure(figsize=(DOUBLE, 3.25), layout="constrained")
-    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1, 1.15])
+    gs = fig.add_gridspec(1, 3, width_ratios=[0.95, 0.95, 1.3])
     axes = [fig.add_subplot(gs[0, i]) for i in range(3)]
     titles = {"cnn1d": "(a) 1D-CNN (supervised)", "conv_ae": "(b) conv-AE (unsupervised)"}
     for ax, model in zip(axes[:2], DEEP):
@@ -424,7 +424,7 @@ def fig3_main(d: Data, save) -> None:
                            f"[{m2.ci_low:.4f}, {m2.ci_high:.4f}]"),
             transform=ax.transAxes, va="top", ha="left", fontsize=8,
             bbox=dict(facecolor="white", edgecolor="none", pad=1.0))
-    ax.set_xlabel("D = ΔR(masq.) − ΔR(fab.)\n(+ = more loss on stealthy side)")
+    ax.set_xlabel("D = ΔR(masq.) − ΔR(fab.)\n(+ = more loss, stealthy side)")
     ax.set_title("(c) 1D-CNN, paired units")
     ax.grid(axis="x")
 
@@ -483,7 +483,7 @@ def fig4_heatmap(d: Data, save) -> None:
     ax.set_yticks(np.arange(-0.5, nr), minor=True)
     ax.grid(which="minor", color="white", linewidth=1.5)
     ax.tick_params(which="minor", length=0)
-    ax.set_xticks(range(nc), [LEVEL[k] if m in DEEP else "not quantized" for m, k in cols])
+    ax.set_xticks(range(nc), [LEVEL[k] if m in DEEP else "native" for m, k in cols])
     ax.xaxis.tick_top()
     ylabels = [type_label(t) + ("\u2020" if role != "primary" else "") for t, role in zip(meta.attack_type, meta.role)]
     ax.set_yticks(range(nr), ylabels)
@@ -553,20 +553,23 @@ def fig5_pareto(d: Data, save) -> None:
         ax.set_ylim(*ylim)
         for budget, ls, name in ((q.budget_strict_ms.iloc[0], "--", "1-message budget"),
                                  (q.budget_window_ms.iloc[0], "-.", "window budget")):
-            ax.axvline(budget, color=INK_2, linewidth=0.9, linestyle=ls, zorder=1)
+            ax.axvline(budget, color=INK_2, linewidth=0.9, linestyle=ls, zorder=5)   # above the latency box
             top = kind == "stealthy"                    # empty region: top in ROAD, bottom in Car-Hacking
-            ax.text(budget / 1.12, ylim[1] - 0.03 * (ylim[1] - ylim[0]) if top else
-                    ylim[0] + 0.03 * (ylim[1] - ylim[0]), f"{name}: {budget:.3g} ms", rotation=90,
-                    ha="right", va="top" if top else "bottom", fontsize=8, color=INK_2)
+            if name == "window budget":                 # horizontal, right of the line (free corner)
+                ax.text(budget * 1.15, ylim[1] - 0.03 * (ylim[1] - ylim[0]), f"window\nbudget\n{budget:.3g} ms",
+                        ha="left", va="top", fontsize=8, color=INK_2)
+            else:
+                ax.text(budget / 1.12, ylim[1] - 0.03 * (ylim[1] - ylim[0]) if top else
+                        ylim[0] + 0.03 * (ylim[1] - ylim[0]), f"{name}: {budget:.3g} ms", rotation=90,
+                        ha="right", va="top" if top else "bottom", fontsize=8, color=INK_2)
         # K-050: the two-session range is narrower than the markers on a log axis, so it is also written out
-        names, ranges = ["Median latency, 2 sessions"], [""]
+        lines = ["Median, 2 sessions (ms):"]
         for r in q.itertuples():
-            names.append(f"{MODEL[r.model]} {r.quantization.upper() if r.model != 'xgb' else ''}".strip())
-            ranges.append(f"{r.lat_lo:.3f}–{r.lat_hi:.3f} ms")
-        ty = 0.66 if kind == "stealthy" else 0.62
-        ax.text(0.39, ty, "\n".join(names), transform=ax.transAxes, ha="left", va="top", fontsize=8,
-                bbox=dict(facecolor="white", edgecolor="none", pad=1.0))
-        ax.text(0.81, ty, "\n".join(ranges), transform=ax.transAxes, ha="right", va="top", fontsize=8)
+            name = f"{MODEL[r.model]} {r.quantization.upper()}" if r.model != "xgb" else MODEL[r.model]
+            lines.append(f"{name}: {r.lat_lo:.3f}–{r.lat_hi:.3f}")
+        ax.text(0.385 if kind == "stealthy" else 0.405, 0.66 if kind == "stealthy" else 0.62, "\n".join(lines),
+                transform=ax.transAxes, ha="left",
+                va="top", fontsize=8, bbox=dict(facecolor="white", edgecolor="none", pad=1.0))
         ax.set_xscale("log")
         ax.set_xlim(0.015, 150)
         ax.set_xlabel("Median latency per window (ms, log scale)")
@@ -652,7 +655,7 @@ def fig7_sup_vs_unsup(d: Data, save) -> None:
     meta = meta[meta.role.eq("primary")].reset_index(drop=True)
     pt = d.stat("per_type_delta", statistic="d_roc_auc", quantization="q2")
     fig = plt.figure(figsize=(DOUBLE, 3.9), layout="constrained")
-    gs = fig.add_gridspec(2, 3, width_ratios=[1.35, 0.8, 0.8], height_ratios=[1, 1.05])
+    gs = fig.add_gridspec(2, 3, width_ratios=[1.2, 0.9, 0.9], height_ratios=[1, 1.05])
     axa = fig.add_subplot(gs[:, 0])
     axb = fig.add_subplot(gs[0, 1:])
     axc, axd = fig.add_subplot(gs[1, 1]), fig.add_subplot(gs[1, 2])
@@ -672,11 +675,11 @@ def fig7_sup_vs_unsup(d: Data, save) -> None:
     axa.set_title("(a) Per attack type, INT8")
     axa.grid(axis="x")
 
-    rows = [("as3", "mean_abs_diff_droc_auc", "pre-registered rule (K-062):\n|ΔAE| − |ΔCNN|, ROC-AUC"),
-            ("as3", "mean_abs_diff_drecall", "pre-registered rule (K-062):\n|ΔAE| − |ΔCNN|, recall"),
-            ("as3_signed_diff", "mean_signed_diff_droc_auc", "signed check (K-063):\nΔAE − ΔCNN, ROC-AUC"),
-            ("as3_signed_diff", "mean_signed_diff_drecall", "signed check (K-063):\nΔAE − ΔCNN, recall")]
-    yb = np.array([3.0, 2.0, 0.6, -0.4])
+    rows = [("as3", "mean_abs_diff_droc_auc", "|ΔAE| − |ΔCNN|, AUC"),
+            ("as3", "mean_abs_diff_drecall", "|ΔAE| − |ΔCNN|, recall"),
+            ("as3_signed_diff", "mean_signed_diff_droc_auc", "ΔAE − ΔCNN, AUC"),
+            ("as3_signed_diff", "mean_signed_diff_drecall", "ΔAE − ΔCNN, recall")]
+    yb = np.array([3.0, 2.0, 0.4, -0.6])
     for (an, stat, _), y in zip(rows, yb):
         for k, dy, filled in (("q1", 0.17, False), ("q2", -0.17, True)):
             s = d.stat(an, statistic=stat, quantization=k).iloc[0]
@@ -684,19 +687,21 @@ def fig7_sup_vs_unsup(d: Data, save) -> None:
             axb.scatter(s.estimate, y + dy, marker="D", s=18, facecolors=INK if filled else "white", edgecolors=INK,
                         linewidths=1.0, zorder=3)
     axb.axvline(0, color=INK_2, linewidth=0.7, linestyle="--", zorder=1)
-    axb.axhline(1.3, color=GRID, linewidth=0.8)
+    axb.axhline(1.45, color=GRID, linewidth=0.8)
     axb.set_yticks(yb, [r[2] for r in rows])
-    axb.text(0.99, 0.97, "upward-biased for the noisier model", transform=axb.transAxes, ha="right", va="top",
-             fontsize=8, color=INK_2)
-    axb.set_ylim(-0.95, 3.6)
-    axb.set_xlabel("Mean over attack types (+ = conv-AE more sensitive), 95% interval")
-    axb.set_title("(b) Loss difference conv-AE vs 1D-CNN; open Q1, filled Q2")
+    trb = blended_transform_factory(axb.transAxes, axb.transData)
+    for y, text in ((3.62, "pre-registered rule (K-062), biased upward"), (1.02, "signed check (K-063)")):
+        axb.text(0.01, y, text, transform=trb, ha="left", va="center", fontsize=8, color=INK_2, fontstyle="italic",
+                 bbox=dict(facecolor="white", edgecolor="none", pad=0.5), zorder=4)
+    axb.set_ylim(-1.05, 4.0)
+    axb.set_xlabel("Mean over types (+ = conv-AE loses more)")
+    axb.set_title("(b) conv-AE − 1D-CNN, 95% interval")
     axb.grid(axis="x")
 
     churn = d.stat("as3_churn", quantization="q2")
     for ax, stat, ylabel, title in (
-            (axc, "churn_attack", "Share of attack windows\nwith a changed decision (0–1)", "(c) Decisions, Q0→Q2"),
-            (axd, "spearman_q0_qk", "1 − Spearman ρ of window\nscores, Q0 vs Q2 (log)", "(d) Score order")):
+            (axc, "churn_attack", "Attack windows with\nchanged decision (0–1)", "(c) Changed decisions"),
+            (axd, "spearman_q0_qk", "1 − Spearman ρ,\nQ0 vs Q2 (log)", "(d) Ranks")):
         for xi, ds in enumerate(("car_hacking", "road")):
             for m, off in (("cnn1d", -0.17), ("conv_ae", 0.17)):
                 s = churn[churn.statistic.eq(stat) & churn.dataset.eq(ds) & churn.model.eq(m)].iloc[0]
@@ -717,8 +722,11 @@ def fig7_sup_vs_unsup(d: Data, save) -> None:
                       label=f"{MODEL[m]} ({'supervised' if m == 'cnn1d' else 'unsupervised'})") for m in DEEP]
     handles += [Line2D([], [], marker="o", markerfacecolor="white", color=INK_2, linestyle="none", markersize=4.5,
                        label="(c, d) seed value"),
-                Line2D([], [], color=INK_2, linewidth=1.8, label="(c, d) mean of 3 seeds")]
-    fig.legend(handles=handles, loc="outside lower center", ncol=4, columnspacing=1.2, handletextpad=0.4)
+                Line2D([], [], color=INK_2, linewidth=1.8, label="(c, d) mean of 3 seeds"),
+                Line2D([], [], marker="D", markerfacecolor="white", color=INK, linestyle="none", markersize=4.5,
+                       label="(b) Q1 (fp16)"),
+                Line2D([], [], marker="D", color=INK, linestyle="none", markersize=4.5, label="(b) Q2 (INT8)")]
+    fig.legend(handles=handles, loc="outside lower center", ncol=3, columnspacing=1.2, handletextpad=0.4)
     save(fig, "fig7_supervised_vs_unsupervised")
 
 
@@ -752,11 +760,16 @@ def fig8_calibration_shift(d: Data, save) -> None:
             ax.axhline(fpr, color=INK_2, linewidth=0.8, linestyle="--", zorder=1)   # labelled in the legend
             ax.set_yscale("log")
         minor = np.concatenate([c * step + np.arange(3) for c in range(len(clusters))])
-        ax.set_xticks(minor, ["0", "1", "2"] * len(clusters), minor=True)
+        # level numbers are written as text: level 1 sits on the cluster centre, where matplotlib would drop a
+        # minor tick label in favour of the cluster name
+        ax.set_xticks(minor, minor=True)
+        ax.tick_params(axis="x", which="minor", length=2, labelbottom=False)
+        for i, x in enumerate(minor):
+            ax.annotate(str(i % 3), (x, 0), xycoords=("data", "axes fraction"), xytext=(0, -3.5),
+                        textcoords="offset points", ha="center", va="top", fontsize=8, color=INK_2)
         ax.set_xticks([c * step + 1 for c in range(len(clusters))],
                       [f"{DS[ds]}\n{MODEL[m]}" for ds, m in clusters])
         ax.tick_params(axis="x", which="major", length=0, pad=14)
-        ax.tick_params(axis="x", which="minor", length=2)
         ax.set_xlim(-0.6, (len(clusters) - 1) * step + 2.6)
         ax.set_ylabel(ylabel)
         ax.set_title(title)
@@ -775,14 +788,14 @@ def fig8_calibration_shift(d: Data, save) -> None:
 # --------------------------------------------------------------------------------------------
 
 
-TEX_MAP = {"Δ": r"$\Delta$", "δ": r"$\delta$", "±": r"$\pm$", "–": "--", "−": "-",
+TEX_MAP = {"Δ": r"$\Delta$", "δ": r"$\delta$", "±": r"$\pm$", "–": "--", "−": r"$-$",
            "ρ": r"$\rho$", "†": r"$^\dagger$", "→": r"$\rightarrow$", "%": r"\%", "_": r"\_",
            "&": r"\&", "#": r"\#", "|": r"$|$"}
 
 
 def tex(s) -> str:
     s = "" if s is None or (isinstance(s, float) and np.isnan(s)) else str(s)
-    return "".join(TEX_MAP.get(ch, ch) for ch in s)
+    return "".join(TEX_MAP.get(ch, ch) for ch in s).replace("$$", "")   # merge adjacent math pieces
 
 
 def latex_table(header: list[str], rows: list, colspec: str, caption: str, label: str, star: bool = True) -> str:
@@ -847,14 +860,19 @@ def table1_dataset(d: Data, out: Path, written: list) -> pd.DataFrame:
                          f"{r.captures_train}/{r.captures_val}/{r.captures_test}", f"{r.frames:,}",
                          f"{r.injected_frames:,}" if r.injected_frames else "--",
                          f"{r.windows_train:,}", f"{r.windows_val:,}", f"{r.windows_test:,}",
-                         r.split_rule if r.split_rule != SPLIT_RULE[ds] else ""])
+                         "frames: attack-free captures only" if r.attack_type == "normal" else
+                         (r.split_rule if r.split_rule != SPLIT_RULE[ds] else "")])
     w = d.cfg["data"]["windows"]
     header = ["Attack type & Group & Captures & Frames & Injected & \\multicolumn{3}{c}{Windows} & Note \\\\",
               "\\cmidrule(lr){6-8}",
               "& & tr/va/te & & frames & train & val & test & \\\\"]
-    cap = (f"Dataset summary. Frames and injected frames per attack type over all captures of that type; windows "
-           f"of N = {w['size']} frames, stride {w['stride']['train']} in training and {w['stride']['test']} "
-           f"(non-overlapping) in validation and test. No capture contributes to two splits.")
+    cap = (f"Dataset summary. Captures: number of captures that contribute windows of the row to the train, val and "
+           f"test split (attack-free windows also come from the attack-free parts of attack captures). Frames and "
+           f"injected frames: whole captures of that attack type. Windows of N = {w['size']} frames, stride "
+           f"{w['stride']['train']} in training and {w['stride']['test']} (non-overlapping) in validation and test. "
+           f"ROAD is split by source capture, so no capture (and no masquerade log derived from it) feeds two "
+           f"splits; each Car-Hacking attack file is cut into disjoint time blocks separated by recording gaps "
+           f"(K-017), because the dataset has one file per attack.")
     write_table(df, latex_table(header, rows, "@{}llrrrrrrl@{}", cap, "tab:dataset"), "table_1_dataset", out, written)
     return df
 
@@ -911,7 +929,7 @@ def table3_resources(d: Data, out: Path, written: list) -> pd.DataFrame:
             r = piv.loc[(ds, m, k)]
             q0 = piv.loc[(ds, m, "q0" if m != "xgb" else "native")]
             rec = {"dataset": ds, "model": m, "quantization": k, "size_mb": r["size_mb"],
-                   "size_ratio_vs_q0": r["size_mb"] / q0["size_mb"]}
+                   "size_ratio_vs_q0": r["size_mb"] / q0["size_mb"] if m != "xgb" else np.nan}
             for met in A.SESSION_METRICS:
                 for s in (1, 2):
                     rec[f"{met}_s{s}"] = r.get(f"{met}_session{s}", np.nan)
@@ -937,7 +955,7 @@ def table3_resources(d: Data, out: Path, written: list) -> pd.DataFrame:
             meas = not np.isnan(r.latency_median_ms_s1)
             yes = lambda v: "--" if np.isnan(v) else ("yes" if v else "no")
             rows.append([MODEL[r.model], LEVEL[r.quantization] if r.model != "xgb" else "native",
-                         f"{r.size_mb:.3f}", f"{r.size_ratio_vs_q0:.2f}",
+                         f"{r.size_mb:.3f}", "--" if np.isnan(r.size_ratio_vs_q0) else f"{r.size_ratio_vs_q0:.2f}",
                          rng(r.latency_median_ms_s1, r.latency_median_ms_s2),
                          rng(r.latency_p95_ms_s1, r.latency_p95_ms_s2),
                          rng(r.latency_ratio_min, r.latency_ratio_max, 2),
@@ -990,6 +1008,20 @@ def table4_stats(d: Data, out: Path, written: list) -> pd.DataFrame:
     def p3(v):
         return "--" if np.isnan(v) else f"{v:.3g}"
 
+    def est(r) -> str:
+        vals = (r.estimate, r.ci_low, r.ci_high)
+        if r.statistic.startswith("Cliff"):
+            f = "{:.2f}"
+        elif max(abs(v) for v in vals) < 1e-3:         # Q1 ROC-AUC differences are below 10^-3
+            def sci(v: float) -> str:                  # LaTeX math, passed through tex() unchanged
+                mant, exp = f"{v:.1e}".split("e")
+                return f"${mant}\\times10^{{{int(exp)}}}$"
+            return f"{sci(vals[0])} [{sci(vals[1])}, {sci(vals[2])}]"
+        else:
+            f = "{:.4f}"
+        e, lo, hi = (um(f.format(v)) for v in vals)
+        return f"{e} [{lo}, {hi}]"
+
     titles = {"A": "A: coarse vs stealthy, group level (K-059; Holm over 4 tests per family)",
               "A'": "A': sensitivity analysis, Car-Hacking coarse types added",
               "B": "B: coarse vs stealthy, paired fabrication-masquerade units, 1D-CNN (K-057; exploratory)",
@@ -1000,7 +1032,7 @@ def table4_stats(d: Data, out: Path, written: list) -> pd.DataFrame:
         for r in df[df.block.eq(blk)].itertuples():
             model = MODEL.get(r.model, "conv-AE vs 1D-CNN")
             rows.append([model, r.quantization.upper(), r.statistic,
-                         f"{r.estimate:.4g} [{r.ci_low:.4g}, {r.ci_high:.4g}]", p3(r.p), p3(r.p_holm),
+                         est(r), p3(r.p), p3(r.p_holm),
                          p3(r.min_attainable_p)])
     header = ["Model & Level & Statistic & Estimate [95\\% CI] & $p$ & $p_\\mathrm{Holm}$ & min. $p$ \\\\"]
     cap = ("Statistical comparisons (Δ = Q0 − Qk; positive = loss). Intervals: hierarchical bootstrap "
