@@ -207,3 +207,22 @@ python -m analysis.stats --n-boot 200 --out <dir>   # quick check into another d
   reported with its minimum attainable p (K-059). Pareto fronts follow the two-session latency rule (K-050, K-060).
 - Bootstrap replicates are cached in `data/processed/analysis_cache/`; a rerun reuses them (`--force` recomputes).
   Provenance (commit, versions, input hashes) goes to `results/tables/analysis_manifest.json`.
+
+### Figures and tables (P7)
+
+Figures and tables for the paper are drawn from the P6 tables in `results/tables` (no training, scoring or
+bootstrap). Presentation decisions: `docs/DECISIONS.md` K-065; caption proposals and the research question each
+figure supports: `docs/FIGURES.md`.
+
+```powershell
+python -m analysis.figures                    # 8 figures + 5 tables (a few seconds)
+python -m analysis.figures --draft --only fig3 --figures-dir <dir>   # inspection: print layout problems, keep going
+```
+
+- Figures: `results/figures/fig<N>_<name>.{pdf,png}` (vector PDF and 300 dpi PNG, IEEE widths 3.5" / 7.16",
+  all text 8-9 pt, validated colour-blind-safe palette always paired with marker shape or fill).
+- Tables: `results/tables/table_<N>_<name>.{csv,tex}` (LaTeX needs only `booktabs`).
+- Before a figure is written, `layout_problems` checks for overlapping or clipped text, text outside 8-9 pt and
+  empty panels; any problem stops the command (except with `--draft`, which is for inspection only).
+- Provenance goes to the `figures` entry of `results/tables/analysis_manifest.json`, and the git commit goes
+  into the PDF/PNG metadata. Outputs are byte-identical on a rerun.

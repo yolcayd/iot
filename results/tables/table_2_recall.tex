@@ -1,0 +1,34 @@
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{Test Recall (mean $\pm$ s.d. over 3 seeds) per attack type, model and quantization level (Q0 fp32, Q1 fp16, Q2 INT8); each version uses its own validation threshold (FPR = 1\%). XGBoost is deterministic over seeds (s.d. 0). $^\dagger$ test-only pair, outside the primary pool.}
+\label{tab:recall}
+\begin{tabular}{@{}llrrrrrrr@{}}
+\toprule
+& & \multicolumn{3}{c}{1D-CNN} & \multicolumn{3}{c}{conv-AE} & XGBoost \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+Attack type & Group & Q0 & Q1 & Q2 & Q0 & Q1 & Q2 & (not quantized) \\
+\midrule
+\multicolumn{9}{l}{\textit{Car-Hacking}} \\
+DoS & coarse & 1.000 $\pm$ 0.000 & 1.000 $\pm$ 0.000 & 1.000 $\pm$ 0.000 & 0.983 $\pm$ 0.003 & 0.983 $\pm$ 0.003 & 0.983 $\pm$ 0.004 & 1.000 $\pm$ 0.000 \\
+fuzzy & coarse & 0.999 $\pm$ 0.000 & 0.999 $\pm$ 0.000 & 0.999 $\pm$ 0.000 & 0.996 $\pm$ 0.000 & 0.996 $\pm$ 0.000 & 0.996 $\pm$ 0.000 & 1.000 $\pm$ 0.000 \\
+gear spoofing & coarse & 1.000 $\pm$ 0.000 & 1.000 $\pm$ 0.000 & 1.000 $\pm$ 0.000 & 0.874 $\pm$ 0.092 & 0.874 $\pm$ 0.093 & 0.899 $\pm$ 0.096 & 1.000 $\pm$ 0.000 \\
+RPM spoofing & coarse & 1.000 $\pm$ 0.000 & 1.000 $\pm$ 0.000 & 1.000 $\pm$ 0.000 & 0.994 $\pm$ 0.001 & 0.994 $\pm$ 0.001 & 0.994 $\pm$ 0.001 & 1.000 $\pm$ 0.000 \\
+pooled (primary pool) & -- & 1.000 $\pm$ 0.000 & 1.000 $\pm$ 0.000 & 1.000 $\pm$ 0.000 & 0.955 $\pm$ 0.030 & 0.955 $\pm$ 0.030 & 0.963 $\pm$ 0.031 & 1.000 $\pm$ 0.000 \\
+\midrule
+\multicolumn{9}{l}{\textit{ROAD}} \\
+fuzzing & coarse & 0.995 $\pm$ 0.008 & 0.995 $\pm$ 0.008 & 1.000 $\pm$ 0.000 & 0.564 $\pm$ 0.221 & 0.569 $\pm$ 0.221 & 0.539 $\pm$ 0.234 & 0.779 $\pm$ 0.000 \\
+correlated signal & coarse & 0.901 $\pm$ 0.082 & 0.901 $\pm$ 0.082 & 0.898 $\pm$ 0.085 & 0.036 $\pm$ 0.038 & 0.035 $\pm$ 0.036 & 0.044 $\pm$ 0.055 & 0.254 $\pm$ 0.000 \\
+max speedometer & coarse & 0.642 $\pm$ 0.093 & 0.641 $\pm$ 0.093 & 0.635 $\pm$ 0.091 & 0.069 $\pm$ 0.061 & 0.069 $\pm$ 0.060 & 0.072 $\pm$ 0.067 & 0.486 $\pm$ 0.000 \\
+reverse light off & coarse & 0.356 $\pm$ 0.115 & 0.356 $\pm$ 0.115 & 0.350 $\pm$ 0.110 & 0.000 $\pm$ 0.000 & 0.000 $\pm$ 0.000 & 0.000 $\pm$ 0.000 & 0.624 $\pm$ 0.000 \\
+reverse light on & coarse & 0.088 $\pm$ 0.020 & 0.087 $\pm$ 0.020 & 0.083 $\pm$ 0.019 & 0.001 $\pm$ 0.001 & 0.001 $\pm$ 0.001 & 0.001 $\pm$ 0.001 & 0.215 $\pm$ 0.000 \\
+correlated signal (masq.) & stealthy & 0.854 $\pm$ 0.064 & 0.854 $\pm$ 0.064 & 0.852 $\pm$ 0.061 & 0.021 $\pm$ 0.017 & 0.021 $\pm$ 0.017 & 0.025 $\pm$ 0.028 & 0.070 $\pm$ 0.000 \\
+max speedometer (masq.) & stealthy & 0.718 $\pm$ 0.120 & 0.717 $\pm$ 0.120 & 0.711 $\pm$ 0.118 & 0.113 $\pm$ 0.111 & 0.112 $\pm$ 0.111 & 0.112 $\pm$ 0.128 & 0.110 $\pm$ 0.000 \\
+reverse light off (masq.) & stealthy & 0.540 $\pm$ 0.183 & 0.537 $\pm$ 0.187 & 0.532 $\pm$ 0.178 & 0.000 $\pm$ 0.000 & 0.000 $\pm$ 0.000 & 0.001 $\pm$ 0.001 & 0.158 $\pm$ 0.000 \\
+reverse light on (masq.) & stealthy & 0.096 $\pm$ 0.073 & 0.096 $\pm$ 0.072 & 0.089 $\pm$ 0.068 & 0.003 $\pm$ 0.004 & 0.002 $\pm$ 0.003 & 0.004 $\pm$ 0.004 & 0.018 $\pm$ 0.000 \\
+max coolant temp$^\dagger$ & coarse & 0.047 $\pm$ 0.047 & 0.047 $\pm$ 0.047 & 0.047 $\pm$ 0.047 & 0.000 $\pm$ 0.000 & 0.000 $\pm$ 0.000 & 0.000 $\pm$ 0.000 & 0.093 $\pm$ 0.000 \\
+max coolant temp (masq.)$^\dagger$ & stealthy & 0.085 $\pm$ 0.054 & 0.085 $\pm$ 0.054 & 0.085 $\pm$ 0.054 & 0.000 $\pm$ 0.000 & 0.000 $\pm$ 0.000 & 0.000 $\pm$ 0.000 & 0.140 $\pm$ 0.000 \\
+pooled (primary pool) & -- & 0.545 $\pm$ 0.059 & 0.544 $\pm$ 0.060 & 0.538 $\pm$ 0.056 & 0.055 $\pm$ 0.041 & 0.054 $\pm$ 0.041 & 0.056 $\pm$ 0.047 & 0.276 $\pm$ 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table*}

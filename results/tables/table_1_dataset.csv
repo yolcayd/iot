@@ -1,0 +1,18 @@
+dataset,attack_type,group,split_rule,captures,frames,injected_frames,captures_train,windows_train,captures_val,windows_val,captures_test,windows_test
+car_hacking,normal,attack-free,time blocks in each file (K-017),2,1879939,0,6,106938,5,14147,5,15559
+car_hacking,dos,coarse,time blocks in each file (K-017),1,2774703,587521,1,13112,1,2096,1,2206
+car_hacking,fuzzy,coarse,time blocks in each file (K-017),1,2947792,491847,1,18667,1,1723,1,1962
+car_hacking,gear_spoofing,coarse,time blocks in each file (K-017),1,3552074,597252,1,22637,1,3764,1,3814
+car_hacking,rpm_spoofing,coarse,time blocks in each file (K-017),1,3730634,654897,1,24025,1,4339,1,4308
+road,normal,attack-free,by source capture (K-018),12,24149519,0,14,304260,11,53226,16,53526
+road,fuzzing,coarse,source capture; no val (K-018),3,94931,1061,1,173,0,0,2,68
+road,correlated_signal,coarse,by source capture (K-018),3,192748,5493,1,1042,1,533,1,315
+road,max_speedometer,coarse,by source capture (K-018),3,572842,11694,1,1230,1,783,1,1522
+road,reverse_light_off,coarse,by source capture (K-018),3,308385,5480,1,337,1,591,1,607
+road,reverse_light_on,coarse,by source capture (K-018),3,465234,8034,1,995,1,920,1,587
+road,correlated_signal_masquerade,stealthy,by source capture (K-018),3,187258,5493,1,1000,1,512,1,302
+road,max_speedometer_masquerade,stealthy,by source capture (K-018),3,561151,11694,1,1181,1,752,1,1461
+road,reverse_light_off_masquerade,stealthy,by source capture (K-018),3,302908,5480,1,323,1,568,1,583
+road,reverse_light_on_masquerade,stealthy,by source capture (K-018),3,457203,8034,1,955,1,883,1,564
+road,max_engine_coolant_temp,coarse,test only (K-019),1,61923,43,0,0,0,0,1,43
+road,max_engine_coolant_temp_masquerade,stealthy,test only (K-019),1,61881,43,0,0,0,0,1,43

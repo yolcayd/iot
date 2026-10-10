@@ -1,0 +1,29 @@
+block,comparison,model,quantization,statistic,estimate,ci_low,ci_high,p,p_holm,min_attainable_p,test
+A,ROAD stealthy (4) vs coarse (5),cnn1d,q1,Cliff's δ of ΔRecall,0.65,0,0.75,0.134921,0.444444,0.015873,exact Mann-Whitney U
+A,ROAD stealthy (4) vs coarse (5),cnn1d,q2,Cliff's δ of ΔRecall,0.7,-0.3,0.9,0.111111,0.444444,0.015873,exact Mann-Whitney U
+A,ROAD stealthy (4) vs coarse (5),conv_ae,q1,Cliff's δ of ΔRecall,0.2,-0.2,0.5,0.68254,1,0.015873,exact Mann-Whitney U
+A,ROAD stealthy (4) vs coarse (5),conv_ae,q2,Cliff's δ of ΔRecall,-0.1,-0.5,0.5,0.904762,1,0.015873,exact Mann-Whitney U
+A,ROAD stealthy (4) vs coarse (5),cnn1d,q1,Cliff's δ of ΔF1,0.45,0,0.75,0.301587,1,0.015873,exact Mann-Whitney U
+A,ROAD stealthy (4) vs coarse (5),cnn1d,q2,Cliff's δ of ΔF1,0.1,-0.3,0.7,0.904762,1,0.015873,exact Mann-Whitney U
+A,ROAD stealthy (4) vs coarse (5),conv_ae,q1,Cliff's δ of ΔF1,0.2,-0.4,0.5,0.68254,1,0.015873,exact Mann-Whitney U
+A,ROAD stealthy (4) vs coarse (5),conv_ae,q2,Cliff's δ of ΔF1,-0.1,-0.5,0.5,0.904762,1,0.015873,exact Mann-Whitney U
+A',sensitivity: + CH coarse (4 vs 9),cnn1d,q1,Cliff's δ of ΔRecall,0.694444,0,0.75,0.0181818,0.0615385,0.0027972,exact Mann-Whitney U
+A',sensitivity: + CH coarse (4 vs 9),cnn1d,q2,Cliff's δ of ΔRecall,0.833333,-0.0555556,0.944444,0.0153846,0.0615385,0.0027972,exact Mann-Whitney U
+A',sensitivity: + CH coarse (4 vs 9),conv_ae,q1,Cliff's δ of ΔRecall,0.166667,-0.222222,0.5,0.716084,1,0.0027972,exact Mann-Whitney U
+A',sensitivity: + CH coarse (4 vs 9),conv_ae,q2,Cliff's δ of ΔRecall,-0.111111,-0.5,0.444444,0.795804,1,0.0027972,exact Mann-Whitney U
+A',sensitivity: + CH coarse (4 vs 9),cnn1d,q1,Cliff's δ of ΔF1,0.472222,-0.444444,0.694444,0.198601,0.794406,0.0027972,exact Mann-Whitney U
+A',sensitivity: + CH coarse (4 vs 9),cnn1d,q2,Cliff's δ of ΔF1,0.5,0.194444,0.833333,0.198601,0.794406,0.0027972,exact Mann-Whitney U
+A',sensitivity: + CH coarse (4 vs 9),conv_ae,q1,Cliff's δ of ΔF1,0.277778,-0.416667,0.5,0.448951,0.897902,0.0027972,exact Mann-Whitney U
+A',sensitivity: + CH coarse (4 vs 9),conv_ae,q2,Cliff's δ of ΔF1,-0.111111,-0.555556,0.472222,0.795804,0.897902,0.0027972,exact Mann-Whitney U
+B,paired masquerade − fabrication (3 pairs),cnn1d,q1,mean D (ΔRecall),0.000993543,0,0.00290155,,,0.25,none (K-057)
+B,paired masquerade − fabrication (3 pairs),cnn1d,q2,mean D (ΔRecall),0.000596454,-0.00354689,0.0057018,,,0.25,none (K-057)
+B,paired masquerade − fabrication (3 pairs),cnn1d,q1,mean D (ΔF1),0.00100444,0,0.00304439,,,0.25,none (K-057)
+B,paired masquerade − fabrication (3 pairs),cnn1d,q2,mean D (ΔF1),-0.000236083,-0.00331119,0.00353786,,,0.25,none (K-057)
+C,"conv-AE vs 1D-CNN, 13 types",conv_ae-cnn1d,q1,"|ΔAE| − |ΔCNN|, ROC-AUC (K-062)",8.36486e-06,1.85553e-06,0.000124578,0.892578,1,0.000244141,Wilcoxon
+C,"conv-AE vs 1D-CNN, 13 types",conv_ae-cnn1d,q2,"|ΔAE| − |ΔCNN|, ROC-AUC (K-062)",0.006228,0.00477206,0.0272153,0.000732422,0.00292969,0.000244141,Wilcoxon
+C,"conv-AE vs 1D-CNN, 6 types",conv_ae-cnn1d,q1,"|ΔAE| − |ΔCNN|, recall (K-062)",0.000857472,-0.000251614,0.00483726,0.5,1,0.03125,Wilcoxon
+C,"conv-AE vs 1D-CNN, 6 types",conv_ae-cnn1d,q2,"|ΔAE| − |ΔCNN|, recall (K-062)",0.00618556,0.00329529,0.0265246,0.25,0.75,0.03125,Wilcoxon
+C,"conv-AE vs 1D-CNN, 13 types",conv_ae-cnn1d,q1,"ΔAE − ΔCNN, ROC-AUC (K-063)",-7.75695e-05,-0.000155603,-2.43676e-07,,,,none
+C,"conv-AE vs 1D-CNN, 13 types",conv_ae-cnn1d,q2,"ΔAE − ΔCNN, ROC-AUC (K-063)",0.00253253,-0.00406041,0.00876561,,,,none
+C,"conv-AE vs 1D-CNN, 6 types",conv_ae-cnn1d,q1,"ΔAE − ΔCNN, recall (K-063)",-0.000776515,-0.00484945,0.000396508,,,,none
+C,"conv-AE vs 1D-CNN, 6 types",conv_ae-cnn1d,q2,"ΔAE − ΔCNN, recall (K-063)",-0.000221007,-0.0176224,0.0172268,,,,none
