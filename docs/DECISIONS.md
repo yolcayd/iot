@@ -868,3 +868,135 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
      - Bu birimlerin ΔRecall'a dayalı birincil teste nasıl girebileceği (ya da giremeyeceği) P6 planında netleştirilecek. Tabloda bir değişiklik yapılmadı; sonuç elle düzeltilmez.
   3. **Veri setleri arası genelleme deneyi kapsam dışı** (K-053 geçerli).
 - **Etkisi:** P5 açık sorunları 1 ve 2'nin durumu `docs/phase-logs/P5.md`'de güncellendi. P6 planı bu iki maddeyi ele alacak.
+
+## K-057 — AS-1 tasarımı (P6): keşifsel eşleştirilmiş analiz, birimler ve XGBoost'un durumu
+
+- **Faz / tarih:** P6 · 2026-10-10
+- **Durum:** Geçerli (kullanıcı onayı, P6 planı; P6 analiz kodu çalıştırılmadan yazıldı). K-013'ün "eşleştirilmiş test (ör. Wilcoxon)" niyetini değiştirir; K-013'ün birim tanımı, K-037 (ΔRecall birincil) ve K-041 (taban kuralı) geçerli.
+- **Bağlam:** K-041'in kesin birim listesinde (P5, `grid_k041_units.csv`) 12 birimden 5'i kalıyor: CNN 3, XGB 2. XGBoost nicemlenmez (K-042), bu yüzden Qk'si ve ΔRecall'u yoktur. Tablo, taban kuralını (yalnızca Q0'a bakar) ızgaradaki her modele uyguladığı için XGB birimlerini `in_primary_test = True` gösteriyor (K-056 madde 2).
+- **Karar:**
+  - **AS-1 birimi:** (model, fabrication–masquerade çifti). Yalnızca nicemlenen modeller (CNN, conv-AE) birim olabilir. XGBoost ve RF (K-053) AS-1 birimi değildir. Gerekçe: ΔRecall tanımsız. `grid_k041_units.csv` değiştirilmez; AS-1 tablosunda (`as1_pairs.csv`) `as1_eligible` ve `as1_excluded_reason` sütunlarıyla işaretlenir.
+  - **Birincil birimler:** taban kuralını geçen nicemlenmiş birimler, yani 3 CNN çifti (correlated_signal, max_speedometer, reverse_light_off). Taban kuralıyla dışarıda kalanlar (CNN reverse_light_on, conv-AE'nin 4 çifti) ve `unseen` coolant çifti işaretli olarak raporlanır.
+  - **Ölçüler** (her birim × k ∈ {Q1, Q2}; test, `recalibrated` kipi):
+    - ΔR_fab = R_fab(Q0) − R_fab(Qk);
+    - ΔR_masq = R_masq(Q0) − R_masq(Qk);
+    - **D = ΔR_masq − ΔR_fab.** D > 0, gizli tarafta daha çok kayıp demektir (H2 yönü).
+    - ΔF1 için aynı üçlü ikincil olarak raporlanır.
+    - Ayrıca birincil birimlerin D ortalaması verilir.
+  - **Raporlanan değerler:** tohum bazında değerler, 3 tohumun ortalaması ± std ve %95 hiyerarşik bootstrap aralığı (K-058).
+  - **Hipotez testi yapılmaz.** n = 3 birimde Wilcoxon işaretli sıra testinin ulaşılabilir en küçük iki yönlü p'si 2/2³ = 0.25'tir. Test hangi veriyle yapılırsa yapılsın anlamlılığa ulaşamaz. Bu değer bilgi olarak yazılır. Analiz **keşifseldir**: etki büyüklüğü (D) ve aralıklar önceliklidir.
+- **Gerekçe:** Kullanıcı yönlendirmesi (P6): küçük örneklemde anlamsız kalacak testler zorlanmaz. Taban kuralı K-041'de sonuçlardan önce kayıtlıydı ve değişmez. Yalnızca nicemlenmeyen modellerin AS-1'e giremeyeceği açıkça yazılır.
+- **Etkisi:** AS-1'in birincil kanıtı tek modele (CNN) ve tek veri setine (ROAD) dayanır; makalede sınırlılık olarak yazılır (K-014 ile birlikte).
+
+## K-058 — Bootstrap yöntemi: tohum × pencere çapraz hiyerarşik bootstrap, hareketli blok
+
+- **Faz / tarih:** P6 · 2026-10-10
+- **Durum:** Geçerli (kullanıcı kararı: blok birincil, iid duyarlılık; P6 analiz kodu çalıştırılmadan)
+- **Karar:**
+  - **Kaynak:** pencere düzeyindeki test skorları (`results/raw/<run>/quant/scores_q{0,1,2}_test.parquet`; XGB `scores_test.parquet`) ve her sürümün val'den kalibre edilmiş eşiği (`quant/metrics.csv`, `metrics_test.csv`).
+    - Eşikler bootstrap'ta **yeniden hesaplanmaz** (kural 3). Yeniden hesaplanan nokta tahminleri `metrics.csv` ile aynı olmalıdır; değilse analiz durur.
+  - **Çapraz tasarım:**
+    - Her replikte 3 tohum yerine konarak çekilir.
+    - Pencereler tek bir ortak çekilişle yeniden örneklenir. Test kümesi bütün tohumlarda, nicemleme düzeylerinde ve modellerde aynıdır; aynı replikte hepsi aynı pencere örneğini görür.
+    - Bu sayede Q0–Qk, fabrication–masquerade ve CNN–conv-AE farkları eşleştirilmiş kalır.
+    - Replik değeri = çekilen tohumların, çekilen pencerelerdeki istatistiğinin ortalaması.
+  - **Pencere örneklemesi:**
+    - Hareketli blok bootstrap'ı. Her (segment, label) katmanında pencereler zaman sırasına (`start`) dizilir; L = ⌈n^{1/3}⌉ uzunluğunda bloklar, katmanın boyutu korunacak şekilde çekilir.
+    - Katmanlama, her tür kümesinde saldırı ve normal pencere sayısını sabit tutar.
+    - **Duyarlılık:** AS-1 için iid sürümü (L = 1) ayrıca raporlanır.
+  - **Ayarlar:** B = 10.000 replik, %95 yüzdelik aralığı, sabit RNG tohumu (`configs/analysis.yaml`).
+- **Gerekçe:**
+  - Ardışık test pencereleri aynı enjeksiyon aralığından gelir; tespit kararları zaman içinde ilişkilidir. iid bootstrap bu durumda aralığı daraltır. Blok uzunluğu kuralı standart bir seçimdir ve sonuçlardan önce sabitlenir.
+  - 3 tohumla tohum düzeyindeki yeniden örnekleme kabadır (10 farklı çoklu küme). Yine de eğitim değişkenliğini aralığa katar. Tohum bazında değerler ayrıca verilir.
+- **Etkisi:** Aralıklar test penceresi örneklemi ve 3 eğitim tohumu üzerinden belirsizliği gösterir. Veri setinin kendisinden (tek araç, sentetik masquerade; K-014) gelen belirsizliği göstermez.
+
+## K-059 — İkincil grup düzeyi karşılaştırma: ROAD, Mann-Whitney U, Cliff's δ, Holm ve ulaşılabilir en küçük p
+
+- **Faz / tarih:** P6 · 2026-10-10
+- **Durum:** Geçerli (kullanıcı onayı, P6 planı; P6 analiz kodu çalıştırılmadan)
+- **Karar:**
+  - **Kapsam ve gruplar** (plan 2.7'nin birincil analizi; K-013'e göre ikincil):
+    - Kapsam: ROAD birincil havuzu (coolant hariç, K-019).
+    - Gruplar: coarse = fuzzing + 4 fabrication türü (5 tür); stealthy = 4 masquerade türü.
+    - Birim: tür; değer, 3 tohumun ortalaması olan ΔRecall (ikincil aile: ΔF1).
+  - **Her model (CNN, conv-AE) × k (Q1, Q2) için:**
+    - Mann-Whitney U (iki yönlü, kesin dağılım);
+    - Cliff's δ = P(Δ_stealthy > Δ_coarse) − P(Δ_stealthy < Δ_coarse); δ > 0 H2 yönüdür;
+    - δ için K-058'e göre hiyerarşik bootstrap aralığı.
+  - **Holm-Bonferroni aileleri:** ΔRecall ailesi 4 test; ΔF1 ailesi 4 test.
+  - **Ulaşılabilir en küçük p:** her satırda raporlanır. 5'e 4 için kesin MWU'nun en küçük iki yönlü p'si 2/C(9,4) = 2/126 = 0.0159. Holm'da en küçük p 4 ile çarpılır: 0.063 > 0.05. **Bu tasarımda düzeltilmiş anlamlılık yapısal olarak ulaşılamaz.** Bu durum testin sonucundan bağımsızdır ve açıkça yazılır.
+  - **Taban kuralı uygulanmaz** (K-041 son madde). conv-AE'nin ROAD recall'u çoğu türde tabanda olduğu için ΔRecall'u yapısal olarak 0'a yakındır; bu, yorumda not edilir.
+  - **Duyarlılık:** Car-Hacking'in 4 coarse türü coarse gruba eklenir (9'a 4). Veri seti ve gruplar karışır (gizli türlerin hepsi ROAD'da), bu yüzden yalnızca duyarlılık analizi olarak raporlanır.
+- **Gerekçe:** Plan 2.7 ve F5 bu testi istiyor. Küçük örneklem nedeniyle etki büyüklüğü ve aralığı öncelikli tutuluyor; p değerleri ulaşılabilir sınırlarıyla birlikte veriliyor.
+
+## K-060 — AS-2: Pareto cephesi, iki oturum kuralı ve gecikme bütçeleri
+
+- **Faz / tarih:** P6 · 2026-10-10
+- **Durum:** Geçerli (bütçe tanımı kullanıcı kararı; P6 analiz kodu çalıştırılmadan)
+- **Karar:**
+  - **Adaylar** (veri seti başına):
+    - CNN Q0, CNN Q2, conv-AE Q0, conv-AE Q2, XGB (nicemlenmez).
+    - Q1'in CPU gecikmesi yoktur (K-043). Q1 yalnızca boyut–recall cephesine girer.
+    - RF 3 tohumlu analizlere girmez (K-053).
+  - **Eksenler:**
+    - gecikme: tohum-0, ana makine, medyan (en küçük daha iyi; K-052);
+    - model dosya boyutu: tohum ortalaması (en küçük daha iyi);
+    - recall: en büyük daha iyi.
+      - ROAD birincil cephe: 4 masquerade türünün recall ortalaması (tohum ortalaması).
+      - İkincil cephe: toplam (pooled) recall.
+      - Car-Hacking'de gizli tür olmadığı için yalnızca toplam recall cephesi kurulur.
+  - **Gecikme (K-050):**
+    - Pareto her oturumda ayrı hesaplanır. Bir aday ancak **iki oturumda da** baskılanıyorsa baskılanmış sayılır; sağlam cephe, en az bir oturumda baskılanmayan adaylardır.
+    - Gecikme, aynı oturumda aynı veri setinin CNN Q0'ına oranla da verilir.
+    - Mutlak değerler yalnızca büyüklük mertebesi olarak yorumlanır; p95 yorumlanmaz.
+  - **Gecikme bütçeleri** (`configs/analysis.yaml`; ileti hızı `results/tables/data_profile.csv`'den, veri setinin dışlanmamış saldırısız (`ambient`) kayıtlarının `msg_rate_per_s` medyanı):
+    - (i) **pencere bütçesi** = 100 ileti / medyan ileti hızı (stride = N ile pencere başına tespit);
+    - (ii) **sıkı bütçe** = 1 ileti aralığı = 1 / medyan ileti hızı (her yeni iletide kayan pencereyle tespit).
+    - Bir aday, iki oturumun medyan gecikmesinin büyüğü bütçenin altındaysa bütçeye uyar.
+  - **Kapsam notu:** ölçümler ana makine CPU'sundandır. Gerçek ECU ya da konteyner ölçümü yoktur (K-051). Bütçe uyumu bir ECU için kanıt değildir.
+- **Gerekçe:** Plan ve öneri formu "belirlenen gecikme bütçesi"nden söz ediyor, ancak bir değer tanımlanmamıştı. Veriden türetilen iki bütçe, iki tespit kipinin gerçek zamanlılık sınırıdır ve sonuçlardan bağımsızdır.
+
+## K-061 — AS-3: denetimli ve denetimsiz modelin nicemleme duyarlılığı; kalibrasyon kayması ayrı
+
+- **Faz / tarih:** P6 · 2026-10-10
+- **Durum:** Geçerli (kullanıcı onayı, P6 planı; P6 analiz kodu çalıştırılmadan)
+- **Karar:**
+  - **Karşılaştırma:** CNN (denetimli) ile conv-AE (denetimsiz; K-039), aynı (veri seti, tür) üzerinde eşleştirilmiş. Birincil havuzun 13 türü: CH 4, ROAD 9. Test, `recalibrated` kipi.
+  - **Birincil ölçü ΔROC-AUC:** eşikten bağımsızdır ve recall tabanından etkilenmez.
+  - **ΔRecall:** yalnızca iki modelin de Q0 recall'u (3 tohum ortalaması) ≥ 0.10 olan türlerde. Bu, K-041'in taban mantığıdır; recall'u tabanda olan modelin ΔRecall'u yapısal olarak sıfıra yakın kalır ve yanlış biçimde "dayanıklı" görünür. Bütün türler ayrıca raporlanır.
+  - **Duyarlılık büyüklüğü:** tür başına d_t = |Δ_conv-AE,t| − |Δ_CNN,t|. d_t > 0 denetimsiz modelin daha duyarlı olduğu anlamına gelir (H4 yönü).
+    - Birincil istatistik: türler üzerinden d_t ortalaması ve K-058'e göre hiyerarşik bootstrap aralığı. İki modelin tohumları birbirinden bağımsız çekilir, pencere çekilişi ortaktır.
+    - İkincil: Wilcoxon işaretli sıra (`zero_method = "pratt"`), Holm ailesi 4 test (ΔAUC, ΔRecall × Q1, Q2); Cliff's δ (|Δ| dağılımları).
+    - İşaretli Δ (kayıp yönü) betimleyici olarak verilir.
+  - **Kalibrasyon kayması** (K-036 b, `q0_threshold` kipi) ayrı başlıkta raporlanır:
+    - saldırısız kayıtlarda val ve test FPR'ı (Q0 eşiği Qk'ye aynen uygulandığında);
+    - tür bazında recall değişimi;
+    - tohum bazında değerler, ortalama, min–max.
+- **Gerekçe:** H4'ün öne sürdüğü mekanizma ("anomali skoru küçük hata farklarına dayanır"), eşik yeniden kalibre edildiğinde ayırt edicilik kaybı (ΔAUC) olarak, eşik sabit kaldığında ise kalibrasyon kayması olarak görünür. İki kip ayrı raporlanır.
+
+## K-062 — Hipotez hüküm kuralları (H1–H4)
+
+- **Faz / tarih:** P6 · 2026-10-10
+- **Durum:** Geçerli (kullanıcı onayı, P6 planı)
+- **Zamanlama notu:** Bu kurallar P5'in betimleyici sonuçları (tohum ortalamaları, `grid_quant.csv`) görüldükten **sonra**, ancak P6'nın bootstrap aralıkları ve testleri hesaplanmadan **önce** yazıldı. Önceden kayıtlı değildirler. Makalede böyle belirtilir.
+- **Hüküm etiketleri:** doğrulandı / doğrulanmadı / kısmen doğrulandı / test edilemedi.
+- **Kurallar** (Q2 = INT8; test; `recalibrated` kipi; birincil havuz):
+  - **H1:**
+    - **(a) Toplam kayıp sınırlı:** her derin model × veri setinde toplam (pooled) ΔF1'in tohum ortalaması ≤ 0.05.
+    - **(b) Eşit dağılmıyor:** türler arasında, ΔRecall aralığı 0'ı kayıp yönünde dışlayan en az bir tür ve aralığı 0'ı içeren en az bir tür var.
+    - Hüküm: (a) ve (b) birlikte doğrulandı; yalnızca biri sağlanırsa kısmen.
+  - **H2:**
+    - **(a) Gizli tarafta daha büyük kayıp:** birincil birimlerin D ortalaması > 0 ve aralığı 0'ı dışlıyor (K-057). Grup düzeyindeki ikincil analiz (K-059) destekleyici olarak raporlanır, hükmü belirlemez.
+    - **(b) Kaba saldırılar yüksek başarımla tespit ediliyor:** Q2'de CH dos, CH fuzzy ve ROAD fuzzing recall'unun tohum ortalaması ≥ 0.90; her derin model için ayrı.
+    - Hüküm: (a) ve (b) birlikte doğrulandı; yalnızca biri sağlanırsa kısmen.
+  - **H3:**
+    - **(a) Doğruluk:** her derin model × veri setinde, tür bazında |ΔRecall| ortalaması Q1'de Q2'dekinden küçük ya da ona eşit.
+    - **(b) Kazanç:** Q1 dosya boyutu < Q0. Gecikme kazancı **test edilemedi** (CPU'da fp16 çekirdeği yok; K-043).
+    - **(c) INT8'de gizli kayıp:** H2 (a) ölçütü.
+    - Hüküm: gecikme bileşeni test edilemediği için en fazla "kısmen doğrulandı".
+  - **H4:** AS-3 birincil ölçüsünün (ΔROC-AUC; d_t ortalaması) Q2'deki aralığı tamamen 0'ın üstünde.
+    - ΔRecall bileşeni (taban kısıtlı türler) aynı yöndeyse doğrulandı;
+    - yalnızca biri sağlanıyorsa kısmen;
+    - ikisinin de aralığı 0'ı içeriyor ya da 0'ın altındaysa doğrulanmadı.
+    - Kalibrasyon kayması hükme girmez, ayrıca yorumlanır.
+- **Gerekçe:** Hükümler sayısal ve yeniden üretilebilir olmalı. Kurallar aralıkların hesaplanmasından önce sabitlenir.
