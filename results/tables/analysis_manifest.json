@@ -93,10 +93,10 @@
    "split": "test",
    "stage": "full"
   },
-  "created_utc": "2026-10-10T09:43:39+00:00",
+  "created_utc": "2026-10-10T09:44:46+00:00",
   "delta_rows_checked_against_grid_quant": 2040,
   "git": {
-   "commit": "93d21b7a4eec35519cca56322607f50bcc68c08c",
+   "commit": "1233f001eb2cf1c4f9daea719d89fae38227320b",
    "dirty": false,
    "dirty_files": [],
    "excluded_from_dirty_check": [
@@ -343,15 +343,12 @@
    "split": "test",
    "stage": "full"
   },
-  "created_utc": "2026-10-10T09:44:32+00:00",
-  "elapsed_s": 2.1,
+  "created_utc": "2026-10-10T09:44:50+00:00",
+  "elapsed_s": 2.2,
   "git": {
-   "commit": "93d21b7a4eec35519cca56322607f50bcc68c08c",
-   "dirty": true,
-   "dirty_files": [
-    " M analysis/stats.py",
-    " M tests/test_stats.py"
-   ],
+   "commit": "1233f001eb2cf1c4f9daea719d89fae38227320b",
+   "dirty": false,
+   "dirty_files": [],
    "excluded_from_dirty_check": [
     "results/raw",
     "results/tables/baseline_*.csv",
