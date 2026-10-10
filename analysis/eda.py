@@ -415,14 +415,23 @@ def signature_figure(dataset: str, attack: str, caps: list[Capture], ref_ids: se
     save(fig, f"signature_{dataset}_{attack}")
 
 
-def summary_figure(sig: pd.DataFrame, cfg: dict) -> None:
+def summary_figure(sig: pd.DataFrame, cfg: dict, stem: str = "attack_signature_summary",
+                   figsize: tuple[float, float] = (7.16, 3.6), note_size: float = 6, legend_size: float = 7,
+                   save_fn=None, label_fn=None, styles: dict | None = None,
+                   xticks: dict[int, list[float]] | None = None) -> None:
+    """C1-C4 per attack type. The keyword arguments let analysis/figures.py redraw it in the paper style:
+    ``label_fn(dataset, attack_type)`` row labels, ``styles`` scatter kwargs per group ("coarse", "stealthy"),
+    ``xticks`` fixed ticks per panel index."""
     rule = cfg["grouping_rule"]
     sig = sig.sort_values(["dataset", "attack_type"]).reset_index(drop=True)
-    labels = [f"{'CH' if d == 'car_hacking' else 'ROAD'}: {a}" for d, a in zip(sig.dataset, sig.attack_type)]
+    label_fn = label_fn or (lambda d, a: f"{'CH' if d == 'car_hacking' else 'ROAD'}: {a}")
+    labels = [label_fn(d, a) for d, a in zip(sig.dataset, sig.attack_type)]
+    styles = styles or {"coarse": dict(marker="s", s=20, color=INK_2),
+                        "stealthy": dict(marker="o", s=20, facecolors="none", edgecolors=INK, linewidths=1.0)}
     y = np.arange(len(sig))[::-1]
     coarse = sig.proposed_group.eq("coarse").to_numpy()
 
-    fig, axes = plt.subplots(1, 4, figsize=(7.16, 3.6), sharey=True)
+    fig, axes = plt.subplots(1, 4, figsize=figsize, sharey=True)
     panels = [
         ("C1: unseen-ID\nframe share", sig.C1_unseen_id_share,
          ("line", rule["C1_unseen_id_share"]["threshold"]), "symlog"),
@@ -432,7 +441,7 @@ def summary_figure(sig: pd.DataFrame, cfg: dict) -> None:
         ("C4: target-ID\nmedian IAT ratio", sig.C4_target_median_iat_ratio,
          ("band", rule["C4_target_median_iat_ratio"]["band"]), "log"),
     ]
-    for ax, (title, vals, (kind, thr), scale) in zip(axes, panels):
+    for i_panel, (ax, (title, vals, (kind, thr), scale)) in enumerate(zip(axes, panels)):
         v = vals.to_numpy(dtype=float)
         if kind == "band":
             ax.axvspan(thr[0], thr[1], color=GRID, alpha=0.7, linewidth=0)
@@ -442,24 +451,25 @@ def summary_figure(sig: pd.DataFrame, cfg: dict) -> None:
         cap = np.nanmax(v[finite]) * 3 if finite.any() else 1.0
         plot_v = np.where(np.isinf(v), cap, v)
         ok = ~np.isnan(v)
-        ax.scatter(plot_v[coarse & ok], y[coarse & ok], marker="s", s=20, color=INK_2, label="coarse (rule)")
-        ax.scatter(plot_v[~coarse & ok], y[~coarse & ok], marker="o", s=20, facecolors="none",
-                   edgecolors=INK, linewidths=1.0, label="stealthy (rule)")
+        ax.scatter(plot_v[coarse & ok], y[coarse & ok], label="coarse (rule)", **styles["coarse"])
+        ax.scatter(plot_v[~coarse & ok], y[~coarse & ok], label="stealthy (rule)", **styles["stealthy"])
         for yi, vi in zip(y[np.isinf(v)], plot_v[np.isinf(v)]):
-            ax.annotate("inf", (vi, yi), xytext=(0, 5), textcoords="offset points", fontsize=6, color=INK_2, ha="center")
+            ax.annotate("inf", (vi, yi), xytext=(0, 5), textcoords="offset points", fontsize=note_size, color=INK_2, ha="center")
         for yi in y[np.isnan(v)]:
-            ax.annotate("n/a", (0.5, yi), xycoords=("axes fraction", "data"), fontsize=6, color=INK_2,
+            ax.annotate("n/a", (0.5, yi), xycoords=("axes fraction", "data"), fontsize=note_size, color=INK_2,
                         ha="center", va="center")
         if scale == "symlog":
             ax.set_xscale("symlog", linthresh=1e-3)
         else:
             ax.set_xscale("log")
+        if xticks and i_panel in xticks:
+            ax.set_xticks(xticks[i_panel])
         ax.set_title(title, loc="left")
     axes[0].set_yticks(y, labels)
     handles, names = axes[1].get_legend_handles_labels()
-    fig.legend(handles, names, frameon=False, loc="lower center", ncol=2, fontsize=7, bbox_to_anchor=(0.6, 0.0))
+    fig.legend(handles, names, frameon=False, loc="lower center", ncol=2, fontsize=legend_size, bbox_to_anchor=(0.6, 0.0))
     fig.tight_layout(w_pad=0.6, rect=(0, 0.05, 1, 1))
-    save(fig, "attack_signature_summary")
+    (save_fn or save)(fig, stem)
 
 
 # --------------------------------------------------------------------------------------------

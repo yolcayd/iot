@@ -1038,3 +1038,21 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 - **Etkisi:**
   - `configs/analysis.yaml → hypotheses.h4_verdict_on_conflict`; `stats.csv`'nin H4 satırı nihai hükmü, kuralın hükmünü ve denetimin hükmünü birlikte taşır.
   - **Zamanlama notu:** Hüküm, bütün sonuçlar görüldükten sonra kullanıcı tarafından verildi. Makalede böyle belirtilir.
+
+## K-065 — P7 şekil ve tablolarının sunum kararları
+
+- **Faz / tarih:** P7 · 2026-10-10
+- **Durum:** Geçerli (kullanıcı onayı, P7 planı; şekil kodu çalıştırılmadan yazıldı). Hiçbir analiz sonucunu değiştirmez; yalnızca P6 çıktılarının nasıl gösterileceğini belirler.
+- **Karar:**
+  1. **Ana şekil (Şekil 3) ΔRecall gösterir, ΔF1 göstermez.** Plan F6 ΔF1 diyordu; K-037'den beri birincil ölçü ΔRecall'dur (kullanıcı talimatı). Şekil H2'nin doğrulanmadığını gizlemez: tür başına aralıklar, grup testi (δ, Holm p) ve eşleştirilmiş D = ΔR_masq − ΔR_fab aynı şekilde yer alır. Taban altı türler (Q0 recall < 0.10; K-041) ayrı ve gri işaretlenir; "dayanıklı" diye okunmamaları için.
+  2. **Şekil 3'ün kapsamı ROAD birincil havuzu** (K-059). Gizli türlerin hepsi ROAD'da; CH'de CNN tavanda (ΔRecall tam 0). CH, Şekil 4 ve Tablo II'de görünür.
+  3. **Isı haritası (Şekil 4):** hücrede recall (tohum ortalaması), renk ΔRecall (Q0'a göre). Plan "hücrede F1" diyordu; gerekçe madde 1 ile aynı.
+  4. **Tablo II:** recall ort ± std (birincil). F1 aynı biçimde ek tablo olarak (`table_2b_f1`) verilir; plan F6'nın istediği F1 tablosu böylece korunur.
+  5. **Tablo III:** gecikme için ortalama yerine medyan ve p95 verilir (K-049'un ana istatistiği medyan; `all_results.csv`'de ortalama oturum bazında yok). Her ikisi de iki oturumun değeriyle; p95 yorumlanmaz (K-050).
+  6. **Gecikmenin gösterimi (Şekil 5, 6; Tablo III):** iki oturumun aralığı (K-050). Şekil 5'te yatay çubuk aralığı gösterir; işaretçi yavaş oturumdadır, çünkü bütçe uyumu bu değerle ölçülür (K-060). Tek oturum değeri ya da oturum içi aralık belirsizlik ölçüsü olarak gösterilmez.
+  7. **Şekil 5'te iki bütçe** (pencere ve sıkı; K-060) dikey çizgi olarak çizilir; değerleri `pareto.csv`'den okunur.
+  8. **Şekil 8 eklendi: kalibrasyon kayması** (K-036 b, K-061). Plan F6'da yoktu; P6'nın ayrı başlık olarak raporladığı bulgu (ROAD conv-AE Q2'de Q0 eşiğiyle FPR artışı) kendi şeklini alır.
+  9. **Şekil 7, H4'ün üç aşamasını birlikte gösterir** (K-064 raporlama kuralı): K-062 mutlak değer farkı ("önceden kayıtlı; yukarı yanlı, K-063" etiketiyle), K-063 işaretli fark ve çıktı değişimi ölçüleri (karar değişimi, Spearman).
+  10. **Ek veri kaynakları:** kullanıcının saydığı dört tabloya (`all_results.csv`, `delta_f1.csv`, `stats.csv`, `data_profile.csv`) ek olarak P6/P1'in türetilmiş tabloları okunur: `pareto.csv` (gizli tür recall'unun aralığı, cephe bayrakları, bütçeler), `split_summary.csv` (Tablo I pencere sayıları), `attack_signatures.csv` ve `configs/eda.yaml` (Şekil 2). Bu değerler dört tabloda yok; yeniden hesaplanmaz, okunur.
+  11. **Görsel kurallar:** IEEE tek sütun 3.5", çift sütun 7.16"; bütün yazılar 8–9 pt; Okabe–Ito'dan doğrulanmış palet (gruplar kaba `#D55E00` / gizli `#0072B2`; modeller CNN `#009E73` / conv-AE `#AA3377`, XGB nötr). Renk her zaman işaretçi şekli ya da dolguyla birlikte kullanılır. Yazı çakışması, taşma, 8–9 pt dışı yazı ve boş panel kaydetmeden önce kodla denetlenir.
+- **Gerekçe:** Şekiller P6 bulgularını değiştirmeden ve seçici olmadan göstermeli. Plan F6, K-037 (ΔRecall birincil), K-050 (gecikme belirsizliği) ve K-064'ten (H4 raporlama kuralı) önce yazılmıştı; bu girdi sunumu o kararlarla uyumlu hâle getirir.

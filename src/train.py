@@ -116,6 +116,9 @@ GENERATED_OUTPUTS = (
     "results/tables/pareto.csv",
     "results/tables/calibration_shift.csv",
     "results/tables/decision_churn.csv",
+    # analysis/figures.py (P7)
+    "results/figures/fig*",
+    "results/tables/table_*",
 )
 
 
