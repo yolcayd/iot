@@ -93,19 +93,12 @@
    "split": "test",
    "stage": "full"
   },
-  "created_utc": "2026-10-10T09:26:22+00:00",
+  "created_utc": "2026-10-10T09:43:39+00:00",
   "delta_rows_checked_against_grid_quant": 2040,
   "git": {
-   "commit": "19b57ae840802d02173bcfdc26e48f8c756170b9",
-   "dirty": true,
-   "dirty_files": [
-    " M analysis/aggregate.py",
-    "?? configs/analysis.yaml",
-    "?? results/tables/all_results.csv",
-    "?? results/tables/analysis_manifest.json",
-    "?? results/tables/delta_f1.csv",
-    "?? results/tables/missing_cells.csv"
-   ],
+   "commit": "93d21b7a4eec35519cca56322607f50bcc68c08c",
+   "dirty": false,
+   "dirty_files": [],
    "excluded_from_dirty_check": [
     "results/raw",
     "results/tables/baseline_*.csv",
@@ -114,7 +107,17 @@
     "results/tables/quant_*.csv",
     "results/tables/benchmark_*.csv",
     "results/tables/benchmark_manifest.json",
-    "results/tables/grid_*.csv"
+    "results/tables/grid_*.csv",
+    "results/tables/all_results.csv",
+    "results/tables/delta_f1.csv",
+    "results/tables/missing_cells.csv",
+    "results/tables/analysis_manifest.json",
+    "results/tables/stats.csv",
+    "results/tables/as1_pairs.csv",
+    "results/tables/per_type_delta.csv",
+    "results/tables/pareto.csv",
+    "results/tables/calibration_shift.csv",
+    "results/tables/decision_churn.csv"
    ]
   },
   "inputs_sha256": {
@@ -340,29 +343,14 @@
    "split": "test",
    "stage": "full"
   },
-  "created_utc": "2026-10-10T09:41:01+00:00",
-  "elapsed_s": 145.2,
+  "created_utc": "2026-10-10T09:44:32+00:00",
+  "elapsed_s": 2.1,
   "git": {
-   "commit": "60622e730217d6ec56d6ce2022209e76c2f63262",
+   "commit": "93d21b7a4eec35519cca56322607f50bcc68c08c",
    "dirty": true,
    "dirty_files": [
-    " M README.md",
-    " M analysis/aggregate.py",
     " M analysis/stats.py",
-    " M src/train.py",
-    "?? configs/analysis.yaml",
-    "?? results/tables/all_results.csv",
-    "?? results/tables/analysis_manifest.json",
-    "?? results/tables/as1_pairs.csv",
-    "?? results/tables/calibration_shift.csv",
-    "?? results/tables/decision_churn.csv",
-    "?? results/tables/delta_f1.csv",
-    "?? results/tables/missing_cells.csv",
-    "?? results/tables/pareto.csv",
-    "?? results/tables/per_type_delta.csv",
-    "?? results/tables/stats.csv",
-    "?? tests/test_aggregate.py",
-    "?? tests/test_stats.py"
+    " M tests/test_stats.py"
    ],
    "excluded_from_dirty_check": [
     "results/raw",
@@ -372,7 +360,17 @@
     "results/tables/quant_*.csv",
     "results/tables/benchmark_*.csv",
     "results/tables/benchmark_manifest.json",
-    "results/tables/grid_*.csv"
+    "results/tables/grid_*.csv",
+    "results/tables/all_results.csv",
+    "results/tables/delta_f1.csv",
+    "results/tables/missing_cells.csv",
+    "results/tables/analysis_manifest.json",
+    "results/tables/stats.csv",
+    "results/tables/as1_pairs.csv",
+    "results/tables/per_type_delta.csv",
+    "results/tables/pareto.csv",
+    "results/tables/calibration_shift.csv",
+    "results/tables/decision_churn.csv"
    ]
   },
   "inputs_sha256": {
@@ -448,8 +446,8 @@
    "results/tables/calibration_shift.csv": "afc4caa1eab89f6553d3239aac90da7be9556f49d7fce22a7b51a002b42a5c4f",
    "results/tables/decision_churn.csv": "9f56c4998f437ac623da23acc6b1b7902b6bd1a34496d5d0fea2b3d02f24dbac",
    "results/tables/pareto.csv": "64c149434999fe2e60769bf8256c59c8317226fe58c91f577b94018b05e6645a",
-   "results/tables/per_type_delta.csv": "494a7eec1b11fb27338ac1c3c8c09f43aa65cd388e3e8417793da44f7d28ab7c",
-   "results/tables/stats.csv": "1d73a6e6fbe0bf4c569d3d2d64f351dd01f440ca263b16420c470c2d42c9255f"
+   "results/tables/per_type_delta.csv": "759d422cdd6dde250c8aee93d8a0cb7022bf001acb1406f4bb53be172bcefa8d",
+   "results/tables/stats.csv": "daa6dc9bee6c0042fa6e303fa6db917d92e23673aa323deb06e3a871cbfae015"
   },
   "threads": 4,
   "versions": {

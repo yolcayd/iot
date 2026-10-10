@@ -166,3 +166,8 @@ def test_absolute_difference_is_biased_upward_for_the_noisier_model():
     noisy, quiet = rng.normal(0, 0.02, 20000), rng.normal(0, 0.002, 20000)
     assert (np.abs(noisy) - np.abs(quiet)).mean() == pytest.approx(0.018 * math.sqrt(2 / math.pi), rel=0.05)
     assert abs((noisy - quiet).mean()) < 0.001
+
+
+def test_interval_bounds_carry_no_floating_residue():
+    rep = np.array([1e-17, 2e-17, -1e-18] * 100)
+    assert X.ci(rep, 0.95) == (0.0, 0.0)

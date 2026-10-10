@@ -40,7 +40,7 @@ cnn1d,car_hacking,rpm_spoofing,coarse,primary,q1,f1,0.000145602,0.000164023,0.00
 cnn1d,car_hacking,rpm_spoofing,coarse,primary,q1,roc_auc,0,0,0;0;0,0,0,7641,4308
 cnn1d,car_hacking,rpm_spoofing,coarse,primary,q2,recall,0,0,0;0;0,0,0,7641,4308
 cnn1d,car_hacking,rpm_spoofing,coarse,primary,q2,f1,-0.00274105,0.000842945,-0.00204758;-0.00367929;-0.00249628,-0.00402045,-0.0016636,7641,4308
-cnn1d,car_hacking,rpm_spoofing,coarse,primary,q2,roc_auc,1.16075e-08,2.01047e-08,3.48224e-08;0;0,0,9.28598e-08,7641,4308
+cnn1d,car_hacking,rpm_spoofing,coarse,primary,q2,roc_auc,1.16075e-08,2.01047e-08,3.48224e-08;0;0,0,9.286e-08,7641,4308
 conv_ae,car_hacking,rpm_spoofing,coarse,primary,q1,recall,0,0,0;0;0,0,0,7641,4308
 conv_ae,car_hacking,rpm_spoofing,coarse,primary,q1,f1,0,0,0;0;0,0,0,7641,4308
 conv_ae,car_hacking,rpm_spoofing,coarse,primary,q1,roc_auc,2.32149e-07,1.06384e-07,2.08935e-07;1.3929e-07;3.48224e-07,-3.71729e-07,1.06789e-06,7641,4308
@@ -121,7 +121,7 @@ conv_ae,road,max_speedometer,coarse,primary,q2,f1,-0.00404996,0.0231258,-0.01391
 conv_ae,road,max_speedometer,coarse,primary,q2,roc_auc,0.00321459,0.0167752,0.0184435;0.00596686;-0.0147666,-0.0141025,0.0184205,2135,1522
 cnn1d,road,max_speedometer_masquerade,stealthy,primary,q1,recall,0.000912617,0.00104553,0.000684463;0;0.00205339,0,0.00273785,2074,1461
 cnn1d,road,max_speedometer_masquerade,stealthy,primary,q1,f1,0.00059573,0.000712088,0.00040278;0;0.00138441,0,0.00188676,2074,1461
-cnn1d,road,max_speedometer_masquerade,stealthy,primary,q1,roc_auc,4.39188e-05,2.21236e-05,5.52706e-05;5.80621e-05;1.84235e-05,-3.90803e-06,9.04429e-05,2074,1461
+cnn1d,road,max_speedometer_masquerade,stealthy,primary,q1,roc_auc,4.39188e-05,2.21236e-05,5.52706e-05;5.80621e-05;1.84235e-05,-3.90802e-06,9.04429e-05,2074,1461
 cnn1d,road,max_speedometer_masquerade,stealthy,primary,q2,recall,0.00707278,0.00276622,0.00752909;0.00410678;0.00958248,0.00273785,0.011864,2074,1461
 cnn1d,road,max_speedometer_masquerade,stealthy,primary,q2,f1,0.00416914,0.00201646,0.0028288;0.00319046;0.00648817,0.00110704,0.0077244,2074,1461
 cnn1d,road,max_speedometer_masquerade,stealthy,primary,q2,roc_auc,0.0010226,0.00181277,-0.000789979;0.00102223;0.00283555,-0.000692851,0.00275516,2074,1461

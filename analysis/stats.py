@@ -112,7 +112,8 @@ def min_p_wilcoxon(n: int) -> float:
 def ci(rep: np.ndarray, level: float) -> tuple[float, float]:
     a = (1 - level) / 2
     lo, hi = np.quantile(rep, [a, 1 - a])
-    return float(lo), float(hi)
+    # rounded: replicate means of exact zeros can leave +-1e-17, which must not count as excluding 0 (K-062)
+    return round(float(lo), 12), round(float(hi), 12)
 
 
 # --------------------------------------------------------------------------------------------
