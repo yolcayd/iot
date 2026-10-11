@@ -45,10 +45,8 @@ Seven of the eight figures are double-column, so not all of them fit in a 6-page
 - The final choice is made when the paper is written.
 - **Applied in P8 (K-066):** the user confirmed this selection. Figure 1 is placed in Section IV and Figure 2 in the
   appendix (cited from Section III, whose evidence is a generated table); Figures 3, 5, 8 (main text) and 4, 7
-  (appendix) are placed with the Results section. Figure 7 still shows internal decision ids (K-062, K-063) in its
-  labels and must be relabelled before it goes into the paper. Figure 1's split box says "no file feeds two
-  splits", which is not true for Car-Hacking (time blocks of one file, K-017); the caption in the paper is correct,
-  the box text should be fixed in `analysis/figures.py`.
+  (appendix) are placed with the Results section. Figure 1's split box and Figure 7's group labels were corrected
+  after P8 (K-068).
 
 ## Notes for the paper text
 

@@ -1120,5 +1120,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   2. **Şekil 7 (b)**, grup başlıkları: "pre-registered rule (K-062), biased upward" → "pre-registered statistic
      (|Δ|), biased upward"; "signed check (K-063)" → "corrected (signed) statistic". İç karar numaraları makale
      okuyucusuna bilgi taşımaz (K-066); K-064 raporlama kuralı (üç aşamanın birlikte gösterilmesi) korunur.
-- **Etkisi:** `python -m analysis.figures` yeniden çalıştırıldı; yalnızca `fig1_system` ve
-  `fig7_supervised_vs_unsupervised` değişti (P7 günlüğüne not düşüldü). `paper/figures/` eşitlendi.
+- **Etkisi:** `python -m analysis.figures` temiz ağaçta (commit `9d35da0`) yeniden çalıştırıldı. Görsel içerik yalnızca
+  `fig1_system` ve `fig7_supervised_vs_unsupervised`'da değişti; diğer altı şeklin PNG pikselleri önceki sürümle
+  birebir aynı (baytları yalnızca metadata'daki commit nedeniyle değişti). Tablolar bayt düzeyinde aynı. P7 günlüğüne
+  not düşüldü; `paper/figures/` eşitlendi.
