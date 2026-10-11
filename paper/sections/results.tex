@@ -1,0 +1,22 @@
+\section{Results}\label{sec:results}
+% SKELETON ONLY (plan 5.2 step 3). Rules: every number from all_results.csv / stats.csv / pareto.csv through
+% generated macros; every claim points to a figure or table; adjusted p and effect size always together;
+% unsupported hypotheses stated as such; the per-type vs aggregate difference highlighted.
+% Figure placement (docs/FIGURES.md, K-066): main text Fig. 3, 5, 8; appendix Fig. 4, 7; Fig. 6 only if space
+% allows. Figures are in paper/figures/ (scripts/sync_figures.py).
+%
+% TODO: A. RQ1 per-type loss (H1, H2) -> fig3_delta_recall_coarse_vs_stealthy, Table II (recall; F1 in the
+%   appendix), Table IV blocks A-B. H2 is NOT supported; do not write "no stealthy-specific loss exists"; give the
+%   bound of the paired difference D. State the structural minimum attainable p-values.
+% TODO: B. RQ2 latency/size/recall (H3) -> fig5_pareto, Table III. Latency only as orders of magnitude and as the
+%   two-session range of within-session ratios (K-050); p95 not interpreted; fp16 latency not measurable on the
+%   CPU (K-043); budget compliance on the host is not evidence for an ECU (K-051).
+% TODO: C. RQ3 supervised vs unsupervised (H4) -> Table IV block C, appendix fig7. The three stages of the verdict
+%   are reported together (pre-registered rule K-062 "supported"; signed check K-063 "not supported"; final
+%   "partially supported" K-064, decided by the authors after all results were seen), never one alone.
+%   fig7 still carries internal decision ids (K-062/K-063) in its labels: relabel it before it is used.
+% TODO: D. calibration shift -> fig8_calibration_shift: keeping the float32 threshold on the INT8 autoencoder
+%   raises the false-alarm rate on ROAD; the apparent recall gain is false alarms.
+% TODO: E. unexpected results, one sentence each (docs/FINDINGS.md): masquerade not harder than fabrication for
+%   the 1D-CNN but harder for XGBoost; no INT8 latency gain for the conv-AE.
+\textcolor{red}{[Results: written in the next phase.]}

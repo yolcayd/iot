@@ -1,0 +1,19 @@
+\section{Introduction}\label{sec:intro}
+% SKELETON ONLY (docs/DECISIONS.md K-066): the framing of the paper around the H2 result is written after the
+% advisor's review. Plan 5.1 content, in this order:
+% TODO: (1) CAN (ISO 11898) has no authentication, encryption or integrity protection; an attacker with bus access
+%   can inject arbitrary frames.                     % TODO-CITE: CAN standard; in-vehicle attack surface
+% TODO: (2) regulation makes intrusion detection a required defence layer.   % TODO-CITE: UNECE R155, ISO/SAE 21434
+% TODO: (3) IDS models are deployed as an extra ECU and are therefore quantized (fp32 -> fp16 -> INT8); prior work
+%   reports the gain (memory, latency) and the cost only as an aggregate score \cite{rajapaksha2023odtl}.
+%                                                    % TODO-CITE: post-training quantization; edge/TinyML IDS
+% TODO: (4) why an aggregate score can hide a type-specific loss: coarse attacks dominate the datasets, stealthy
+%   (payload-only) attacks are rare (Table~\ref{tab:dataset}).
+% TODO: (5) research questions RQ1-RQ3 and hypotheses H1-H4 (docs/PLAN.md 1.3-1.4). How the H2 result is framed
+%   (H2 not supported; supported wording in docs/FIGURES.md: "in this design the stealthy-specific INT8 loss does
+%   not appear larger than about 0.6 recall points") is decided with the advisor.
+% TODO: (6) contributions: mechanism-based coarse/stealthy taxonomy defined from traffic statistics only
+%   (Section~\ref{sec:threat}); paired fabrication-masquerade design; leakage-safe evaluation protocol
+%   (Section~\ref{sec:method}); per-type quantization loss with hierarchical bootstrap intervals; calibration
+%   shift of the quantized autoencoder.
+\textcolor{red}{[Introduction: skeleton only; written after the advisor's review of the framing.]}

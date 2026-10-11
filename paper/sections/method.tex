@@ -1,0 +1,146 @@
+\section{Method}\label{sec:method}
+% Written in P8 (framework-independent). Describes only what the code does: src/data/{features,windows,splits}.py,
+% src/models/*.py, src/calibration.py, src/quantize.py, configs/{data,models,quantization}.yaml, quant_meta.json;
+% decisions K-002, K-007, K-016 ... K-025, K-027 ... K-045. No numeric literal: every number is a macro.
+
+Fig.~\ref{fig:system} summarises the pipeline.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig1_system}
+\caption{System overview. CAN captures are split by source capture (ROAD) or by disjoint time blocks
+(Car-Hacking), encoded per frame and cut into \WinSize-frame windows (non-overlapping at validation and test
+time). A 1D-CNN, a convolutional autoencoder or XGBoost scores each window; the two deep models are post-training
+quantized to fp16 (\Qhalf) and INT8 (\Qint), each version is thresholded at a \TargetFPR{} false-positive rate on
+attack-free validation windows, and every version is evaluated per attack type.}
+\label{fig:system}
+\end{figure*}
+
+\subsection{Frame encoding}
+Each frame becomes a \NFeatures-dimensional vector in the unit interval:
+\begin{itemize}
+\item an \emph{identifier code}: the rank of the identifier in the sorted vocabulary of identifiers seen in benign
+training frames, divided by the vocabulary size $K$ ($K=\VocabCH$ for Car-Hacking, $K=\VocabROAD$ for ROAD);
+identifiers outside the vocabulary, such as most injected fuzzing identifiers, map to a reserved code zero;
+\item the \NPayloadBytes{} \emph{payload bytes}, each divided by \ByteScale; shorter payloads are zero-padded;
+\item the \emph{inter-arrival time} since the previous frame with the same identifier, on a logarithmic scale
+between a floor and a cap, the \IATFloorQ{} and \IATCapQ{} quantiles of the benign per-identifier inter-arrival
+times of the training segments (Car-Hacking \IATFloorUsCH~$\mu$s to \IATCapSCH~s; ROAD \IATFloorUsROAD~$\mu$s to
+\IATCapSROAD~s). It is computed inside each segment, and the first frame of an identifier in a segment takes the
+cap value.
+\end{itemize}
+The vocabulary, floor and cap are fitted on training data only. The encoding is designed for the INT8 input: the
+asymmetric unsigned INT8 input quantizer of every \Qint{} graph has scale \InputScale{} and zero point
+\InputZeroPoint, that is \InputLevels{} levels on the unit interval. The identifier codes, including the reserved
+code (\IdLevelsCH{} and \IdLevelsROAD{} values), and the payload-byte values fall on distinct levels, which we check for every quantized graph, whereas scaling raw
+identifiers to the unit interval would merge neighbouring identifiers into one level. The logarithmic
+inter-arrival time gives every decade the same resolution; a linear scale would squeeze the typical CAN periods
+into a few levels. A loss measured after quantization therefore reflects the quantized model, not the input
+scaling.
+
+\subsection{Windows and labels}
+A window holds $N=\WinSize$ consecutive frames and is labelled \emph{attack} if it contains at least one injected
+frame. Windows are cut with stride \StrideTrain{} in training (\OverlapTrainPct{} overlap, as data augmentation)
+and with stride \StrideEval, without overlap, in validation and test.
+
+\subsection{Leakage-safe split}
+Random splitting of windows overestimates performance on CAN data for several reasons, and the split is designed
+against each of them.
+% TODO-CITE: overlapping windows and random window-level splits in CAN IDS evaluation.
+\begin{itemize}
+\item \emph{Overlapping windows.} Two consecutive training windows share \OverlapTrainPct{} of their frames. If
+windows of one recording were assigned to splits at random, almost every test window would have a near copy in
+training. We therefore split recordings (or time blocks of a recording) before windowing, and overlap exists only
+inside the training split.
+\item \emph{Non-overlapping test windows.} With stride equal to the window size, every test frame is evaluated
+exactly once, so an injection event is not counted several times and test windows do not share frames.
+\item \emph{Duplicated recordings.} Two kinds of recordings occur twice in the data. ROAD masquerade captures are
+copies of their fabrication source (Section~\ref{sec:threat}); the unit of the ROAD split is therefore the source
+capture, and both versions always land in the same split. The \SharedTailFiles{} Car-Hacking attack files end with
+the same attack-free recording (identical timestamps, identifiers and payloads); it is cut from every file and used
+once, in training.
+\item \emph{Fitted parameters.} The identifier vocabulary and the inter-arrival-time scaling are fitted on training
+data, decision thresholds on validation data and INT8 calibration on training data; test data are never used for
+fitting or selection.
+\end{itemize}
+
+\emph{ROAD} has several captures per attack type. For every fabrication type the first, second and third source
+capture go to training, validation and test, with the derived masquerade captures. Two exceptions follow from
+window counts alone (at least \MinTestAttackWindows{} test attack windows per type): the first fuzzing capture is
+used for training and the other two for testing, without a validation capture, and the engine-coolant pair, which
+has a single source capture, is placed in the test split as an attack type unseen in training and reported apart.
+Attack-free captures are distributed over the three splits; \ExcludedROAD{} captures without frame-level labels
+are excluded.
+
+\emph{Car-Hacking} has one file per attack type, so a file-level split would remove each type from training or from
+test. Each attack file is cut in time instead: the first \TrainBursts{} attack bursts go to training, the next
+\ValBursts{} to validation and the remaining bursts to test, and \GapBursts{} whole bursts are discarded at each
+cut. The attack-free file is split by time (\NormalFractions{} percent) with \NormalGapS-s gaps. Every gap is at
+least \MinBlockGapS~s long, an order of magnitude longer than the inter-arrival-time cap, so no feature of one block
+looks into the next. Blocks of one file are still parts of the same driving session, which is a weaker
+independence than a file-level split (Section~\ref{sec:limitations}).
+
+An automated test enforces the split: no sequence of \LeakNgram{} consecutive frames (identifiers, payloads and
+inter-frame time differences, hence independent of timestamp offsets) occurs in two splits, and it detects the
+known duplicates (masquerade--fabrication pairs, the shared Car-Hacking recording) as positive controls. The same
+test checks that the test stride equals the window size and that the feature scaling was fitted on training data
+only.
+
+\subsection{Models}
+\emph{1D-CNN} (supervised). The network stacks \CNNBlocks{} convolution blocks (channels \CNNChannels; kernel sizes
+\CNNKernels), each with batch normalisation and ReLU and with max pooling between blocks, followed by an average over time and a
+two-layer head with \CNNHidden{} hidden units and dropout \CNNDropout. The window score is the output logit
+(\CNNParams{} parameters).
+
+\emph{Convolutional autoencoder} (unsupervised, conv-AE). Two strided convolutions (channels \AEChannels) and a
+convolution to \AELatentChannels{} channels encode a window to a latent sequence of length \AELatentLen; two
+transposed convolutions and a convolution with a sigmoid output reconstruct it (\AEParams{} parameters). It is
+trained on attack-free windows only, and the window score is the mean squared reconstruction error.
+
+The planned unsupervised model was an LSTM autoencoder (\LSTMHidden{} hidden units, latent size \LSTMLatent). A
+feasibility rule fixed before training required a validation ROC-AUC of at least \FeasMinAUC{} and allowed, on
+failure, one retry with \RetryHidden{} hidden units, learning rate \RetryLR{} and up to \RetryMaxEpochs{} epochs,
+followed by the conv-AE. The candidate order and the selection rule (the first candidate that passes on both
+datasets is used) were fixed before the retry and the conv-AE were evaluated. The LSTM autoencoder failed on ROAD (Car-Hacking \FeasLSTMBaseCH, ROAD \FeasLSTMBaseROAD; retry
+\FeasLSTMRetryCH{} and \FeasLSTMRetryROAD), and the conv-AE passed (\FeasConvAECH{} and \FeasConvAEROAD). Validation
+attack labels were used for this pass/fail decision only, never for a threshold.
+
+\emph{XGBoost} (supervised reference). Gradient-boosted trees operate on \NSummaryFeatures{} window summaries
+computed from the same encoded windows: identifier entropy, number of distinct identifiers and share of
+out-of-vocabulary identifiers; mean, standard deviation, minimum and lower decile of the inter-arrival time; mean
+and variance of every payload byte; and the share of consecutive same-identifier frames whose payload changes. The
+score is the raw margin. XGBoost is not quantized; it serves as a reference for size, latency and detection.
+
+\subsection{Decision threshold}
+All models use the same rule. The threshold is the \CalibQuantile{} quantile of the scores of the \emph{clean
+validation normals}: validation windows labelled normal that do not come from a masquerade capture and have no
+frame within \NormalMarginS~s of an injected frame. A window is an attack if its score exceeds the threshold, so
+the false-positive rate on these windows is at most \TargetFPR. No attack label and no test window is used. Fixing
+the false-alarm rate compares all models and versions at the same operating point, which corresponds to the
+false-alarm budget of an in-vehicle detector. Every quantized version receives its own threshold from its own
+validation scores (primary analysis). As a secondary analysis, the float32 threshold is applied unchanged to the
+quantized version to measure the \emph{calibration shift} that a deployment without re-calibration would see.
+
+\subsection{Quantization}
+\emph{\Qfp{} (float32)} is the PyTorch model exported to ONNX (opset \Opset), checked against PyTorch on the CPU
+(absolute tolerance \QZeroAtol, relative tolerance \QZeroRtol). All quantization losses are computed relative to
+this ONNX model on the CPU, so that the reference and the quantized versions run in the same runtime.
+
+\emph{\Qhalf{} (float16)} converts the ONNX graph to half precision with float32 inputs and outputs. The CPU
+execution provider of ONNX Runtime has no float16 kernel for the heavy layers of our models (\HeavyFPCNN{} of
+\HeavyCNN{} for the 1D-CNN, \HeavyFPAE{} of \HeavyAE{} for the conv-AE) and casts them back to float32. A rule set
+before any float16 result was seen states that the CPU file does not represent float16 if less than
+\MinHeavyFPShare{} of the heavy layers run in half precision. The float16 accuracy is therefore measured with the
+PyTorch model in half precision (weights, inputs and activations) on the GPU, the model size is that of the float16
+ONNX file, and no CPU latency is reported for \Qhalf.
+
+\emph{\Qint{} (INT8)} is static post-training quantization with ONNX Runtime in the QDQ format: asymmetric unsigned INT8
+activations, symmetric per-channel signed INT8 weights and min--max calibration on \CalibWindowsQ{} windows drawn with
+the run seed from the model's own training selection (1D-CNN: supervised training windows; conv-AE: attack-free
+training windows). The code refuses calibration windows from outside the training split or fewer than
+\MinCalibWindowsQ. The quantized operator types are \QOpTypes; the remaining nodes (transpositions, reductions and
+the score computation) stay in float, and the list of float nodes is stored with every model. A kernel profile
+records how each heavy layer runs: all \HeavyIntCNN{} heavy layers of the 1D-CNN use INT8 kernels, while for the
+conv-AE \HeavyIntAE{} of \HeavyAE{} do; its \HeavySimAE{} transposed convolutions have no INT8 CPU kernel and run as
+dequantize--float--quantize simulation, which keeps the INT8 numerics but not the INT8 arithmetic. The score (logit
+or reconstruction error) is computed inside every graph, so latency covers the whole inference.

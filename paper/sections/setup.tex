@@ -1,0 +1,109 @@
+\section{Experimental Setup}\label{sec:setup}
+% Written in P8 (framework-independent). Sources: configs/{data,models,grid,quantization,analysis}.yaml,
+% run_config.json of the full-grid runs, benchmark JSON files, data_profile.csv / split_summary.csv (Table I),
+% pareto.csv (budgets); decisions K-006, K-008, K-022, K-026 ... K-031, K-034 ... K-041, K-046 ... K-062.
+% No numeric literal: every number is a macro.
+
+\subsection{Datasets}
+\emph{Car-Hacking}~\cite{song2020dcnn} contains \CHAttackFiles{} attack files (DoS, fuzzy, gear spoofing and RPM
+spoofing) and an attack-free recording, with frame labels supplied by the dataset. \emph{ROAD}~\cite{verma2024road}
+contains attack-free (ambient) captures, fuzzing, targeted fabrication attacks and their masquerade versions. ROAD
+has no frame labels; a frame is labelled injected if its identifier is the injection identifier of the capture
+metadata, its payload matches the injected pattern and it falls inside the injection interval (fuzzing: an
+all-ones payload after the start of the injection). The \ExcludedROAD{} accelerator captures, whose injection
+happened before the recording started, have no injected frames to label and are excluded. Table~\ref{tab:dataset}
+lists frames, injected frames and windows per attack type and split; attacks are rare at window level, especially
+in ROAD.
+
+\input{generated/table_dataset}
+
+\subsection{Training}
+Every model is trained on both datasets with \NSeeds{} seeds (\Seeds), \NRuns{} training runs in total. The deep
+models use Adam with learning rate \LearningRate, weight decay \WeightDecay, batch size \BatchSize{} (1D-CNN) or
+\AEBatchSize{} (conv-AE), at most \MaxEpochs{} epochs and early stopping with patience \Patience. The 1D-CNN keeps
+the epoch with the highest validation average precision, which measures the ranking of attack windows independently
+of the threshold, and is trained with a positive-class weight equal to the ratio of normal to attack training
+windows (Car-Hacking \PosWeightCH, ROAD \PosWeightROAD); no resampling is used. Its training set omits the
+attack-free windows of masquerade captures, which duplicate those of the fabrication source
+(\CNNTrainWindowsCH{} and \CNNTrainWindowsROAD{} windows). The conv-AE is trained on attack-free training windows
+with no frame within \NormalMarginS~s of an injected frame, again without masquerade captures (\AETrainWindowsCH{}
+and \AETrainWindowsROAD{} windows), and stops on the reconstruction loss of the clean validation normals.
+
+XGBoost uses \XGBEstimators{} trees of depth at most \XGBDepth, learning rate \XGBLR, the same class weight and
+early stopping after \XGBEarlyStop{} rounds without improvement of the validation log-loss. Its row and column
+sampling rates are \XGBSubsample, which makes the training deterministic: the \NSeeds{} seeds yield the same model,
+so XGBoost has no seed variance and counts as a single observation wherever seeds are compared.
+
+Training runs on an \GPUName{} with \TrainThreads{} CPU threads and deterministic settings (fixed seeds,
+deterministic cuDNN kernels). Every run stores its configuration, library versions (Python \PythonVersion, PyTorch
+\TorchVersion, ONNX \ONNXVersion, ONNX Runtime \ORTVersion, scikit-learn \SklearnVersion, XGBoost \XGBVersion) and
+the git commit. The thresholds are fitted on \CalibNormalsCH{} (Car-Hacking) and \CalibNormalsROAD{} (ROAD) clean
+validation normal windows. In Car-Hacking, the attack-free gaps between bursts are shorter than the
+\NormalMarginS-s margin, so these windows all come from the attack-free recording.
+
+\subsection{Evaluation and metrics}
+Metrics are computed per attack type on the test split. The evaluation set of a type contains its attack windows
+and the normal windows of the captures that contain it, so that false alarms are counted under the same vehicle
+and driving conditions. The primary metric is the recall (true-positive rate) at the calibrated threshold: it
+depends only on the attack windows and is therefore comparable across types whose attack prevalence differs, and
+since every version runs at the same false-alarm rate it is comparable across models and quantization levels. The
+quantization loss of type $t$ at level $k$ is
+\begin{equation}
+\dRecall_t(k) = \mathrm{Recall}_t(\Qfp) - \mathrm{Recall}_t(k),\qquad k \in \{\Qhalf, \Qint\},
+\end{equation}
+so a positive value is a loss. F1, ROC-AUC and average precision and their losses are secondary; the false-positive
+rate is reported on the attack-free test captures. Pooled metrics over all types are reported as secondary
+results only, and accuracy is not reported because of the class imbalance. The engine-coolant pair, unseen in
+training, is reported apart. A paired unit whose float32 recall (mean over seeds) is below \FloorRecall{} on either
+side is excluded from the paired analysis, because its loss is bounded by the floor; the rule depends on \Qfp{}
+only.
+
+\subsection{Statistical analysis}
+Uncertainty is estimated with a hierarchical bootstrap that crosses training seeds and test windows. Each replicate
+draws seeds with replacement and resamples the test windows once, with the same draw for every seed, quantization
+level and model, so that differences between levels, between the two members of a pair and between models stay
+paired. Windows are resampled in moving blocks, whose length is the cube root of the stratum size rounded up,
+within each stratum of capture segment and label, because consecutive windows of one injection are correlated. We
+use \NBoot{} replicates and \CIPct{} percentile intervals; thresholds are kept fixed in every replicate.
+
+For the coarse--stealthy comparison, the primary statistic is the paired difference
+$D = \dRecall_{\mathrm{masq}} - \dRecall_{\mathrm{fab}}$ per fabrication--masquerade unit and its mean over units
+(a positive $D$ means a larger loss on the stealthy side). With few units no paired test can reach significance, so this analysis is
+exploratory and reports effect sizes with intervals. The secondary group comparison on the ROAD primary types
+(\GroupStealthy{} stealthy against \GroupCoarse{} coarse) uses the exact two-sided Mann--Whitney $U$ test, Cliff's
+$\delta$ and the Holm correction, and we report the smallest attainable $p$-value of each test next to its result.
+The latency--size--recall trade-off is analysed as a Pareto front; a candidate counts as dominated only if it is
+dominated in both measurement sessions. The supervised and unsupervised models are compared per attack type over
+the \ASThreeTypes{} types of both datasets on $\Delta$ROC-AUC, and on $\dRecall$ only where both models reach a
+float32 recall of at least \RecallFloorAS.
+
+The verdict rules for the hypotheses were written after the descriptive results of the full grid were available
+but before any interval or test was computed; the robustness checks of the supervised--unsupervised comparison were
+added after a smoke run of the analysis. Both are reported as such together with the results.
+
+\subsection{Measurement environment}
+Latency and memory are measured on a laptop host, an \CPUName{} (\PerfCores{} performance and \EffCores{}
+efficiency cores, \PhysCores{} physical and \LogicalCores{} logical processors, \MemGiB~GiB RAM) under
+\OSName. The process is pinned to one logical processor on each of \PinnedCores{} performance cores (skipping core
+zero, which serves most interrupts), and the measurement starts only in the best-performance power mode. Inference
+uses the CPU execution provider of ONNX Runtime \BenchORTVersion{} with \BenchIntraOp{} intra-operator and
+\BenchInterOp{} inter-operator threads, sequential execution and batch size \BenchBatch. After at least
+\BenchWarmup{} warm-up inferences and at least \BenchWarmupS~s, which are discarded, \BenchRepeats{} inferences are
+timed, cycling through \BenchInputs{} fixed validation windows. Peak memory is measured in a separate process per
+model; model size is the file size.
+
+Two sessions are measured; they count as consistent if the median latencies differ by at most \MedianTol{} and the
+\TailPct{}th-percentile latencies by at most \PNinetyFiveTol. A rule fixed before the measurement states that inconsistent
+targets are not re-measured: both sessions are reported, latency comparisons rest on within-session ratios to
+\Qfp{}, given as the range over the two sessions, a direction is stated only if both sessions agree, tail
+percentiles are not interpreted and absolute latencies are read as orders of magnitude only. Latency is measured on
+the seed-\BenchSeed{} models, since the graph, and with it the latency, depends on the architecture and the
+quantization level, not on the trained weights. The float16 models are not timed (Section~\ref{sec:method}). The
+host is an approximation of an edge device: no ECU, single-board computer or resource-limited container was
+measured.
+
+To relate latency to the bus, we define two budgets from the median message rate of the attack-free captures
+(Car-Hacking \MsgRateCH, ROAD \MsgRateROAD{} messages per second): the \emph{window budget}, the time in which
+\BudgetWindowMsgs{} messages arrive (\BudgetWindowCH~ms and \BudgetWindowROAD~ms), suits detection on
+non-overlapping windows; the \emph{strict budget}, \BudgetStrictMsgs{} message interval (\BudgetStrictCH~ms and
+\BudgetStrictROAD~ms), suits a sliding window that is re-evaluated on every frame.

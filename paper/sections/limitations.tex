@@ -1,0 +1,19 @@
+\section{Limitations}\label{sec:limitations}
+% SKELETON ONLY (plan 5.1 and the decision log). Each item points to its entry in docs/DECISIONS.md:
+% TODO: stealthy group = synthetically derived ROAD masquerade captures only; one vehicle, one dataset, not
+%   physically recorded (K-014); Car-Hacking has no stealthy type.
+% TODO: the primary paired evidence rests on few units of one model on one dataset (K-057); the group test cannot
+%   reach adjusted significance by design (K-059).
+% TODO: Car-Hacking temporal block split is weaker than a file-level split (same driving session; K-017); 1D-CNN at
+%   the recall ceiling on Car-Hacking.
+% TODO: dynamometer data and limited attack diversity of ROAD \cite{verma2024road}.
+% TODO: no real ECU, Raspberry Pi or constrained-container measurement; host CPU only; the two sessions disagree
+%   beyond tolerance; latency on seed-0 models (K-050, K-051, K-052); core pinning serves repeatability, not ECU
+%   realism (K-049).
+% TODO: fp16 has no CPU kernels here: fp16 accuracy from GPU half precision, no fp16 latency (K-043).
+% TODO: PTQ only, no QAT and no pruning (K-003); conv-AE at its epoch budget (K-054); LSTM autoencoder rejected by
+%   the pre-registered feasibility rule (K-039); XGBoost seed-independent (K-055).
+% TODO: hypothesis verdict rules written after the descriptive results (K-062); robustness checks of RQ3 added
+%   after a smoke run (K-063); final H4 verdict by the authors after all results (K-064).
+% TODO: CAN-bus responses to fuzzing labelled normal by the dataset (K-026).
+\textcolor{red}{[Limitations: skeleton only.]}

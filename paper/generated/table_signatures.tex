@@ -1,0 +1,31 @@
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Traffic criteria that define the attack groups (exploratory analysis, before any model was trained). C1: share of attack-period frames with an ID unseen in attack-free traffic (coarse if $>0.01$). C2: median Jensen--Shannon divergence of the ID distribution of 1{,}000-frame attack windows against the normal period of the same capture (coarse if above the 99th percentile of an attack-free null: CH 0.00059, ROAD 0.077). C3, C4: target-ID rate and median inter-arrival-time ratio, attack/normal period (coarse if outside $[1/1.5,\,1.5]$; not defined without a single target ID). Bold: criterion fires. A type is coarse if any criterion fires.}
+\label{tab:signatures}
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+Attack type & C1 & C2 & C3 & C4 & Group \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{Car-Hacking}} \\
+DoS & \textbf{0.545} & \textbf{0.349} & \textbf{$\infty$} & \textbf{$\infty$} & coarse \\
+fuzzy & \textbf{0.379} & \textbf{0.226} & -- & -- & coarse \\
+gear spoofing & 0.000 & \textbf{0.111} & \textbf{6.47} & \textbf{0.11} & coarse \\
+RPM spoofing & 0.000 & \textbf{0.111} & \textbf{7.06} & \textbf{0.11} & coarse \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{ROAD}} \\
+fuzzing & \textbf{0.066} & 0.040 & -- & -- & coarse \\
+correlated signal & 0.000 & 0.010 & \textbf{2.00} & \textbf{0.41} & coarse \\
+max speedometer & 0.000 & 0.011 & \textbf{2.00} & \textbf{0.36} & coarse \\
+reverse light off & 0.000 & 0.010 & \textbf{2.00} & \textbf{0.40} & coarse \\
+reverse light on & 0.000 & 0.010 & \textbf{2.00} & \textbf{0.39} & coarse \\
+correlated signal (masq.) & 0.000 & 0.006 & 1.00 & 1.02 & stealthy \\
+max speedometer (masq.) & 0.000 & 0.006 & 1.00 & 1.00 & stealthy \\
+reverse light off (masq.) & 0.000 & 0.006 & 1.00 & 1.00 & stealthy \\
+reverse light on (masq.) & 0.000 & 0.005 & 1.00 & 1.00 & stealthy \\
+max coolant temp & 0.000 & 0.006 & \textbf{2.03} & \textbf{0.50} & coarse \\
+max coolant temp (masq.) & 0.000 & 0.006 & 1.03 & 1.14 & stealthy \\
+\bottomrule
+\end{tabular}
+\end{table}

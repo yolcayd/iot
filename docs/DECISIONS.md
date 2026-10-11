@@ -1056,3 +1056,36 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   10. **Ek veri kaynakları:** kullanıcının saydığı dört tabloya (`all_results.csv`, `delta_f1.csv`, `stats.csv`, `data_profile.csv`) ek olarak P6/P1'in türetilmiş tabloları okunur: `pareto.csv` (gizli tür recall'unun aralığı, cephe bayrakları, bütçeler), `split_summary.csv` (Tablo I pencere sayıları), `attack_signatures.csv` ve `configs/eda.yaml` (Şekil 2). Bu değerler dört tabloda yok; yeniden hesaplanmaz, okunur.
   11. **Görsel kurallar:** IEEE tek sütun 3.5", çift sütun 7.16"; bütün yazılar 8–9 pt; Okabe–Ito'dan doğrulanmış palet (gruplar kaba `#D55E00` / gizli `#0072B2`; modeller CNN `#009E73` / conv-AE `#AA3377`, XGB nötr). Renk her zaman işaretçi şekli ya da dolguyla birlikte kullanılır. Yazı çakışması, taşma, 8–9 pt dışı yazı ve boş panel kaydetmeden önce kodla denetlenir.
 - **Gerekçe:** Şekiller P6 bulgularını değiştirmeden ve seçici olmadan göstermeli. Plan F6, K-037 (ΔRecall birincil), K-050 (gecikme belirsizliği) ve K-064'ten (H4 raporlama kuralı) önce yazılmıştı; bu girdi sunumu o kararlarla uyumlu hâle getirir.
+
+## K-066 — Makale yazımı (P8): sayıların kaynağı, bölüm kapsamı, şekil yerleşimi, derleyici
+
+- **Faz / tarih:** P8 · 2026-10-11
+- **Durum:** Geçerli (kullanıcı onayı, P8 planı; bölüm metinleri yazılmadan önce kaydedildi)
+- **Karar:**
+  1. **Sayılar yalnızca üretilmiş makrolardan gelir.** `python -m analysis.paper_numbers`, `configs/*.yaml`,
+     `results/tables/*.csv`, `normalization_params.json` ve koşuların `run_config.json` / `quant_meta.json` /
+     benchmark JSON'larından `paper/generated/numbers.tex` (her makronun yanında kaynak dosya ve anahtar) üretir.
+     Bölüm III, IV ve V'te sayı literali bulunmaz; `tests/test_paper.py` bunu dar bir beyaz liste dışında
+     (ad parçaları: 1D, INT8, float16/32, fp16/32, Q0–Q2, C1–C4, H1–H4, RQ1–3) reddeder. Tohumlar arasında
+     farklı olması beklenmeyen run_config alanları (ör. pos_weight, kalibrasyon pencere sayısı, sürümler)
+     tutarsızsa üretici durur.
+  2. **Bu fazın kapsamı:** yalnızca çerçeveden bağımsız bölümler (III Threat Model and Attack Taxonomy,
+     IV Method, V Experimental Setup) yazılır. Abstract, Introduction, Related Work, Results, Discussion,
+     Limitations ve Conclusion yalnızca iskelet ve `% TODO` yorumlarıdır; makalenin H2 sonucu etrafındaki
+     çerçevesi danışman görüşünden sonra yazılır (kullanıcı talimatı).
+  3. **Şekil yerleşimi** (`docs/FIGURES.md` önerisi, kullanıcı talimatı): ana metinde Şekil 1, 3, 5, 8; ekte
+     Şekil 2, 4, 7 (Şekil 6 da ana metin dışında). Bu fazda yalnızca bölümü yazılan float'lar yerleştirilir:
+     Şekil 1 (Yöntem), Şekil 2 (Ek; Bölüm III'ten atıf).
+  4. **Bölüm III'te kompakt imza tablosu** (kullanıcı kararı): `attack_signatures.csv` ve `configs/eda.yaml`'dan
+     üretilen tek sütunluk tablo (tür başına C1–C4 değerleri, tetiklenen ölçütler, grup). Şekil 2 ekte.
+  5. **Tablo I'in makale sürümü** `analysis.figures.table1_dataset` verisinden yeniden biçimlendirilir; başlık ve
+     notlarda iç karar numaraları (K-0xx) yer almaz. `results/tables/` altındaki P7 tablolarına dokunulmaz.
+  6. **Atıflar:** `refs.bib` yalnızca öneri formundaki 5 kaynağı içerir; formda olmayan DOI ya da sayfa
+     eklenmez. Literatür iddiası gereken yerlere `% TODO-CITE: <konu>` yorumu konur; uydurma atıf yapılmaz.
+  7. **Derleyici:** TinyTeX kullanıcı dizinine (`%APPDATA%\TinyTeX`) kurulur; PATH değiştirilmez. Derleme
+     `scripts/build_paper.py` ile yapılır (çıktı `paper/build/`, git dışında).
+- **Gerekçe:** CLAUDE.md "sonuç uydurma" yasağı ve plan 5.2'nin "tüm sayılar configs/ ve results/tables/
+  dosyalarından okunsun" kuralı ancak otomatik bir denetimle güvenceye alınabilir. Karar numaraları projenin iç
+  izlenebilirlik aracıdır, okuyucuya bilgi taşımaz.
+- **Etkisi:** Bir config ya da tablo değişirse metin `python -m analysis.paper_numbers` ile güncellenir; eskimiş
+  `numbers.tex` testte yakalanır.

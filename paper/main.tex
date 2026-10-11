@@ -1,1 +1,62 @@
-% IEEEtran conference paper skeleton (created in the paper phase).
+% IEEEtran conference paper (P8; plan section 5). Build: `python scripts/build_paper.py` (output in paper/build/).
+% Every number in the section text comes from generated/numbers.tex (`python -m analysis.paper_numbers`);
+% the sections contain no numeric literals (tests/test_paper.py; docs/DECISIONS.md K-066).
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage[T1]{fontenc}
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{url}
+
+\graphicspath{{figures/}}
+\input{generated/numbers}
+
+% Shorthand used in the text
+\newcommand{\Qfp}{Q0}        % float32 reference
+\newcommand{\Qhalf}{Q1}      % float16
+\newcommand{\Qint}{Q2}       % INT8
+\newcommand{\dRecall}{\ensuremath{\Delta\mathrm{Recall}}}
+
+\begin{document}
+
+% TODO: the title is provisional (English title of the project proposal); it is fixed together with the framing
+% of the paper after the advisor's review of the H2 result.
+\title{Attack-Type-Aware Analysis of Model Quantization Effects on In-Vehicle CAN Intrusion Detection for
+Resource-Constrained Edge Devices}
+
+\author{
+\IEEEauthorblockN{Yusuf Olcay Dirik}
+\IEEEauthorblockA{Bursa Technical University}
+\and
+\IEEEauthorblockN{Muhammed Furkan K\"u\c{c}\"uk (to be confirmed)}
+\IEEEauthorblockA{Bursa Technical University}
+}
+
+\maketitle
+
+\input{sections/abstract}
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/threat_model}
+\input{sections/method}
+\input{sections/setup}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/limitations}
+\input{sections/conclusion}
+
+\section*{Acknowledgment}
+An AI assistant (Claude, Anthropic) was used for developing the experiment code and drafting the manuscript; the
+experimental design, analyses, interpretation of results and final text are the authors' responsibility.
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\appendix
+\input{sections/appendix}
+
+\end{document}

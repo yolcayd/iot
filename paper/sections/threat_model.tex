@@ -1,0 +1,111 @@
+\section{Threat Model and Attack Taxonomy}\label{sec:threat}
+% Written in P8 (framework-independent). Sources: configs/eda.yaml (rule, fixed before any metric was computed),
+% configs/attack_groups.yaml, results/tables/attack_signatures.csv, periodicity_summary.csv, capture_lineage.csv;
+% decisions K-007, K-009 ... K-014. No numeric literal in this file: every number is a macro (generated/numbers.tex).
+
+\subsection{Adversary and defender}
+A CAN frame carries an identifier, which also sets its arbitration priority, and up to \NPayloadBytes{} payload
+bytes. The protocol does not authenticate the sender, so any node that can transmit on the bus can emit a frame
+with an arbitrary identifier and payload.
+% TODO-CITE: CAN standard (ISO 11898) and the absence of sender authentication; in-vehicle attack surface
+% (compromised ECU, diagnostic port).
+We consider an adversary with this capability and restrict the attack classes to those that the two datasets
+contain: \emph{flooding} with a high-priority identifier (identifier \DoSTarget{} in Car-Hacking), \emph{fuzzing}
+with random identifiers and payloads (Car-Hacking) or an all-ones payload on many identifiers (ROAD),
+\emph{fabrication} (spoofing), where frames with a valid identifier are injected next to those of the legitimate
+sender, and \emph{masquerade}, where the injected frames replace those of the legitimate sender, so that the
+identifier keeps its normal schedule and only its payload changes.
+% TODO-CITE: masquerade / suspension attacks and how a legitimate ECU can be silenced (e.g. bus-off).
+
+The defender is an intrusion detection system on an edge ECU that passively reads every frame and labels each window
+of \WinSize{} consecutive frames as attack or normal. The model is trained offline, compressed by post-training
+quantization and deployed with a decision threshold that is fixed before deployment from attack-free validation
+traffic (Section~\ref{sec:method}). Prevention, attacks below the frame level and adaptive adversaries that know
+the detector are out of scope.
+
+\subsection{A mechanism-based taxonomy}
+The intuition behind this study is that CAN attacks differ in how visible they are in the traffic structure. We
+define the two groups by mechanism rather than by attack name:
+\begin{itemize}
+\item \emph{coarse} attacks change the timing or the identifier distribution of the bus, which includes every
+attack that adds frames;
+\item \emph{stealthy} attacks preserve both, so that their signature lies only in the payload.
+\end{itemize}
+The name-based grouping this study started from (flooding and fuzzing coarse; spoofing, malfunction and masquerade
+stealthy) is an assumption about traffic, not a measurement. We therefore assign each attack type with four traffic
+criteria, computed between the attack period and the normal period of the same captures. A type is coarse if any
+criterion fires and stealthy otherwise:
+\begin{itemize}
+\item[C1] the share of attack-period frames whose identifier never occurs in attack-free reference traffic
+exceeds \COneThr;
+\item[C2] the median Jensen--Shannon divergence between the identifier frequencies of \CTwoFrames-frame attack
+windows and those of the normal period exceeds the \CTwoPct{}th percentile of a null distribution drawn
+\CTwoDraws{} times from attack-free traffic (equal window sizes keep the sample-size dependence of the divergence
+identical);
+\item[C3] the frame rate of the target identifier changes by more than a factor of \CBand{} in either direction;
+\item[C4] the median inter-arrival time of the target identifier changes by more than a factor of \CBand{}.
+\end{itemize}
+Attacks without a single target identifier (fuzzing) are judged on C1 and C2 only. In Car-Hacking, injected frames
+less than \BurstGapS{}~s apart form a burst and the bursts form the attack period; in ROAD the attack period is the
+injection interval of the capture metadata. Bus silences longer than \RecGapS{}~s are recording gaps and are
+excluded from rates and inter-arrival times. The rule and its thresholds were fixed before any of these statistics
+was computed, and it uses traffic statistics only: no model output enters the grouping, which keeps the later
+comparison of quantization losses between the groups from being circular.
+
+\subsection{Empirical grouping}
+Table~\ref{tab:signatures} lists the criteria for all \NTypes{} attack types (Fig.~\ref{fig:signatures} in the
+appendix shows them graphically). CAN traffic is strongly periodic, which is what makes timing informative: in
+Car-Hacking all \PeriodicCH{} of \IdsCH{} identifiers have an inter-arrival-time coefficient of variation below
+\CVThr{} (median \MedianCVCH), and in ROAD \RobustPeriodicROAD{} of \IdsROAD{} identifiers meet the same bound with
+a robust spread measure.
+
+Flooding and fuzzing change the identifier distribution: in Car-Hacking \DoSUnseenPct{} (DoS) and
+\FuzzyUnseenPct{} (fuzzy) of the attack-period frames carry an unseen identifier, and the window divergence
+(\DoSJSD{} and \FuzzyJSD) is far above the null percentile (\NullQCH). ROAD fuzzing fires only C1
+(\RoadFuzzUnseenPct): its divergence (\RoadFuzzJSD) stays below the ROAD null (\NullQROAD).
+
+Spoofing and fabrication use valid identifiers and add no unseen identifier, but they are not stealthy. The
+Car-Hacking spoofing attacks multiply the target-identifier rate by \SpoofRate{} and scale its median inter-arrival
+time by \SpoofIAT{}, enough to move the identifier distribution as well (divergence \SpoofJSD). The ROAD fabrication
+attacks double the target rate (ratio \FabRate) and shorten its median inter-arrival time (ratio \FabIAT), while
+the identifier distribution changes less than the noise floor (divergence \FabJSD{} against \NullQROAD): a detector
+that only looked at identifier frequencies would miss them, but the timing of the target identifier gives them
+away.
+
+Masquerade attacks leave every traffic statistic at its normal value: the target rate ratio is \MasqRate, the
+inter-arrival-time ratio \MasqIAT, the divergence at most \MasqJSDMax{} and no unseen identifier occurs. Their
+signature is in the payload only; the largest shift of a payload-byte median between attack and normal period is
+\MasqByteShift{} byte units, depending on the attack.
+
+The rule yields \NCoarse{} coarse and \NStealthy{} stealthy types (\NCoarseCaptures{} and \NStealthyCaptures{}
+captures). It contradicts the name-based grouping in \NPlanContradict{} types: every spoofing and fabrication
+attack is coarse. All stealthy types are ROAD masquerade attacks; Car-Hacking contains none.
+
+\input{generated/table_signatures}
+
+\subsection{Paired fabrication--masquerade design}
+Each of the \NMasqCaptures{} ROAD masquerade captures is derived from a fabrication capture: it is the same log
+with the conflicting legitimate target-identifier frames removed from the injection interval. We verified this
+lineage on the data: \MasqInSourcePct{} of the frames of every masquerade capture occur in its source capture
+(same relative time, identifier and payload), every removed frame is a legitimate target-identifier frame inside
+the injection interval, and both versions keep the same injected frames. A fabrication capture and its masquerade
+version therefore share the vehicle, the driving state and the injected payload values; they differ only in the
+timing trace that the extra frames leave (the doubled target rate). Comparing the quantization loss within such a
+pair isolates the contribution of that timing cue, with the confounders of a between-type comparison held fixed.
+This pairing is the primary design for the comparison of the two groups; the comparison of the groups as a whole
+is secondary (Section~\ref{sec:setup}). Because the two members of a pair contain the same injected frames, they
+are always assigned to the same split (Section~\ref{sec:method}).
+
+The masquerade captures are synthetic in one respect: in a real masquerade attack the legitimate ECU has to be
+silenced, which may leave timing side effects that removing frames from a log does not reproduce. The stealthy
+group thus rests on one vehicle, one dataset and post-processed captures (Section~\ref{sec:limitations}).
+
+\subsection{Why the taxonomy matters for quantization}
+A detector can recognise a coarse attack from gross structure, such as unseen identifiers or a doubled frame rate,
+which reduced numerical precision is unlikely to erase. A stealthy attack is visible only as a payload deviation,
+which for some attacks amounts to a few byte units; this is the kind of fine difference that coarser arithmetic
+could suppress. This motivates the question whether post-training quantization costs more detection performance on
+stealthy than on coarse attacks, and whether an aggregate score would hide such a cost, since coarse attacks
+dominate both datasets (Table~\ref{tab:dataset}). To make sure that a measured loss comes from the quantized model
+and not from the way the input is scaled, the input encoding keeps identifier codes and payload bytes exactly
+representable on the INT8 input grid (Section~\ref{sec:method}).

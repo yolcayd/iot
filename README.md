@@ -68,7 +68,8 @@ src/        data pipeline, models, training, quantization, evaluation, benchmark
 analysis/   aggregation, statistics, figures
 tests/      unit and leakage tests
 results/    raw run outputs (models are git-ignored), tables, figures
-paper/      LaTeX sources
+paper/      LaTeX sources (IEEEtran conference); generated numbers in paper/generated/
+scripts/    figure sync and paper build
 docs/       project plan, proposal, environment notes, phase logs
 ```
 
@@ -226,3 +227,26 @@ python -m analysis.figures --draft --only fig3 --figures-dir <dir>   # inspectio
   empty panels; any problem stops the command (except with `--draft`, which is for inspection only).
 - Provenance goes to the `figures` entry of `results/tables/analysis_manifest.json`, and the git commit goes
   into the PDF/PNG metadata. Outputs are byte-identical on a rerun.
+
+### Paper (P8)
+
+The paper is an IEEEtran conference project in `paper/` (`main.tex`, `sections/`, `refs.bib`). Sections III
+(threat model), IV (method) and V (setup) are written; the others are skeletons with `% TODO` notes. Decisions:
+`docs/DECISIONS.md` K-066.
+
+```powershell
+python -m analysis.paper_numbers        # paper/generated/: numbers.tex (macros) + two generated tables
+python scripts/sync_figures.py          # results/figures/fig*.pdf -> paper/figures/ (--check: report only)
+python scripts/build_paper.py           # both steps + pdflatex/bibtex -> paper/build/main.pdf, log check
+```
+
+- No number is typed into the section text: every number is a macro of `paper/generated/numbers.tex`, generated
+  from `configs/`, `results/tables/` and the run files (`run_config.json`, `quant_meta.json`, benchmark JSON),
+  with its source in a comment. `tests/test_paper.py` rejects numeric literals in the written sections and a stale
+  `numbers.tex`.
+- `refs.bib` holds only the five references of the project proposal; places that need a citation are marked
+  `% TODO-CITE` in the sections.
+- LaTeX: any TeX distribution with `IEEEtran` and `cite`. The build script looks for `pdflatex` in `$PDFLATEX`, on
+  the PATH, or in a user-level TinyTeX (`%APPDATA%\TinyTeX`; `tlmgr install ieeetran cite`). For Overleaf, upload
+  the `paper/` folder (with `generated/` and `figures/`).
+
