@@ -35,6 +35,15 @@ RQ1 = per-attack-type loss (H1, H2); RQ2 = latency/size/recall trade-off (H3); R
 | `table_3_resources` | RQ2, H3 | Model size, median and p95 latency as the range over two host sessions (p95 not interpreted), latency ratio to the float32 1D-CNN, peak memory, and compliance with the 1-message and window budgets. | `all_results.csv`, `pareto.csv` |
 | `table_4_stats` | RQ1, RQ3 | Statistical comparisons with 95 % hierarchical bootstrap intervals: coarse vs stealthy at group level (Cliff's δ, exact Mann–Whitney p, Holm p, minimum attainable p), the paired fabrication–masquerade difference (no test, minimum p 0.25), and the supervised vs unsupervised comparison (pre-registered rule and signed check). | `stats.csv` |
 
+## Figure selection for the 6-page paper (proposal, not final)
+
+Seven of the eight figures are double-column, so not all of them fit in a 6-page IEEE paper. User proposal (2026-10-11):
+
+- **Main text:** Figure 1 (system), Figure 3 (main result, RQ1), Figure 5 (Pareto, RQ2), Figure 8 (calibration shift).
+- **Appendix / extended version:** Figure 2 (attack signatures), Figure 4 (recall heat map), Figure 7 (supervised vs unsupervised).
+- **Rationale:** calibration shift is the strongest practical finding: a quantized autoencoder must be re-thresholded on its own validation scores. It gets a main-text figure. The H4 numbers of Figure 7 stay available in Table IV block C.
+- The final choice is made when the paper is written.
+
 ## Notes for the paper text
 
 - Figure 3 is the main figure. The text must say that H2 is **not** supported. It must not say "no stealthy-specific loss exists"; the supported wording is "in this design the stealthy-specific INT8 loss does not appear larger than ≈ 0.6 recall points" (P6 open issue 2).
