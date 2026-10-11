@@ -107,7 +107,7 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 ## K-011 — Gruplama sonucu ve plan ile çelişkiler
 
 - **Faz / tarih:** P1 · 2026-10-05
-- **Durum:** Geçerli (kullanıcı onayı: 2026-10-05)
+- **Durum:** Geçerli (kullanıcı onayı: 2026-10-05). Gerekçe ve Etkisi maddelerindeki iki sayı K-067 ile düzeltildi (8 → 7 tür, 22 → 20 kayıt).
 - **Bağlam:** K-009 kuralı 15 saldırı türüne uygulandı (`results/tables/attack_signatures.csv`).
 - **Karar:** `configs/attack_groups.yaml` kesinleşti.
   - **coarse (10 tür):** CH dos, fuzzy, gear_spoofing, rpm_spoofing; ROAD fuzzing, correlated_signal, max_engine_coolant_temp, max_speedometer, reverse_light_off, reverse_light_on.
@@ -1089,3 +1089,36 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   izlenebilirlik aracıdır, okuyucuya bilgi taşımaz.
 - **Etkisi:** Bir config ya da tablo değişirse metin `python -m analysis.paper_numbers` ile güncellenir; eskimiş
   `numbers.tex` testte yakalanır.
+
+## K-067 — K-011'in iki sayısının düzeltilmesi (7 tür, 20 kayıt)
+
+- **Faz / tarih:** P8 (kapanış sonrası) · 2026-10-11
+- **Durum:** Geçerli (kullanıcı kararı). K-011'in grup atamasını değiştirmez; yalnızca iki sayısını düzeltir.
+- **Bağlam:** P8'de makale sayıları `attack_signatures.csv`'den üretilirken iki sayı K-011 ile tutmadı:
+  - K-011 Gerekçe: "8 türde plan_group = stealthy iken veri coarse gösterdi". CSV'de `agrees_with_plan = False` olan
+    tür sayısı 7: Car-Hacking gear_spoofing, rpm_spoofing; ROAD correlated_signal, max_engine_coolant_temp,
+    max_speedometer, reverse_light_off, reverse_light_on. P1 günlüğündeki tabloda da 7 çelişki işareti var.
+  - K-011 Etkisi: "coarse 10 tür / 22 kayıt". CSV'deki `n_captures` toplamı 20: Car-Hacking 4, ROAD fuzzing 3,
+    fabrication 13 (correlated_signal 3, max_engine_coolant_temp 1, max_speedometer 3, reverse_light_off 3,
+    reverse_light_on 3).
+- **Karar:** Doğru değerler **7 tür** ve **20 kayıt**tır. K-011'in metni olduğu gibi kalır, durum satırı bu girdiye
+  atıf yapar. Diğer sayılar (coarse 10 tür; stealthy 5 tür / 13 kayıt) CSV ile aynı.
+- **Gerekçe:** İki değer elle yazılmış özet sayılardı; kaynak tablo `attack_signatures.csv`'dir. Grup ataması
+  (`configs/attack_groups.yaml`) ve onu denetleyen test (`tests/test_attack_groups.py`) bu hatadan etkilenmedi.
+- **Etkisi:** Makale metni zaten CSV'den üretiliyor (`\NPlanContradict` = 7, `\NCoarseCaptures` = 20; K-066).
+  Haftalık raporda K-011'e atıfla verilen sayılar bundan sonra bu girdiye göre okunur.
+
+## K-068 — Şekil 1 ayrım kutusu ve Şekil 7 etiketleri (K-065'e ek)
+
+- **Faz / tarih:** P8 (kapanış sonrası) · 2026-10-11
+- **Durum:** Geçerli (kullanıcı kararı). K-065'in sunum kararlarını değiştirmez; iki metni düzeltir. Sayısal hiçbir
+  çıktı değişmez.
+- **Karar:**
+  1. **Şekil 1**, "Leakage-safe split" kutusu: "… or by time block (Car-Hacking); no file feeds two splits" yerine
+     "train / val / test by source capture (ROAD) or by disjoint time blocks of each file (Car-Hacking)". Eski metin
+     Car-Hacking için yanlıştı: her saldırı dosyasının zaman blokları üç kümeye de girer (K-017).
+  2. **Şekil 7 (b)**, grup başlıkları: "pre-registered rule (K-062), biased upward" → "pre-registered statistic
+     (|Δ|), biased upward"; "signed check (K-063)" → "corrected (signed) statistic". İç karar numaraları makale
+     okuyucusuna bilgi taşımaz (K-066); K-064 raporlama kuralı (üç aşamanın birlikte gösterilmesi) korunur.
+- **Etkisi:** `python -m analysis.figures` yeniden çalıştırıldı; yalnızca `fig1_system` ve
+  `fig7_supervised_vs_unsupervised` değişti (P7 günlüğüne not düşüldü). `paper/figures/` eşitlendi.

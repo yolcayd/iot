@@ -293,8 +293,8 @@ def fig1_system(d: Data, save) -> None:
     boxes = [
         ("CAN captures", "Car-Hacking: 4 attack files\n+ attack-free recordings\nROAD: ambient, targeted,\n"
                          "fuzzing, masquerade"),
-        ("Leakage-safe split", "train / val / test by source\ncapture (ROAD) or by time\nblock (Car-Hacking); "
-                               "no file\nfeeds two splits"),
+        ("Leakage-safe split", "train / val / test by source\ncapture (ROAD) or by\n"
+                               "disjoint time blocks of\neach file (Car-Hacking)"),
         (f"Per-frame features ({F.N_FEATURES})", "ID code, 8 payload bytes,\nlog inter-arrival time;\n"
                                                  "scaling fitted on\ntraining frames only"),
         (f"Windows (N = {w['size']})", f"{w['size']} frames per window\ntrain stride {w['stride']['train']} (overlap)\n"
@@ -690,7 +690,7 @@ def fig7_sup_vs_unsup(d: Data, save) -> None:
     axb.axhline(1.45, color=GRID, linewidth=0.8)
     axb.set_yticks(yb, [r[2] for r in rows])
     trb = blended_transform_factory(axb.transAxes, axb.transData)
-    for y, text in ((3.62, "pre-registered rule (K-062), biased upward"), (1.02, "signed check (K-063)")):
+    for y, text in ((3.62, "pre-registered statistic (|Δ|), biased upward"), (1.02, "corrected (signed) statistic")):
         axb.text(0.01, y, text, transform=trb, ha="left", va="center", fontsize=8, color=INK_2, fontstyle="italic",
                  bbox=dict(facecolor="white", edgecolor="none", pad=0.5), zorder=4)
     axb.set_ylim(-1.05, 4.0)
