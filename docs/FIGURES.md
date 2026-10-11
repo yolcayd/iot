@@ -53,3 +53,13 @@ Seven of the eight figures are double-column, so not all of them fit in a 6-page
 - Figure 3 is the main figure. The text must say that H2 is **not** supported. It must not say "no stealthy-specific loss exists"; the supported wording is "in this design the stealthy-specific INT8 loss does not appear larger than ≈ 0.6 recall points" (P6 open issue 2).
 - Figure 7 and Table IV block C carry the three stages of the H4 verdict together: the pre-registered rule (K-062), the signed check (K-063) and the final verdict (K-064). None of them is shown alone.
 - Latency values are orders of magnitude only (K-050). The direction of the Q2/Q0 ratio is the claim, not the absolute value.
+
+## Applied in P9 (part 1, K-069)
+
+- Section VI (Results) places Figures 3, 5 and 8 in the main text and Figures 4 and 7 in the appendix, as proposed
+  above. Figure 6 is not used; its numbers are in the resources table and the text.
+- The captions in `paper/sections/results.tex` and `appendix.tex` follow the proposals of this file; every number in
+  them is a macro of `paper/generated/numbers.tex`.
+- The paper versions of Tables II, IIb, III and IV are generated into `paper/generated/` by
+  `python -m analysis.paper_numbers` (Table IV without internal decision ids). Their numbers in the compiled paper
+  follow the LaTeX order (signatures I, dataset II, recall III, statistics IV, resources V, F1 VI).

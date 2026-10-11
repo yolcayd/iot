@@ -974,7 +974,8 @@ def table3_resources(d: Data, out: Path, written: list) -> pd.DataFrame:
     return df
 
 
-def table4_stats(d: Data, out: Path, written: list) -> pd.DataFrame:
+def table4_data(d: Data) -> pd.DataFrame:
+    """Rows of Table IV from stats.csv (block A/A' group test, B paired units, C supervised vs unsupervised)."""
     recs = []
     fams = {"group_road_drecall": ("A", "ROAD stealthy (4) vs coarse (5)", "Cliff's δ of ΔRecall"),
             "group_road_df1": ("A", "ROAD stealthy (4) vs coarse (5)", "Cliff's δ of ΔF1"),
@@ -1003,43 +1004,56 @@ def table4_stats(d: Data, out: Path, written: list) -> pd.DataFrame:
             recs.append({"block": "C", "comparison": comp, "model": "conv_ae-cnn1d", "quantization": r.quantization,
                          "statistic": name, "estimate": r.estimate, "ci_low": r.ci_low, "ci_high": r.ci_high,
                          "p": r.p_value, "p_holm": r.p_holm, "min_attainable_p": r.min_attainable_p, "test": test})
-    df = pd.DataFrame(recs)
+    return pd.DataFrame(recs)
 
-    def p3(v):
-        return "--" if np.isnan(v) else f"{v:.3g}"
 
-    def est(r) -> str:
-        vals = (r.estimate, r.ci_low, r.ci_high)
-        if r.statistic.startswith("Cliff"):
-            f = "{:.2f}"
-        elif max(abs(v) for v in vals) < 1e-3:         # Q1 ROC-AUC differences are below 10^-3
-            def sci(v: float) -> str:                  # LaTeX math, passed through tex() unchanged
-                mant, exp = f"{v:.1e}".split("e")
-                return f"${mant}\\times10^{{{int(exp)}}}$"
-            return f"{sci(vals[0])} [{sci(vals[1])}, {sci(vals[2])}]"
-        else:
-            f = "{:.4f}"
-        e, lo, hi = (um(f.format(v)) for v in vals)
-        return f"{e} [{lo}, {hi}]"
+def p3(v) -> str:
+    return "--" if np.isnan(v) else f"{v:.3g}"
 
-    titles = {"A": "A: coarse vs stealthy, group level (K-059; Holm over 4 tests per family)",
-              "A'": "A': sensitivity analysis, Car-Hacking coarse types added",
-              "B": "B: coarse vs stealthy, paired fabrication-masquerade units, 1D-CNN (K-057; exploratory)",
-              "C": "C: supervised vs unsupervised (K-061, K-062, K-063)"}
+
+def stat_estimate(r) -> str:
+    """Estimate [95% CI] cell of Table IV: Cliff's δ with 2 decimals, values below 10^-3 in powers of ten."""
+    vals = (r.estimate, r.ci_low, r.ci_high)
+    if r.statistic.startswith("Cliff"):
+        f = "{:.2f}"
+    elif max(abs(v) for v in vals) < 1e-3:         # Q1 ROC-AUC differences are below 10^-3
+        def sci(v: float) -> str:                  # LaTeX math, passed through tex() unchanged
+            mant, exp = f"{v:.1e}".split("e")
+            return f"${mant}\\times10^{{{int(exp)}}}$"
+        return f"{sci(vals[0])} [{sci(vals[1])}, {sci(vals[2])}]"
+    else:
+        f = "{:.4f}"
+    e, lo, hi = (um(f.format(v)) for v in vals)
+    return f"{e} [{lo}, {hi}]"
+
+
+TABLE4_TITLES = {"A": "A: coarse vs stealthy, group level (K-059; Holm over 4 tests per family)",
+                 "A'": "A': sensitivity analysis, Car-Hacking coarse types added",
+                 "B": "B: coarse vs stealthy, paired fabrication-masquerade units, 1D-CNN (K-057; exploratory)",
+                 "C": "C: supervised vs unsupervised (K-061, K-062, K-063)"}
+
+
+def table4_latex(df: pd.DataFrame, titles: dict, caption: str, name=lambda s: s) -> str:
+    """Table IV in booktabs; ``name`` maps the statistic column to its displayed name."""
     rows = []
     for blk in ("A", "A'", "B", "C"):
         rows.append(("section", titles[blk]))
         for r in df[df.block.eq(blk)].itertuples():
             model = MODEL.get(r.model, "conv-AE vs 1D-CNN")
-            rows.append([model, r.quantization.upper(), r.statistic,
-                         est(r), p3(r.p), p3(r.p_holm),
+            rows.append([model, r.quantization.upper(), name(r.statistic),
+                         stat_estimate(r), p3(r.p), p3(r.p_holm),
                          p3(r.min_attainable_p)])
     header = ["Model & Level & Statistic & Estimate [95\\% CI] & $p$ & $p_\\mathrm{Holm}$ & min. $p$ \\\\"]
+    return latex_table(header, rows, "@{}lllrrrr@{}", caption, "tab:stats")
+
+
+def table4_stats(d: Data, out: Path, written: list) -> pd.DataFrame:
+    df = table4_data(d)
     cap = ("Statistical comparisons (Δ = Q0 − Qk; positive = loss). Intervals: hierarchical bootstrap "
            "over seeds and test windows (moving blocks, B = 10,000). min. p: smallest p the design can attain "
            "(group test: 2/126; after Holm 0.063 > 0.05). The K-062 |Δ| difference is biased upward for the "
            "noisier model (K-063); the final H4 verdict (partially supported, K-064) rests on both rows.")
-    write_table(df, latex_table(header, rows, "@{}lllrrrr@{}", cap, "tab:stats"), "table_4_stats", out, written)
+    write_table(df, table4_latex(df, TABLE4_TITLES, cap), "table_4_stats", out, written)
     return df
 
 

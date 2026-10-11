@@ -154,6 +154,14 @@ def test_table4_values_are_those_of_stats_csv(outputs):
     assert len(t4[t4.block.eq("C")]) == 8                                   # K-062 rule and K-063 check, Q1 and Q2
 
 
+def test_table4_split_into_data_and_latex_keeps_the_p7_output(outputs):
+    d, out, _ = outputs
+    df = FG.table4_data(d)
+    pd.testing.assert_frame_equal(df, pd.read_csv(out / "tables" / "table_4_stats.csv"), check_dtype=False)
+    renamed = FG.table4_latex(df, {k: k for k in ("A", "A'", "B", "C")}, "cap", lambda s: s.replace("(K-062)", "(x)"))
+    assert "(K-062)" not in renamed and "(x)" in renamed
+
+
 def test_stats_and_delta_tables_are_cross_checked(outputs):
     d = copy.copy(outputs[0])
     d.stats = d.stats.copy()

@@ -1124,3 +1124,45 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
   `fig1_system` ve `fig7_supervised_vs_unsupervised`'da değişti; diğer altı şeklin PNG pikselleri önceki sürümle
   birebir aynı (baytları yalnızca metadata'daki commit nedeniyle değişti). Tablolar bayt düzeyinde aynı. P7 günlüğüne
   not düşüldü; `paper/figures/` eşitlendi.
+
+## K-069 — Sonuçlar bölümünün (Bölüm VI) yazımı ve sunum kararları
+
+- **Faz / tarih:** P9 (kısım 1) · 2026-10-11
+- **Durum:** Geçerli (kullanıcı onayı, P9 kısım 1 planı; metin yazılmadan önce). Hiçbir analiz sonucunu değiştirmez;
+  K-065 ve K-066'yı Sonuçlar bölümüne uygular.
+- **Karar:**
+  1. **Kapsam:** yalnızca Bölüm VI (Results) ve ona bağlı ek şekil/tablolar yazılır. Abstract, Introduction, Related
+     Work, Discussion ve Conclusion'a dokunulmaz (danışman görüşü bekleniyor); Limitations da bu kısmın dışında.
+  2. **Hipotezler Sonuçlar'da tek cümleyle yeniden tanımlanır**, çünkü Introduction henüz yazılmadı. Her
+     hipotezin hükmü kendi alt başlığının sonunda vurgulu verilir.
+  3. **Anlamlılık raporu:** her testte etki büyüklüğü + %95 aralık + (varsa) ham ve Holm-düzeltilmiş p + ulaşılabilir
+     en küçük p birlikte. Grup testinde etki büyüklüğü Cliff's δ (aralıklı); AS-3 Wilcoxon testinde etki büyüklüğü
+     ortalama d_t (aralıklı) ve `stats.csv` notundaki |Δ| dağılımlarının Cliff's δ'sı (aralıksız). Eşleştirilmiş
+     birimlerde test yok (K-057); D ve aralığı verilir.
+  4. **H2 ifadesi:** "doğrulanmadı"; "hiç kayıp yok" denmez. Sınır cümlesi: bu tasarımda gizli saldırılara özgü ek
+     INT8 kaybı üç birimin ortalamasında ≈ `\DBoundPts` recall puanını (D aralığının üst ucu × 100) aşmıyor; daha
+     küçük bir etki dışlanamaz.
+  5. **H4:** K-064 raporlama kuralı metinde üç aşama olarak ("first / second / third stage") birlikte yazılır;
+     makalede iç numaralar yerine "pre-registered statistic" ve "corrected (signed) statistic" adları kullanılır
+     (K-068 ile aynı adlandırma). Zamanlama açıkça yazılır.
+  6. **Kalibrasyon kayması ayrı alt başlık** (VI-D), Şekil 8 ile.
+  7. **Yerleşim:** ana metinde Şekil 3, 5, 8 ve recall tablosu (P7 Tablo II), kaynak tablosu (P7 Tablo III) ve
+     istatistik tablosu (P7 Tablo IV); ekte Şekil 4, 7 ve F1 tablosu (P7 Tablo IIb). Şekil 6 kullanılmaz (FIGURES.md:
+     "yer varsa"); bilgisi kaynak tablosunda ve metinde. Makaledeki tablo numaraları LaTeX sırasına göredir
+     (imza I, veri seti II, recall III, istatistik IV, kaynak V, F1 VI); P7 dosya adlarıyla aynı değildir.
+  8. **Makale tablo sürümleri** `analysis/paper_numbers.py` ile `paper/generated/` altına üretilir:
+     `table_recall`, `table_f1`, `table_resources` P7 üreticisinin çıktısıdır (başlıklarında K-0xx yok);
+     `table_stats` Tablo IV'ün numarasız sürümüdür. Bunun için `analysis.figures.table4_stats`, veri
+     (`table4_data`) ve biçim (`table4_latex`) olarak ikiye bölündü; `results/tables/table_4_stats.{csv,tex}` bayt
+     düzeyinde aynı kaldı (testle denetleniyor). Makale sürümlerinde sütun aralığı IEEE metin genişliğine sığması için
+     daraltıldı (3 pt; istatistik tablosunda 2.5 pt).
+  9. **Metindeki nitel iddialar üreticide denetlenir:** ör. hangi adayların sağlam Pareto cephesinde olduğu, hangi
+     aralıkların 0'ı içerdiği, bütçe uyumu, kayıp satırlarının hangi model ve veri setine ait olduğu. Bir iddia
+     verilerle tutmazsa `python -m analysis.paper_numbers` durur (`check`).
+  10. Yüzde beş anlamlılık düzeyi yapılandırmada tanımlı olmadığı için metinde sayı olarak değil "the conventional
+     five-percent level" olarak geçer; üretilmiş tablo başlığında "> 0.05" olarak yer alır.
+- **Gerekçe:** Kullanıcı talimatı (P9 kısım 1) ve CLAUDE.md "sonuç uydurma" yasağı: metindeki her sayı ve nitel
+  iddia, kaynağı izlenebilir ve otomatik denetlenebilir olmalı. Karar numaraları okuyucuya bilgi taşımaz (K-066).
+- **Etkisi:** `paper/sections/results.tex`, `appendix.tex`; `numbers.tex`'e 171 yeni makro (toplam 358);
+  `tests/test_paper.py` Sonuçlar bölümünü de sayı literali ve tanımsız makro için denetliyor ve üretilmiş
+  tablolarda K-0xx olmadığını sınıyor. Derlenmiş taslak 13 sayfa (P8'de 7); kısaltma P10'da (P8 açık sorunu 3).

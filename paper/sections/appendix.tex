@@ -1,5 +1,5 @@
-% Appendix (docs/FIGURES.md, K-066): Fig. 2 now; Fig. 4 (recall heat map), Fig. 7 (supervised vs unsupervised;
-% relabel the internal decision ids first) and the F1 version of Table II are added with the Results section.
+% Appendix (docs/FIGURES.md, K-066, K-069): Fig. 2 (cited from Section III); Fig. 4 (recall heat map), Fig. 7
+% (supervised vs unsupervised; relabelled in K-068) and the F1 version of Table II (cited from Section VI).
 \section{Supplementary figures}\label{sec:appendix}
 
 \begin{figure*}[h]
@@ -11,3 +11,24 @@ target-identifier rate and inter-arrival-time ratios (C3, C4). Masquerade attack
 (dotted line, grey band).}
 \label{fig:signatures}
 \end{figure*}
+
+\begin{figure*}[h]
+\centering
+\includegraphics[width=\textwidth]{fig4_recall_heatmap}
+\caption{Test recall per attack type, model and quantization level (cell text, mean over seeds); the cell colour is
+$\dRecall$ relative to the model's own \Qfp{} (orange = loss, purple = gain). Italic grey cells have a float32 recall
+below \FloorRecall; $\dagger$ marks the test-only engine-coolant pair.}
+\label{fig:heatmap}
+\end{figure*}
+
+\begin{figure*}[h]
+\centering
+\includegraphics[width=\textwidth]{fig7_supervised_vs_unsupervised}
+\caption{Supervised versus unsupervised sensitivity to INT8: (a) per-type $\Delta$ROC-AUC; (b) the pre-registered
+absolute-difference statistic, which is biased upward for the noisier model, next to the corrected signed difference,
+whose interval contains zero; (c) share of attack windows whose decision changes and (d) one minus the Spearman
+correlation between float32 and INT8 window scores, both larger for the conv-AE on ROAD.}
+\label{fig:h4}
+\end{figure*}
+
+\input{generated/table_f1}

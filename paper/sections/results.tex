@@ -1,22 +1,205 @@
 \section{Results}\label{sec:results}
-% SKELETON ONLY (plan 5.2 step 3). Rules: every number from all_results.csv / stats.csv / pareto.csv through
-% generated macros; every claim points to a figure or table; adjusted p and effect size always together;
-% unsupported hypotheses stated as such; the per-type vs aggregate difference highlighted.
-% Figure placement (docs/FIGURES.md, K-066): main text Fig. 3, 5, 8; appendix Fig. 4, 7; Fig. 6 only if space
-% allows. Figures are in paper/figures/ (scripts/sync_figures.py).
-%
-% TODO: A. RQ1 per-type loss (H1, H2) -> fig3_delta_recall_coarse_vs_stealthy, Table II (recall; F1 in the
-%   appendix), Table IV blocks A-B. H2 is NOT supported; do not write "no stealthy-specific loss exists"; give the
-%   bound of the paired difference D. State the structural minimum attainable p-values.
-% TODO: B. RQ2 latency/size/recall (H3) -> fig5_pareto, Table III. Latency only as orders of magnitude and as the
-%   two-session range of within-session ratios (K-050); p95 not interpreted; fp16 latency not measurable on the
-%   CPU (K-043); budget compliance on the host is not evidence for an ECU (K-051).
-% TODO: C. RQ3 supervised vs unsupervised (H4) -> Table IV block C, appendix fig7. The three stages of the verdict
-%   are reported together (pre-registered rule K-062 "supported"; signed check K-063 "not supported"; final
-%   "partially supported" K-064, decided by the authors after all results were seen), never one alone.
-%   fig7 still carries internal decision ids (K-062/K-063) in its labels: relabel it before it is used.
-% TODO: D. calibration shift -> fig8_calibration_shift: keeping the float32 threshold on the INT8 autoencoder
-%   raises the false-alarm rate on ROAD; the apparent recall gain is false alarms.
-% TODO: E. unexpected results, one sentence each (docs/FINDINGS.md): masquerade not harder than fabrication for
-%   the 1D-CNN but harder for XGBoost; no INT8 latency gain for the conv-AE.
-\textcolor{red}{[Results: written in the next phase.]}
+% Written in P9 (docs/DECISIONS.md K-069). Sources: results/tables/{stats,all_results,delta_f1,pareto,
+% calibration_shift}.csv through generated/numbers.tex (analysis/paper_numbers.py: rq1_macros, rq2_macros,
+% rq3_macros, calib_macros; the qualitative claims below are checked there and stop the generator if they fail).
+% Decisions: K-036, K-041, K-043, K-044, K-050, K-051, K-057 ... K-066. No numeric literal: every number is a macro.
+% Figure placement (docs/FIGURES.md, K-066): Fig. 3, 5, 8 here; Fig. 4, 7 and the F1 table in the appendix.
+
+All results are on the test split. Unless stated otherwise, each quantized version uses its own threshold, fitted on
+its validation scores at a false-positive rate of \TargetFPR{} (Section~\ref{sec:method}); the loss is
+$\Delta = \Qfp{} - \mathrm{Q}k$, so a positive value is a loss. Values are means over the \NSeeds{} seeds, and brackets
+are \CIPct{} hierarchical bootstrap intervals over seeds and test windows (Section~\ref{sec:setup}). Each hypothesis is
+restated where it is tested; its verdict rule was fixed after the descriptive results of the full grid and before
+any interval or test was computed.
+
+\input{generated/table_recall}
+
+\subsection{Per-attack-type quantization loss (RQ1)}\label{sec:res-rq1}
+
+\textbf{Overall and per-type loss (H1).} H1 predicted that the pooled F1 loss from float32 to INT8 stays small but is
+not spread evenly over the attack types. Table~\ref{tab:recall} gives the test recall per attack type, model and
+quantization level (F1 in Table~\ref{tab:f1}; heat map of the recall loss in Fig.~\ref{fig:heatmap}). The largest
+pooled INT8 F1 loss is \PooledDFOneMax{} (1D-CNN on ROAD), far below the bound of \HOneMax{} in the verdict rule. Of the
+\NTypeRows{} rows of primary attack type and quantized model, \NLossRows{} have an INT8 recall-loss interval above
+zero, \NZeroRows{} have an interval that contains zero, and \NGainRows{} lies below zero. The \NLossRows{} losses
+all belong to the 1D-CNN on ROAD and amount to \LossRowsRange, less than one recall point. The single gain is the
+conv-AE on Car-Hacking gear spoofing ($\dRecall{} =$ \GearGainCI, the same sign in every seed), whose $\Delta$ROC-AUC is
+\GearGainAUC: the ranking of windows does not change, only the position of the threshold in the tail of the
+calibration scores. H1 is therefore supported by its rule, but the unevenness it detects is negligible in size. On
+Car-Hacking the 1D-CNN is at the recall ceiling (pooled recall \CHCNNRecall) and its $\dRecall$ is exactly zero for
+every type and level, so this dataset leaves no room to observe a loss and contributes little to RQ1.
+
+\textbf{Coarse versus stealthy attacks (H2).} H2 predicted that the INT8 loss is larger for stealthy than for coarse
+attacks, and that coarse attacks (DoS, fuzzing) are still detected with high performance under INT8. The primary
+evidence comes from fabrication--masquerade pairs of the same source capture, which carry the same injected payload
+and differ only in the timing trace (Section~\ref{sec:threat}); \NPairUnits{} 1D-CNN pairs pass the floor rule
+(Fig.~\ref{fig:delta}c, Table~\ref{tab:stats} block B). The INT8 loss on the two sides of a pair is of the same size
+(\PairSideRange{} over the six sides), and the mean paired difference is
+$D =$ \DRQTwoCI{} under INT8 and \DRQOneCI{} under float16. The interval of every single pair also contains zero. F1
+leads to the same result ($D_{\mathrm{F1}} =$ \DFQTwoCI), and resampling windows independently instead of in blocks
+barely changes the interval (\DRQTwoIid). With \NPairUnits{} pairs, a Wilcoxon signed-rank test cannot reach a
+$p$-value below \PairMinP, so no test was run and the effect size and its interval are reported instead.
+
+At the group level (Fig.~\ref{fig:delta}a--b, Table~\ref{tab:stats} block A), the 1D-CNN under INT8 has Cliff's
+$\delta =$ \GroupCNNQTwoCI{} in the direction of H2, with exact Mann--Whitney $p = \GroupCNNQTwoP$ and Holm-adjusted
+$p = \GroupCNNQTwoPHolm$. The effect size looks large, but the mean loss is \GroupMeanStealthy{} for the stealthy and
+\GroupMeanCoarse{} for the coarse types, an absolute difference of \GroupDiffPts{} recall points, and the interval of
+$\delta$ contains zero. Under float16 the 1D-CNN gives $\delta =$ \GroupCNNQOneCI{} ($p = \GroupCNNQOneP$, Holm
+$p = \GroupCNNQOnePHolm$). For the conv-AE under INT8, $\delta =$ \GroupAEQTwoCI{} ($p = \GroupAEQTwoP$, Holm
+$p = \GroupAEQTwoPHolm$); its recall on ROAD lies below the floor for most types (grey in Fig.~\ref{fig:delta}b), where
+a loss is bounded by construction. On $\Delta$F1 the 1D-CNN under INT8 has $\delta =$ \GroupCNNQTwoFCI, and no
+Holm-adjusted $p$ of either ROAD family is below \GroupMinHolm. With \GroupStealthy{} stealthy against \GroupCoarse{}
+coarse types, the smallest attainable two-sided $p$ is \GroupMinPFrac{} $=$ \GroupMinP, which the Holm correction
+raises to \GroupMinPHolm, above the conventional five-percent level: adjusted significance is unreachable in this
+design whatever the data. Adding the Car-Hacking coarse types (\GroupStealthy{} against \SensCoarse) gives
+$\delta =$ \SensCNNQTwoCI, $p = \SensCNNQTwoP$ and Holm $p = \SensCNNQTwoPHolm$, but the added types have a loss of
+exactly zero because of the ceiling, so they carry the difference between the datasets rather than between the groups.
+
+The second part of H2 also fails, for a reason unrelated to quantization (Table~\ref{tab:recall}): every coarse type keeps an INT8 recall of
+at least \HTwoRecallMin{} (lowest value \CoarseOtherMin) except ROAD fuzzing for the conv-AE (\AEFuzzQTwo), whose
+float32 recall is already \AEFuzzQZero{} $\pm$ \AEFuzzQZeroSD.
+
+\emph{H2 is not supported.} INT8 produces a small recall loss for the 1D-CNN on ROAD, and this loss is of the same
+size for a masquerade attack and for the fabrication attack it was derived from. In this design, the
+stealthy-specific additional INT8 loss does not exceed about \DBoundPts{} recall points (upper end of the interval of
+the mean $D$). A smaller stealthy-specific loss cannot be excluded, and the bound rests on \NPairUnits{} pairs of one
+model on one dataset whose stealthy captures are synthetically derived (Section~\ref{sec:limitations}).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig3_delta_recall_coarse_vs_stealthy}
+\caption{Recall loss under quantization is small and not larger for stealthy attacks. Per-type
+$\dRecall{} = \mathrm{Recall}(\Qfp) - \mathrm{Recall}(\mathrm{Q}k)$ with \CIPct{} hierarchical bootstrap intervals for
+(a) the 1D-CNN and (b) the conv-AE on the ROAD primary types (Cliff's $\delta$ and Holm-adjusted $p$ of the group test
+under each level), and (c) the paired masquerade-minus-fabrication difference $D$ for the 1D-CNN, whose INT8 mean is
+\DRQTwoCI. Grey points have a float32 recall below \FloorRecall, where $\dRecall$ is uninformative.}
+\label{fig:delta}
+\end{figure*}
+
+\input{generated/table_stats}
+
+\subsection{Latency, size and recall (RQ2)}\label{sec:res-rq2}
+
+H3 predicted that float16 is the most balanced point between loss and gain, and that INT8 gives the largest gain but
+a marked loss on stealthy attacks. Table~\ref{tab:resources} lists the resources and Fig.~\ref{fig:pareto} the
+trade-off.
+
+\textbf{Size.} The float16 file is \SizeRatioQOne{} and the INT8 file \SizeRatioQTwo{} of the float32 file for both
+deep models (1D-CNN \SizeCNNQZero{}, \SizeCNNQOne{} and \SizeCNNQTwo~MB; conv-AE \SizeAEQZero{}, \SizeAEQOne{} and
+\SizeAEQTwo~MB). The XGBoost model takes \SizeXGBCH~MB (Car-Hacking) and \SizeXGBROAD~MB (ROAD).
+
+\textbf{Latency.} Absolute latencies on the host are read as orders of magnitude only: \DeepLatRange~ms per window for
+the deep models and \XGBLatRange~ms for XGBoost. Because the two measurement sessions disagree beyond the tolerance,
+the direction of an effect is taken from within-session ratios and stated only where both sessions agree. INT8
+lowers the median latency of the 1D-CNN in both sessions and on both datasets (ratio to float32 \CNNRatio, i.e.
+\CNNCutPct\% lower), but not that of the conv-AE (\AERatio). The conv-AE is \AEvsCNN{} times and XGBoost \XGBvsCNN{}
+times slower than the float32 1D-CNN. The float16 models have no CPU latency, because the CPU provider has no float16
+kernels for their layers (Section~\ref{sec:method}); the tail percentiles in Table~\ref{tab:resources} are not
+interpreted.
+
+\textbf{Pareto front and budgets (Fig.~\ref{fig:pareto}).} On ROAD, with the recall over the stealthy types as accuracy axis, the robust
+front holds only the float32 1D-CNN (\StealthCNNQZero) and the INT8 1D-CNN (\StealthCNNQTwo): INT8 buys a
+\CNNCutPct\% lower latency and a file of \SizeRatioQTwo{} times the size for a stealthy recall that is \StealthDiff{}
+lower, with largely overlapping intervals. The conv-AE (\StealthAEQZero{} and \StealthAEQTwo) and XGBoost
+(\StealthXGB) are dominated. On Car-Hacking, with the pooled recall, the front holds the INT8 1D-CNN
+(\PooledCHCNNQTwo) and XGBoost (\PooledCHXGB), which is an order of magnitude slower and several times larger. On the
+size--recall front, where float16 can enter, all three 1D-CNN levels lie on the ROAD front, float16 between the other
+two (\SizeCNNQOne~MB, stealthy recall \StealthCNNQOne). Every candidate stays far below the window budget
+(\BudgetWindowCH~ms on Car-Hacking, \BudgetWindowROAD~ms on ROAD). Under the strict budget (\BudgetStrictCH~ms and
+\BudgetStrictROAD~ms) every deep model fits (at most \DeepLatMax~ms), whereas XGBoost misses it on ROAD
+(\XGBSlowROAD~ms) and fits on Car-Hacking (\XGBSlowCH~ms) by a margin below the precision that the host measurement
+supports. Neither budget therefore separates the deep candidates on this host, and on ROAD the INT8 1D-CNN is the most
+suitable combination: the smallest and fastest candidate, with a stealthy recall within the interval of its float32
+version. These are host measurements; compliance with a budget here is not evidence for an ECU.
+
+\emph{H3 is partially supported.} The float16 models lose less recall than the INT8 ones (1D-CNN on ROAD: mean $|\dRecall|$
+\AbsDRQOne{} against \AbsDRQTwo) and halves the file, but its latency gain could not be measured, and INT8 does not
+cause the predicted stealthy-specific loss (H2).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig5_pareto}
+\caption{Latency--recall trade-off on the host CPU: (a) recall over the ROAD stealthy types (\CIPct{} interval),
+(b) Car-Hacking pooled recall ($\pm$ one s.d. over seeds), against the median per-window latency. The horizontal bar is
+the range of the two measurement sessions and the marker sits at the slower session; marker area is file size; the
+dotted line is the robust Pareto front; dashed and dash-dotted lines are the strict (one-message) and window latency
+budgets.}
+\label{fig:pareto}
+\end{figure*}
+
+\input{generated/table_resources}
+
+\subsection{Supervised versus unsupervised models (RQ3)}\label{sec:res-h4}
+
+H4 predicted that the reconstruction-based unsupervised model is more sensitive to quantization than the supervised
+classifier, because its anomaly score relies on small differences of reconstruction error. The verdict went through
+three stages, which are reported together (Table~\ref{tab:stats} block C; Fig.~\ref{fig:h4}).
+
+\textbf{First stage: pre-registered statistic.} The rule compares, per attack type, the absolute losses of the two models,
+$d_t = |\Delta_{\mathrm{AE},t}| - |\Delta_{\mathrm{CNN},t}|$, averaged over types. Under INT8 the mean $d_t$ is
+\PreAUCQTwoCI{} on $\Delta$ROC-AUC over \PreAUCUnits{} types (Wilcoxon $p = \PreAUCQTwoP$, Holm $p = \PreAUCQTwoPHolm$;
+Cliff's $\delta$ of the absolute losses \PreAUCQTwoDelta) and \PreRecQTwoCI{} on $\dRecall$ over the \PreRecUnits{}
+types where both models reach a float32 recall of at least \RecallFloorAS{} ($p = \PreRecQTwoP$, Holm
+$p = \PreRecQTwoPHolm$; $\delta = \PreRecQTwoDelta$; with \PreRecUnits{} types the smallest attainable $p$ is
+\PreRecMinP, \PreRecMinPHolm{} after Holm). Under float16 the statistic is \PreAUCQOneCI{} on $\Delta$ROC-AUC
+($p = \PreAUCQOneP$). Since both INT8 intervals lie above zero, the rule declares H4 supported.
+
+\textbf{Second stage: corrected statistic.} This verdict cannot stand alone. The expected absolute value of a noisy estimate
+is positive even when the true effect is zero, and it grows with the noise. The losses of the conv-AE vary far more
+across seeds than those of the 1D-CNN (seed s.d. of the INT8 $\Delta$ROC-AUC on ROAD correlated signal: \SDAECorr{}
+against \SDCNNCorr), so $d_t$ is biased upward in favour of H4; the point estimate near the lower end of its interval
+is the symptom, and the Wilcoxon test on the same $d_t$ inherits the bias. The corrected statistic is the signed
+difference $\Delta_{\mathrm{AE}} - \Delta_{\mathrm{CNN}}$, which has no such bias: \SgnAUCQTwoCI{} on $\Delta$ROC-AUC
+and \SgnRecQTwoCI{} on $\dRecall$ under INT8. Neither model's own mean $\Delta$ROC-AUC differs from zero (conv-AE
+\MeanAEAUC, 1D-CNN \MeanCNNAUC). Under float16 the signed difference, \SgnAUCQOneCI, excludes zero but is negligible
+and favours the conv-AE. The directional reading of H4, that the unsupervised model loses more performance, is
+therefore not supported. Measures of output change, which are direct measurements rather than differences of two
+noisy estimates, do separate the models (Fig.~\ref{fig:h4}c--d): on ROAD, INT8 changes the decision for \ChurnAEROAD{} (seeds
+\ChurnAEROADRange) of the attack windows of the conv-AE against \ChurnCNNROAD{} (\ChurnCNNROADRange) for the 1D-CNN,
+\ChurnRatioROAD{} times as many, and the Spearman correlation between float32 and INT8 window scores is \SpearAEROAD{}
+(\SpearAEROADRange) against \SpearCNNROAD. The changed decisions go both ways, so they do not add up to a net loss. On
+Car-Hacking the two models are similar (Spearman \SpearAECH{} and \SpearCNNCH).
+
+\textbf{Third stage: final verdict.} \emph{H4 is partially supported.} Supported: INT8 changes the output of the
+unsupervised model more than that of the supervised one (score ranks and decisions on ROAD, and the calibration shift
+of Section~\ref{sec:res-calib}). Not supported: once the threshold is re-fitted on the quantized model's own
+validation scores, the unsupervised model does not lose more recall or ROC-AUC. On timing: the verdict rule was written
+after the descriptive results and before the intervals; the corrected statistic and the output-change measures were
+added after a smoke run of the analysis, before the full run; and the final verdict was decided by the authors after
+all results had been seen. The verdict of the pre-registered rule is reported, not replaced.
+
+\subsection{Calibration shift}\label{sec:res-calib}
+
+If the float32 threshold is kept for the quantized model instead of being re-fitted (Fig.~\ref{fig:calib}), INT8
+shifts the reconstruction error of the conv-AE on ROAD: the validation false-positive rate rises from \CalValQZero{} to
+\CalValQTwo{} (seeds \CalValRange), a \CalFold-fold increase depending on the seed, and the false-positive rate on the
+attack-free test captures from \CalTestQZero{} to \CalTestQTwo{} (\CalTestRange). The pooled recall rises from
+\CalRecQZero{} to \CalRecQTwo{} (\CalRecRange), but this is not better detection: it comes from the false alarms, and
+in this mode the per-type recall change reaches \CalTypeMin. On Car-Hacking the shift of the conv-AE is small
+(validation false-positive rate \CalCHValQZero{} to \CalCHValQTwo), and the 1D-CNN hardly shifts at all (largest
+change of a mean false-positive rate \ShiftCNNMax); float16 does not shift either model (at most \ShiftQOneMax). A
+quantized autoencoder must therefore be re-thresholded on its own validation scores. The primary analysis does this,
+which is why the shift does not appear in RQ1 and RQ3; it is the deployment-side face of the output sensitivity found
+for H4.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig8_calibration_shift}
+\caption{Calibration shift when the float32 threshold is kept for the quantized model: attack-free (a) validation and
+(b) test false-positive rate and (c) pooled test recall, one line per seed. INT8 moves the reconstruction error of the
+ROAD conv-AE so far that the validation false-positive rate rises \CalFold-fold and the apparent recall gain is false
+alarms, while float16 and the 1D-CNN do not shift.}
+\label{fig:calib}
+\end{figure*}
+
+\subsection{Further observations}\label{sec:res-other}
+
+Masquerade attacks are not harder than fabrication for the 1D-CNN: its float32 recall is higher on the masquerade
+side in two of the three pairs (max speedometer \RecCNNSpeedMasq{} against \RecCNNSpeedFab, reverse light off
+\RecCNNRevMasq{} against \RecCNNRevFab; correlated signal \RecCNNCorrMasq{} against \RecCNNCorrFab). For XGBoost,
+which sees window summary features, fabrication is clearly easier (max speedometer \RecXGBSpeedFab{} against
+\RecXGBSpeedMasq, reverse light off \RecXGBRevFab{} against \RecXGBRevMasq; Table~\ref{tab:recall}). A plausible but
+untested reading is that XGBoost relies on the timing trace that masquerade removes, whereas the 1D-CNN reads the
+payload bytes. INT8 brings no latency gain for the conv-AE (\AERatio; Table~\ref{tab:resources}), which is consistent with its \HeavySimAE{}
+transposed-convolution layers, out of \HeavyAE{} heavy layers, running as simulated quantization without an INT8
+kernel (Section~\ref{sec:method}); this explanation was not tested separately.

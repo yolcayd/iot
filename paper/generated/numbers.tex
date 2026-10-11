@@ -57,6 +57,7 @@
 %   results/tables/ae_feasibility.csv aeb3ef666d55d1bcc5cecded4ae9d527f7226ce16c45cafe84c92a350f215e57
 %   results/tables/all_results.csv 83ee4290d08559683eb5c3c27881eac62be974e64aaa6b9b9ea0ef795cd093ca
 %   results/tables/attack_signatures.csv 751b83b0811d230a576e959e06f3f4e3b61e3209c022f749d8193eb73723d73f
+%   results/tables/calibration_shift.csv afc4caa1eab89f6553d3239aac90da7be9556f49d7fce22a7b51a002b42a5c4f
 %   results/tables/capture_lineage.csv 24976d462226fe2063d1b8901b5ae5fb9712ddf2b1b09c3e6fc10dedf835e29d
 %   results/tables/data_profile.csv 11d52e6fac6f2d633018894026ec0a7a6c9d510c91cc826c496cf8571b080ffb
 %   results/tables/delta_f1.csv 61a7ed3bea4f13a2aee36cbf0917261f8f31caa115a4c02df32d43b5ee1c8612
@@ -254,3 +255,174 @@
 \newcommand{\IdsROAD}{106}% periodicity_summary.csv road n_ids
 \newcommand{\NMasqCaptures}{13}% capture_lineage.csv derived rows
 \newcommand{\MasqInSourcePct}{100\%}% capture_lineage.csv derived_frames_in_source (min)
+\newcommand{\PooledDFOneMax}{0.0029}% delta_f1.csv pooled f1 q2 recalibrated (max seed mean)
+\newcommand{\NTypeRows}{26}% stats.csv per_type_delta d_recall q2 primary (deep models)
+\newcommand{\NLossRows}{3}% stats.csv per_type_delta d_recall q2: ci_low > 0
+\newcommand{\NZeroRows}{22}% stats.csv per_type_delta d_recall q2: interval contains 0
+\newcommand{\NGainRows}{1}% stats.csv per_type_delta d_recall q2: ci_high < 0
+\newcommand{\LossRowsRange}{0.0066--0.0071}% stats.csv per_type_delta loss rows
+\newcommand{\GearGainCI}{\ensuremath{-}0.024 [\ensuremath{-}0.044, \ensuremath{-}0.011]}% stats.csv per_type_delta conv_ae CH gear_spoofing q2
+\newcommand{\GearGainAUC}{\ensuremath{-3.3\times10^{-5}}}% stats.csv per_type_delta conv_ae CH gear_spoofing q2 d_roc_auc
+\newcommand{\CHCNNRecall}{0.9997}% pareto.csv pooled_recall_mean car_hacking cnn1d q0
+\newcommand{\DRQTwoCI}{0.0006 [\ensuremath{-}0.0035, 0.0057]}% stats.csv as1_pooled mean_D_R q2 block
+\newcommand{\DBoundPts}{0.6}% stats.csv as1_pooled mean_D_R q2 ci_high x 100 (recall points)
+\newcommand{\NPairUnits}{3}% stats.csv as1_pooled n_units
+\newcommand{\PairMinP}{0.25}% stats.csv as1_pooled min_attainable_p
+\newcommand{\DRQOneCI}{0.0010 [0.0000, 0.0029]}% stats.csv as1_pooled mean_D_R q1 block
+\newcommand{\DFQTwoCI}{\ensuremath{-}0.0002 [\ensuremath{-}0.0033, 0.0035]}% stats.csv as1_pooled mean_D_F1 q2 block
+\newcommand{\DRQTwoIid}{[\ensuremath{-}0.0037, 0.0051]}% stats.csv as1_pooled mean_D_R q2 iid
+\newcommand{\PairSideRange}{0.0021--0.0080}% stats.csv as1_pair dR_fab / dR_masq q2 primary units
+\newcommand{\GroupCNNQOneCI}{0.65 [0.00, 0.75]}% stats.csv group_mwu group_road_drecall cnn1d q1 (Cliff's delta)
+\newcommand{\GroupCNNQOneP}{0.135}% stats.csv group_mwu group_road_drecall cnn1d q1 p_value
+\newcommand{\GroupCNNQOnePHolm}{0.444}% stats.csv group_mwu group_road_drecall cnn1d q1 p_holm
+\newcommand{\GroupCNNQTwoCI}{0.70 [\ensuremath{-}0.30, 0.90]}% stats.csv group_mwu group_road_drecall cnn1d q2 (Cliff's delta)
+\newcommand{\GroupCNNQTwoP}{0.111}% stats.csv group_mwu group_road_drecall cnn1d q2 p_value
+\newcommand{\GroupCNNQTwoPHolm}{0.444}% stats.csv group_mwu group_road_drecall cnn1d q2 p_holm
+\newcommand{\GroupAEQOneCI}{0.20 [\ensuremath{-}0.20, 0.50]}% stats.csv group_mwu group_road_drecall conv_ae q1 (Cliff's delta)
+\newcommand{\GroupAEQOneP}{0.683}% stats.csv group_mwu group_road_drecall conv_ae q1 p_value
+\newcommand{\GroupAEQOnePHolm}{1}% stats.csv group_mwu group_road_drecall conv_ae q1 p_holm
+\newcommand{\GroupAEQTwoCI}{\ensuremath{-}0.10 [\ensuremath{-}0.50, 0.50]}% stats.csv group_mwu group_road_drecall conv_ae q2 (Cliff's delta)
+\newcommand{\GroupAEQTwoP}{0.905}% stats.csv group_mwu group_road_drecall conv_ae q2 p_value
+\newcommand{\GroupAEQTwoPHolm}{1}% stats.csv group_mwu group_road_drecall conv_ae q2 p_holm
+\newcommand{\GroupCNNQOneFCI}{0.45 [0.00, 0.75]}% stats.csv group_mwu group_road_df1 cnn1d q1 (Cliff's delta)
+\newcommand{\GroupCNNQOneFP}{0.302}% stats.csv group_mwu group_road_df1 cnn1d q1 p_value
+\newcommand{\GroupCNNQOneFPHolm}{1}% stats.csv group_mwu group_road_df1 cnn1d q1 p_holm
+\newcommand{\GroupCNNQTwoFCI}{0.10 [\ensuremath{-}0.30, 0.70]}% stats.csv group_mwu group_road_df1 cnn1d q2 (Cliff's delta)
+\newcommand{\GroupCNNQTwoFP}{0.905}% stats.csv group_mwu group_road_df1 cnn1d q2 p_value
+\newcommand{\GroupCNNQTwoFPHolm}{1}% stats.csv group_mwu group_road_df1 cnn1d q2 p_holm
+\newcommand{\GroupAEQOneFCI}{0.20 [\ensuremath{-}0.40, 0.50]}% stats.csv group_mwu group_road_df1 conv_ae q1 (Cliff's delta)
+\newcommand{\GroupAEQOneFP}{0.683}% stats.csv group_mwu group_road_df1 conv_ae q1 p_value
+\newcommand{\GroupAEQOneFPHolm}{1}% stats.csv group_mwu group_road_df1 conv_ae q1 p_holm
+\newcommand{\GroupAEQTwoFCI}{\ensuremath{-}0.10 [\ensuremath{-}0.50, 0.50]}% stats.csv group_mwu group_road_df1 conv_ae q2 (Cliff's delta)
+\newcommand{\GroupAEQTwoFP}{0.905}% stats.csv group_mwu group_road_df1 conv_ae q2 p_value
+\newcommand{\GroupAEQTwoFPHolm}{1}% stats.csv group_mwu group_road_df1 conv_ae q2 p_holm
+\newcommand{\SensCNNQOneCI}{0.69 [0.00, 0.75]}% stats.csv group_mwu group_road+car_hacking_coarse_drecall cnn1d q1 (Cliff's delta)
+\newcommand{\SensCNNQOneP}{0.0182}% stats.csv group_mwu group_road+car_hacking_coarse_drecall cnn1d q1 p_value
+\newcommand{\SensCNNQOnePHolm}{0.0615}% stats.csv group_mwu group_road+car_hacking_coarse_drecall cnn1d q1 p_holm
+\newcommand{\SensCNNQTwoCI}{0.83 [\ensuremath{-}0.06, 0.94]}% stats.csv group_mwu group_road+car_hacking_coarse_drecall cnn1d q2 (Cliff's delta)
+\newcommand{\SensCNNQTwoP}{0.0154}% stats.csv group_mwu group_road+car_hacking_coarse_drecall cnn1d q2 p_value
+\newcommand{\SensCNNQTwoPHolm}{0.0615}% stats.csv group_mwu group_road+car_hacking_coarse_drecall cnn1d q2 p_holm
+\newcommand{\SensAEQOneCI}{0.17 [\ensuremath{-}0.22, 0.50]}% stats.csv group_mwu group_road+car_hacking_coarse_drecall conv_ae q1 (Cliff's delta)
+\newcommand{\SensAEQOneP}{0.716}% stats.csv group_mwu group_road+car_hacking_coarse_drecall conv_ae q1 p_value
+\newcommand{\SensAEQOnePHolm}{1}% stats.csv group_mwu group_road+car_hacking_coarse_drecall conv_ae q1 p_holm
+\newcommand{\SensAEQTwoCI}{\ensuremath{-}0.11 [\ensuremath{-}0.50, 0.44]}% stats.csv group_mwu group_road+car_hacking_coarse_drecall conv_ae q2 (Cliff's delta)
+\newcommand{\SensAEQTwoP}{0.796}% stats.csv group_mwu group_road+car_hacking_coarse_drecall conv_ae q2 p_value
+\newcommand{\SensAEQTwoPHolm}{1}% stats.csv group_mwu group_road+car_hacking_coarse_drecall conv_ae q2 p_holm
+\newcommand{\GroupMinP}{0.016}% stats.csv group_mwu group_road_drecall min_attainable_p
+\newcommand{\GroupMinPHolm}{0.063}% stats.csv group_mwu group_road_drecall min_attainable_p x tests (Holm)
+\newcommand{\GroupMinPFrac}{2/126}% stats.csv group_mwu exact MWU 2 / C(9, 4)
+\newcommand{\SensMinP}{0.0028}% stats.csv group_mwu group_road+car_hacking_coarse_drecall min_attainable_p
+\newcommand{\SensMinPHolm}{0.011}% stats.csv group_mwu group_road+car_hacking_coarse_drecall min_attainable_p x tests (Holm)
+\newcommand{\SensCoarse}{9}% stats.csv group_mwu group_road+car_hacking_coarse_drecall coarse n
+\newcommand{\GroupMinHolm}{0.444}% stats.csv group_mwu ROAD families min p_holm
+\newcommand{\GroupMeanStealthy}{0.0061}% stats.csv per_type_delta cnn1d road q2 stealthy mean
+\newcommand{\GroupMeanCoarse}{0.0031}% stats.csv per_type_delta cnn1d road q2 coarse mean
+\newcommand{\GroupDiffPts}{0.3}% GroupMeanStealthy - GroupMeanCoarse (recall points)
+\newcommand{\AEFuzzQTwo}{0.539}% all_results.csv recall road conv_ae q2 fuzzing (seed mean)
+\newcommand{\AEFuzzQZero}{0.564}% all_results.csv recall road conv_ae q0 fuzzing (seed mean)
+\newcommand{\AEFuzzQZeroSD}{0.221}% all_results.csv recall road conv_ae q0 fuzzing (seed s.d.)
+\newcommand{\CoarseOtherMin}{0.983}% all_results.csv recall q2 CH dos/fuzzy, ROAD fuzzing (min, others)
+\newcommand{\RecCNNCorrFab}{0.901}% all_results.csv recall road cnn1d q0 correlated_signal (seed mean)
+\newcommand{\RecCNNCorrMasq}{0.854}% all_results.csv recall road cnn1d q0 correlated_signal_masquerade (seed mean)
+\newcommand{\RecCNNSpeedFab}{0.642}% all_results.csv recall road cnn1d q0 max_speedometer (seed mean)
+\newcommand{\RecCNNSpeedMasq}{0.718}% all_results.csv recall road cnn1d q0 max_speedometer_masquerade (seed mean)
+\newcommand{\RecCNNRevFab}{0.356}% all_results.csv recall road cnn1d q0 reverse_light_off (seed mean)
+\newcommand{\RecCNNRevMasq}{0.540}% all_results.csv recall road cnn1d q0 reverse_light_off_masquerade (seed mean)
+\newcommand{\RecXGBCorrFab}{0.254}% all_results.csv recall road xgb native correlated_signal (seed mean)
+\newcommand{\RecXGBCorrMasq}{0.070}% all_results.csv recall road xgb native correlated_signal_masquerade (seed mean)
+\newcommand{\RecXGBSpeedFab}{0.486}% all_results.csv recall road xgb native max_speedometer (seed mean)
+\newcommand{\RecXGBSpeedMasq}{0.110}% all_results.csv recall road xgb native max_speedometer_masquerade (seed mean)
+\newcommand{\RecXGBRevFab}{0.624}% all_results.csv recall road xgb native reverse_light_off (seed mean)
+\newcommand{\RecXGBRevMasq}{0.158}% all_results.csv recall road xgb native reverse_light_off_masquerade (seed mean)
+\newcommand{\SizeRatioQOne}{0.52}% all_results.csv size_mb q1/q0 (seed means)
+\newcommand{\SizeRatioQTwo}{0.38}% all_results.csv size_mb q2/q0 (seed means)
+\newcommand{\SizeCNNQZero}{0.103}% pareto.csv size_mb cnn1d q0
+\newcommand{\SizeCNNQOne}{0.054}% pareto.csv size_mb cnn1d q1
+\newcommand{\SizeCNNQTwo}{0.039}% pareto.csv size_mb cnn1d q2
+\newcommand{\SizeAEQZero}{0.111}% pareto.csv size_mb conv_ae q0
+\newcommand{\SizeAEQOne}{0.058}% pareto.csv size_mb conv_ae q1
+\newcommand{\SizeAEQTwo}{0.042}% pareto.csv size_mb conv_ae q2
+\newcommand{\SizeXGBCH}{0.205}% pareto.csv size_mb xgb car_hacking
+\newcommand{\SizeXGBROAD}{0.274}% pareto.csv size_mb xgb road
+\newcommand{\AbsDRQOne}{0.0005}% stats.csv per_type_delta mean |d_recall| cnn1d road q1
+\newcommand{\AbsDRQTwo}{0.0055}% stats.csv per_type_delta mean |d_recall| cnn1d road q2
+\newcommand{\DeepLatRange}{0.03--0.12}% pareto.csv latency_median_ms_s1/s2 deep
+\newcommand{\DeepLatMax}{0.12}% pareto.csv latency_median_ms_s1/s2 deep (max)
+\newcommand{\XGBLatRange}{0.48--0.52}% pareto.csv latency_median_ms_s1/s2 xgb
+\newcommand{\CNNRatio}{0.64--0.75}% pareto.csv latency_ratio_min/max cnn1d q2
+\newcommand{\CNNCutPct}{25--36}% 1 - CNNRatio (percent)
+\newcommand{\AERatio}{1.01--1.08}% pareto.csv conv_ae q2/q0 latency_median_ms per session
+\newcommand{\AEvsCNN}{2.3--2.9}% pareto.csv latency_ratio_min/max conv_ae (vs CNN Q0)
+\newcommand{\XGBvsCNN}{10.4--12.6}% pareto.csv latency_ratio_min/max xgb (vs CNN Q0)
+\newcommand{\StealthCNNQZero}{0.552 [0.516, 0.592]}% pareto.csv stealthy_recall_mean/ci road cnn1d q0
+\newcommand{\StealthCNNQTwo}{0.546 [0.511, 0.584]}% pareto.csv stealthy_recall_mean/ci road cnn1d q2
+\newcommand{\StealthDiff}{0.006}% pareto.csv stealthy_recall_mean road cnn1d q0 - q2
+\newcommand{\StealthAEQZero}{0.034}% pareto.csv stealthy_recall_mean road conv_ae q0
+\newcommand{\StealthAEQTwo}{0.036}% pareto.csv stealthy_recall_mean road conv_ae q2
+\newcommand{\StealthXGB}{0.089}% pareto.csv stealthy_recall_mean road xgb native
+\newcommand{\StealthCNNQOne}{0.551}% pareto.csv stealthy_recall_mean road cnn1d q1
+\newcommand{\PooledCHCNNQTwo}{0.9997}% pareto.csv pooled_recall_mean car_hacking cnn1d q2
+\newcommand{\PooledCHXGB}{1.000}% pareto.csv pooled_recall_mean car_hacking xgb
+\newcommand{\XGBSlowCH}{0.518}% pareto.csv xgb car_hacking slower-session median latency
+\newcommand{\XGBSlowROAD}{0.500}% pareto.csv xgb road slower-session median latency
+\newcommand{\PreAUCQOneCI}{\ensuremath{8.4\times10^{-6}} [\ensuremath{1.9\times10^{-6}}, \ensuremath{1.2\times10^{-4}}]}% stats.csv as3 mean_abs_diff_droc_auc q1
+\newcommand{\PreAUCQOneP}{0.893}% stats.csv as3 mean_abs_diff_droc_auc q1 Wilcoxon p
+\newcommand{\PreAUCQOnePHolm}{1}% stats.csv as3 mean_abs_diff_droc_auc q1 p_holm
+\newcommand{\PreAUCQOneDelta}{0.20}% stats.csv as3 mean_abs_diff_droc_auc q1 note: Cliff's delta of |d|
+\newcommand{\PreAUCQTwoCI}{0.0062 [0.0048, 0.0272]}% stats.csv as3 mean_abs_diff_droc_auc q2
+\newcommand{\PreAUCQTwoP}{0.000732}% stats.csv as3 mean_abs_diff_droc_auc q2 Wilcoxon p
+\newcommand{\PreAUCQTwoPHolm}{0.00293}% stats.csv as3 mean_abs_diff_droc_auc q2 p_holm
+\newcommand{\PreAUCQTwoDelta}{0.55}% stats.csv as3 mean_abs_diff_droc_auc q2 note: Cliff's delta of |d|
+\newcommand{\PreAUCUnits}{13}% stats.csv as3 mean_abs_diff_droc_auc n_units
+\newcommand{\PreAUCMinP}{0.000244}% stats.csv as3 mean_abs_diff_droc_auc min_attainable_p
+\newcommand{\PreAUCMinPHolm}{0.000977}% stats.csv as3 mean_abs_diff_droc_auc min_attainable_p x tests in the family (Holm)
+\newcommand{\PreRecQOneCI}{0.0009 [\ensuremath{-}0.0003, 0.0048]}% stats.csv as3 mean_abs_diff_drecall q1
+\newcommand{\PreRecQOneP}{0.5}% stats.csv as3 mean_abs_diff_drecall q1 Wilcoxon p
+\newcommand{\PreRecQOnePHolm}{1}% stats.csv as3 mean_abs_diff_drecall q1 p_holm
+\newcommand{\PreRecQOneDelta}{0.31}% stats.csv as3 mean_abs_diff_drecall q1 note: Cliff's delta of |d|
+\newcommand{\PreRecQTwoCI}{0.0062 [0.0033, 0.0265]}% stats.csv as3 mean_abs_diff_drecall q2
+\newcommand{\PreRecQTwoP}{0.25}% stats.csv as3 mean_abs_diff_drecall q2 Wilcoxon p
+\newcommand{\PreRecQTwoPHolm}{0.75}% stats.csv as3 mean_abs_diff_drecall q2 p_holm
+\newcommand{\PreRecQTwoDelta}{0.44}% stats.csv as3 mean_abs_diff_drecall q2 note: Cliff's delta of |d|
+\newcommand{\PreRecUnits}{6}% stats.csv as3 mean_abs_diff_drecall n_units
+\newcommand{\PreRecMinP}{0.0312}% stats.csv as3 mean_abs_diff_drecall min_attainable_p
+\newcommand{\PreRecMinPHolm}{0.125}% stats.csv as3 mean_abs_diff_drecall min_attainable_p x tests in the family (Holm)
+\newcommand{\SgnAUCQTwoCI}{0.0025 [\ensuremath{-}0.0041, 0.0088]}% stats.csv as3_signed_diff mean_signed_diff_droc_auc q2
+\newcommand{\SgnRecQTwoCI}{\ensuremath{-}0.0002 [\ensuremath{-}0.0176, 0.0172]}% stats.csv as3_signed_diff mean_signed_diff_drecall q2
+\newcommand{\SgnAUCQOneCI}{\ensuremath{-7.8\times10^{-5}} [\ensuremath{-1.6\times10^{-4}}, \ensuremath{-2.4\times10^{-7}}]}% stats.csv as3_signed_diff auc q1
+\newcommand{\MeanAEAUC}{0.0031 [\ensuremath{-}0.0034, 0.0093]}% stats.csv as3_signed conv_ae mean_droc_auc q2
+\newcommand{\MeanCNNAUC}{0.0006 [\ensuremath{-}0.0001, 0.0015]}% stats.csv as3_signed cnn1d mean_droc_auc q2
+\newcommand{\SDAECorr}{0.071}% stats.csv per_type_delta conv_ae road correlated_signal d_roc_auc q2 (seed s.d.)
+\newcommand{\SDCNNCorr}{0.0002}% stats.csv per_type_delta cnn1d road correlated_signal d_roc_auc q2 (seed s.d.)
+\newcommand{\ChurnAECH}{0.0084}% stats.csv as3_churn conv_ae car_hacking q2 churn_attack
+\newcommand{\ChurnAECHRange}{0.0040--0.0140}% stats.csv as3_churn conv_ae car_hacking q2 churn_attack min-max
+\newcommand{\SpearAECH}{0.9994}% stats.csv as3_churn conv_ae car_hacking q2 spearman_q0_qk
+\newcommand{\SpearAECHRange}{0.9992--0.9996}% stats.csv as3_churn conv_ae car_hacking q2 spearman_q0_qk min-max
+\newcommand{\ChurnCNNCH}{0}% stats.csv as3_churn cnn1d car_hacking q2 churn_attack
+\newcommand{\ChurnCNNCHRange}{0.0000}% stats.csv as3_churn cnn1d car_hacking q2 churn_attack min-max
+\newcommand{\SpearCNNCH}{0.9988}% stats.csv as3_churn cnn1d car_hacking q2 spearman_q0_qk
+\newcommand{\SpearCNNCHRange}{0.9978--0.9997}% stats.csv as3_churn cnn1d car_hacking q2 spearman_q0_qk min-max
+\newcommand{\ChurnAEROAD}{0.0197}% stats.csv as3_churn conv_ae road q2 churn_attack
+\newcommand{\ChurnAEROADRange}{0.0107--0.0276}% stats.csv as3_churn conv_ae road q2 churn_attack min-max
+\newcommand{\SpearAEROAD}{0.973}% stats.csv as3_churn conv_ae road q2 spearman_q0_qk
+\newcommand{\SpearAEROADRange}{0.946--0.990}% stats.csv as3_churn conv_ae road q2 spearman_q0_qk min-max
+\newcommand{\ChurnCNNROAD}{0.0075}% stats.csv as3_churn cnn1d road q2 churn_attack
+\newcommand{\ChurnCNNROADRange}{0.0055--0.0093}% stats.csv as3_churn cnn1d road q2 churn_attack min-max
+\newcommand{\SpearCNNROAD}{0.9997}% stats.csv as3_churn cnn1d road q2 spearman_q0_qk
+\newcommand{\SpearCNNROADRange}{0.9997--0.9998}% stats.csv as3_churn cnn1d road q2 spearman_q0_qk min-max
+\newcommand{\ChurnRatioROAD}{2.6}% stats.csv as3_churn churn_attack road conv_ae / cnn1d
+\newcommand{\CalValQZero}{0.0102}% calibration_shift.csv road conv_ae q2 fpr_val_q0 (seed mean)
+\newcommand{\CalValQTwo}{0.185}% calibration_shift.csv road conv_ae q2 fpr_val_qk (seed mean)
+\newcommand{\CalValRange}{0.020--0.486}% calibration_shift.csv road conv_ae q2 fpr_val_qk (min-max over seeds)
+\newcommand{\CalTestQZero}{0.0009}% calibration_shift.csv road conv_ae q2 fpr_test_q0 (seed mean)
+\newcommand{\CalTestQTwo}{0.062}% calibration_shift.csv road conv_ae q2 fpr_test_qk (seed mean)
+\newcommand{\CalTestRange}{0.002--0.174}% calibration_shift.csv road conv_ae q2 fpr_test_qk (min-max over seeds)
+\newcommand{\CalRecQZero}{0.055}% calibration_shift.csv road conv_ae q2 pooled_recall_q0 (seed mean)
+\newcommand{\CalRecQTwo}{0.363}% calibration_shift.csv road conv_ae q2 pooled_recall_qk (seed mean)
+\newcommand{\CalRecRange}{0.070--0.733}% calibration_shift.csv road conv_ae q2 pooled_recall_qk (min-max over seeds)
+\newcommand{\CalFold}{2--48}% calibration_shift.csv road conv_ae q2 fpr_val_qk / fpr_val_q0 per seed (min-max)
+\newcommand{\CalTypeMin}{\ensuremath{-}0.90}% calibration_shift.csv road conv_ae q2 type_d_recall_min (min)
+\newcommand{\CalCHValQZero}{0.0095}% calibration_shift.csv car_hacking conv_ae q2 fpr_val_q0 (seed mean)
+\newcommand{\CalCHValQTwo}{0.0125}% calibration_shift.csv car_hacking conv_ae q2 fpr_val_qk (seed mean)
+\newcommand{\ShiftQOneMax}{0.0004}% calibration_shift.csv max |FPR_qk - FPR_q0| over val/test (seed means), q1
+\newcommand{\ShiftCNNMax}{0.0018}% calibration_shift.csv max |FPR_qk - FPR_q0| over val/test (seed means), cnn1d

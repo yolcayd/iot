@@ -85,6 +85,42 @@ def frange(lo: float, hi: float, nd: int) -> str:
     return a if a == b else f"{a}--{b}"
 
 
+def fnum(x: float, nd: int) -> str:
+    """Fixed decimals with a typographic minus that works in text and math mode."""
+    s = ffix(x, nd)
+    if float(s) == 0:
+        s = s.lstrip("-")
+    return s.replace("-", "\\ensuremath{-}")
+
+
+def fci(est: float, lo: float, hi: float, nd: int) -> str:
+    """Estimate with its interval: 0.0006 [-0.0035, 0.0057]."""
+    return f"{fnum(est, nd)} [{fnum(lo, nd)}, {fnum(hi, nd)}]"
+
+
+def fsci(x: float) -> str:
+    """Two significant digits as a power of ten: -7.8e-05 -> -7.8 x 10^-5 (math)."""
+    mant, exp = f"{x:.1e}".split("e")
+    return f"\\ensuremath{{{mant}\\times10^{{{int(exp)}}}}}"
+
+
+def fsig(x: float, n: int = 1) -> str:
+    """``n`` significant digits in positional notation: 0.000156 -> 0.0002."""
+    nd = max(0, n - 1 - math.floor(math.log10(abs(x))))
+    return fnum(x, nd)
+
+
+def fp(p: float) -> str:
+    """p-value with three significant digits; 1 stays 1."""
+    return "1" if p >= 1 else f"{p:.3g}"
+
+
+def check(cond: bool, claim: str) -> None:
+    """A qualitative statement of the Results text that must hold in the data."""
+    if not cond:
+        raise ValueError(f"claim of the Results text does not hold: {claim}")
+
+
 def same(values, what: str):
     """The single value of ``values``; stops if they differ (e.g. between seeds)."""
     vals = list(values)
@@ -148,6 +184,7 @@ class Sources:
         self.periodicity = self.inp.csv(tables / "periodicity_summary.csv")
         self.lineage = self.inp.csv(tables / "capture_lineage.csv")
         self.feasibility = self.inp.csv(tables / "ae_feasibility.csv")
+        self.calib = self.inp.csv(tables / "calibration_shift.csv")
         self.inp._add(LEAKAGE_TEST)
         self.runs = G.stage_runs(self.cfg["analysis"]["stage"])
         self.run_cfg, self.quant_meta = {}, {}
@@ -530,6 +567,324 @@ def signature_macros(m: Macros, s: Sources) -> None:
 
 
 # --------------------------------------------------------------------------------------------
+# Results (Section VI; P9, docs/DECISIONS.md K-069)
+# --------------------------------------------------------------------------------------------
+
+ST = "stats.csv"
+
+
+def one(df: pd.DataFrame, what: str):
+    if len(df) != 1:
+        raise KeyError(f"{what}: {len(df)} rows")
+    return df.iloc[0]
+
+
+def stat_row(s: Sources, analysis: str, **kw):
+    return one(s.d.stat(analysis, **kw), f"{analysis} {kw}")
+
+
+def note_value(note: str, key: str) -> float:
+    """A number written into the note column of stats.csv, e.g. "Cliff's delta(...)=0.5503"."""
+    hit = re.search(re.escape(key) + r"=([-+0-9.e]+)", note)
+    if not hit:
+        raise KeyError(f"{key} not in note: {note}")
+    return float(hit.group(1))
+
+
+def rq1_macros(m: Macros, s: Sources) -> None:
+    """Per-type loss (H1) and the coarse-stealthy comparison (H2)."""
+    d, an = s.d, s.cfg["analysis"]
+    # H1 (a): pooled dF1 at INT8, seed mean per deep model x dataset
+    df = d.delta_f1
+    pooled = (df[df.level.eq("pooled") & df.threshold_mode.eq("recalibrated") & df.metric.eq("f1")
+                 & df.quantization.eq("q2")].groupby(["model", "dataset"]).delta.mean())
+    check(pooled.idxmax() == ("cnn1d", "road"), "the largest pooled INT8 F1 loss is the 1D-CNN on ROAD")
+    check(pooled.max() <= an["hypotheses"]["h1_pooled_df1_max"], "H1 (a) holds")
+    m.add("PooledDFOneMax", ffix(pooled.max(), 4), "delta_f1.csv pooled f1 q2 recalibrated (max seed mean)")
+    # H1 (b): per-type dRecall(Q2) intervals of the deep models on the primary types
+    pt = d.stat("per_type_delta", statistic="d_recall", quantization="q2")
+    pt = pt[pt.note.str.contains("role=primary")]
+    loss, zero, gain = pt[pt.ci_low > 0], pt[(pt.ci_low <= 0) & (pt.ci_high >= 0)], pt[pt.ci_high < 0]
+    m.add("NTypeRows", len(pt), f"{ST} per_type_delta d_recall q2 primary (deep models)")
+    m.add("NLossRows", len(loss), f"{ST} per_type_delta d_recall q2: ci_low > 0")
+    m.add("NZeroRows", len(zero), f"{ST} per_type_delta d_recall q2: interval contains 0")
+    m.add("NGainRows", len(gain), f"{ST} per_type_delta d_recall q2: ci_high < 0")
+    check(loss.model.eq("cnn1d").all() and loss.dataset.eq("road").all(), "every loss row is the 1D-CNN on ROAD")
+    m.add("LossRowsRange", frange(loss.estimate.min(), loss.estimate.max(), 4), f"{ST} per_type_delta loss rows")
+    g = one(gain, "gain row")
+    check((g.model, g.dataset, g.unit) == ("conv_ae", "car_hacking", "gear_spoofing"),
+          "the only gain is the conv-AE on Car-Hacking gear spoofing")
+    check((FG.seeds(g.seed_values) < 0).all(), "the gear-spoofing gain has the same sign in every seed")
+    m.add("GearGainCI", fci(g.estimate, g.ci_low, g.ci_high, 3), f"{ST} per_type_delta conv_ae CH gear_spoofing q2")
+    auc = stat_row(s, "per_type_delta", model="conv_ae", dataset="car_hacking", quantization="q2",
+                   unit="gear_spoofing", statistic="d_roc_auc")
+    m.add("GearGainAUC", fsci(auc.estimate), f"{ST} per_type_delta conv_ae CH gear_spoofing q2 d_roc_auc")
+    ch = d.stat("per_type_delta", model="cnn1d", dataset="car_hacking", statistic="d_recall")
+    check(ch.estimate.eq(0).all(), "1D-CNN dRecall is exactly 0 on Car-Hacking (ceiling)")
+    par = d.pareto.set_index(["dataset", "model", "quantization"])
+    m.add("CHCNNRecall", ffix(par.loc[("car_hacking", "cnn1d", "q0"), "pooled_recall_mean"], 4),
+          "pareto.csv pooled_recall_mean car_hacking cnn1d q0")
+
+    # H2 (a): paired units (block bootstrap; iid as sensitivity)
+    def pooled_d(stat, q, block="block"):
+        return stat_row(s, "as1_pooled", statistic=stat, quantization=q, block=block)
+
+    r = pooled_d("mean_D_R", "q2")
+    check(r.ci_low < 0 < r.ci_high, "the mean D interval at INT8 contains 0")
+    m.add("DRQTwoCI", fci(r.estimate, r.ci_low, r.ci_high, 4), f"{ST} as1_pooled mean_D_R q2 block")
+    m.add("DBoundPts", ffix(100 * r.ci_high, 1), f"{ST} as1_pooled mean_D_R q2 ci_high x 100 (recall points)")
+    m.add("NPairUnits", int(r.n_units), f"{ST} as1_pooled n_units")
+    m.add("PairMinP", ffix(r.min_attainable_p, 2), f"{ST} as1_pooled min_attainable_p")
+    r1 = pooled_d("mean_D_R", "q1")
+    m.add("DRQOneCI", fci(r1.estimate, r1.ci_low, r1.ci_high, 4), f"{ST} as1_pooled mean_D_R q1 block")
+    rf = pooled_d("mean_D_F1", "q2")
+    m.add("DFQTwoCI", fci(rf.estimate, rf.ci_low, rf.ci_high, 4), f"{ST} as1_pooled mean_D_F1 q2 block")
+    ri = pooled_d("mean_D_R", "q2", "iid")
+    m.add("DRQTwoIid", f"[{fnum(ri.ci_low, 4)}, {fnum(ri.ci_high, 4)}]", f"{ST} as1_pooled mean_D_R q2 iid")
+    pair = d.stat("as1_pair", quantization="q2", block="block")
+    pair = pair[pair.note.eq("primary unit")]
+    check(pair.unit.nunique() == r.n_units, "primary units of as1_pair and as1_pooled agree")
+    dr = pair[pair.statistic.eq("D_R")]
+    check(((dr.ci_low < 0) & (dr.ci_high > 0)).all(), "every unit's D interval at INT8 contains 0")
+    sides = pair[pair.statistic.isin(["dR_fab", "dR_masq"])]
+    m.add("PairSideRange", frange(sides.estimate.min(), sides.estimate.max(), 4),
+          f"{ST} as1_pair dR_fab / dR_masq q2 primary units")
+
+    # H2 (a), secondary: group test on the ROAD primary types; sensitivity with the Car-Hacking coarse types
+    gm = d.stat("group_mwu")
+    tag = {"cnn1d": "CNN", "conv_ae": "AE"}
+    qtag = {"q1": "QOne", "q2": "QTwo"}
+    for fam, pre, suffix in (("group_road_drecall", "Group", ""), ("group_road_df1", "Group", "F"),
+                             ("group_road+car_hacking_coarse_drecall", "Sens", "")):
+        for row in gm[gm.holm_family.eq(fam)].itertuples():
+            name = f"{pre}{tag[row.model]}{qtag[row.quantization]}{suffix}"
+            src = f"{ST} group_mwu {fam} {row.model} {row.quantization}"
+            m.add(f"{name}CI", fci(row.estimate, row.ci_low, row.ci_high, 2), f"{src} (Cliff's delta)")
+            m.add(f"{name}P", fp(row.p_value), f"{src} p_value")
+            m.add(f"{name}PHolm", fp(row.p_holm), f"{src} p_holm")
+    for fam, pre in (("group_road_drecall", "Group"), ("group_road+car_hacking_coarse_drecall", "Sens")):
+        f = gm[gm.holm_family.eq(fam)]
+        n_s, n_c = (int(x) for x in re.fullmatch(r"stealthy n=(\d+) vs coarse n=(\d+)", same(f.unit, "unit")).groups())
+        minp = same(f.min_attainable_p.round(12), "min p")
+        check(abs(minp - 2 / math.comb(n_s + n_c, n_s)) < 1e-6, f"{pre}: min p = 2 / C(n, k)")
+        check((minp * len(f) > 0.05) == (pre == "Group"), f"{pre}: adjusted significance unattainable only in the ROAD test")
+        m.add(f"{pre}MinP", fsig(minp, 2), f"{ST} group_mwu {fam} min_attainable_p")
+        m.add(f"{pre}MinPHolm", fsig(minp * len(f), 2), f"{ST} group_mwu {fam} min_attainable_p x tests (Holm)")
+        if pre == "Group":
+            m.add("GroupMinPFrac", f"2/{math.comb(n_s + n_c, n_s)}", f"{ST} group_mwu exact MWU 2 / C({n_s + n_c}, {n_s})")
+        else:
+            m.add("SensCoarse", n_c, f"{ST} group_mwu {fam} coarse n")
+    road_fams = gm[gm.holm_family.isin(["group_road_drecall", "group_road_df1"])]
+    m.add("GroupMinHolm", fp(road_fams.p_holm.min()), f"{ST} group_mwu ROAD families min p_holm")
+    ptr = d.stat("per_type_delta", model="cnn1d", dataset="road", quantization="q2", statistic="d_recall")
+    ptr = ptr[ptr.note.str.contains("role=primary")]
+    st_mean = ptr[ptr.note.str.contains("group=stealthy")].estimate.mean()
+    co_mean = ptr[ptr.note.str.contains("group=coarse")].estimate.mean()
+    note = stat_row(s, "group_mwu", holm_family="group_road_drecall", model="cnn1d", quantization="q2").note
+    check(abs(note_value(note, "stealthy") - st_mean) < 1e-6 and abs(note_value(note, "coarse") - co_mean) < 1e-6,
+          "group means of per_type_delta equal those of the group test")
+    m.add("GroupMeanStealthy", ffix(st_mean, 4), f"{ST} per_type_delta cnn1d road q2 stealthy mean")
+    m.add("GroupMeanCoarse", ffix(co_mean, 4), f"{ST} per_type_delta cnn1d road q2 coarse mean")
+    m.add("GroupDiffPts", ffix(100 * (st_mean - co_mean), 1), "GroupMeanStealthy - GroupMeanCoarse (recall points)")
+
+    # H2 (b): coarse types still detected under INT8
+    mm = d.metric_means("recall").set_index(["dataset", "model", "quantization", "level", "attack_type"])
+    coarse = [("car_hacking", "dos"), ("car_hacking", "fuzzy"), ("road", "fuzzing")]
+    q2 = {(ds, mod, t): mm.loc[(ds, mod, "q2", "attack_type", t), "mean"] for ds, t in coarse for mod in FG.DEEP}
+    fz = ("road", "conv_ae", "fuzzing")
+    others = [v for k, v in q2.items() if k != fz]
+    check(q2[fz] < an["hypotheses"]["h2_coarse_recall_min"], "conv-AE ROAD fuzzing is below the H2 (b) bar")
+    check(min(others) >= an["hypotheses"]["h2_coarse_recall_min"], "every other coarse recall meets the H2 (b) bar")
+    m.add("AEFuzzQTwo", ffix(q2[fz], 3), "all_results.csv recall road conv_ae q2 fuzzing (seed mean)")
+    q0 = mm.loc[("road", "conv_ae", "q0", "attack_type", "fuzzing")]
+    m.add("AEFuzzQZero", ffix(q0["mean"], 3), "all_results.csv recall road conv_ae q0 fuzzing (seed mean)")
+    m.add("AEFuzzQZeroSD", ffix(q0["std"], 3), "all_results.csv recall road conv_ae q0 fuzzing (seed s.d.)")
+    m.add("CoarseOtherMin", ffix(min(others), 3), "all_results.csv recall q2 CH dos/fuzzy, ROAD fuzzing (min, others)")
+
+    # further observation: masquerade vs fabrication at Q0
+    for mod, mt in (("cnn1d", "CNN"), ("xgb", "XGB")):
+        q = "q0" if mod != "xgb" else "native"
+        for base, bt in (("correlated_signal", "Corr"), ("max_speedometer", "Speed"), ("reverse_light_off", "Rev")):
+            for t, side in ((base, "Fab"), (base + FG.MASQ, "Masq")):
+                m.add(f"Rec{mt}{bt}{side}", ffix(mm.loc[("road", mod, q, "attack_type", t), "mean"], 3),
+                      f"all_results.csv recall road {mod} {q} {t} (seed mean)")
+
+
+def rq2_macros(m: Macros, s: Sources) -> None:
+    """Latency, size and recall (H3, Pareto front, budgets)."""
+    d = s.d
+    par = d.pareto.set_index(["dataset", "model", "quantization"])
+    sz = d.model_metric("size_mb").groupby(["dataset", "model", "quantization"]).value.mean()
+    for k, name in (("q1", "SizeRatioQOne"), ("q2", "SizeRatioQTwo")):
+        ratios = [sz[(ds, mod, k)] / sz[(ds, mod, "q0")] for ds in DS_TAG for mod in FG.DEEP]
+        m.add(name, frange(min(ratios), max(ratios), 2), f"all_results.csv size_mb {k}/q0 (seed means)")
+    for mod, mt in (("cnn1d", "CNN"), ("conv_ae", "AE")):
+        for k, kt in (("q0", "QZero"), ("q1", "QOne"), ("q2", "QTwo")):
+            m.add(f"Size{mt}{kt}", ffix(same([round(par.loc[(ds, mod, k), "size_mb"], 3) for ds in DS_TAG], "size"), 3),
+                  f"pareto.csv size_mb {mod} {k}")
+    for ds, tag in DS_TAG.items():
+        m.add(f"SizeXGB{tag}", ffix(par.loc[(ds, "xgb", "native"), "size_mb"], 3), f"pareto.csv size_mb xgb {ds}")
+    # H3 (a): mean |dRecall| per type, Q1 vs Q2
+    pt = d.stat("per_type_delta", statistic="d_recall")
+    pt = pt[pt.note.str.contains("role=primary")]
+    absd = pt.assign(a=pt.estimate.abs()).groupby(["model", "dataset", "quantization"]).a.mean()
+    check(all(absd[(mod, ds, "q1")] <= absd[(mod, ds, "q2")] for mod in FG.DEEP for ds in DS_TAG), "H3 (a) holds")
+    m.add("AbsDRQOne", ffix(absd[("cnn1d", "road", "q1")], 4), f"{ST} per_type_delta mean |d_recall| cnn1d road q1")
+    m.add("AbsDRQTwo", ffix(absd[("cnn1d", "road", "q2")], 4), f"{ST} per_type_delta mean |d_recall| cnn1d road q2")
+    # latency: orders of magnitude and within-session ratios (two sessions)
+    lat = d.pareto[d.pareto.latency_measured.astype(str).eq("True")]
+    deep, xgb = lat[lat.model.isin(FG.DEEP)], lat[lat.model.eq("xgb")]
+
+    def both(t):
+        return pd.concat([t.latency_median_ms_s1, t.latency_median_ms_s2])
+
+    m.add("DeepLatRange", frange(both(deep).min(), both(deep).max(), 2), "pareto.csv latency_median_ms_s1/s2 deep")
+    m.add("DeepLatMax", ffix(both(deep).max(), 2), "pareto.csv latency_median_ms_s1/s2 deep (max)")
+    m.add("XGBLatRange", frange(both(xgb).min(), both(xgb).max(), 2), "pareto.csv latency_median_ms_s1/s2 xgb")
+    cnn2 = lat[lat.model.eq("cnn1d") & lat.quantization.eq("q2")]
+    check((cnn2[["latency_ratio_vs_ref_s1", "latency_ratio_vs_ref_s2"]] < 1).all().all(),
+          "INT8 lowers the 1D-CNN median latency in both sessions and datasets")
+    lo, hi = cnn2.latency_ratio_min.min(), cnn2.latency_ratio_max.max()
+    m.add("CNNRatio", frange(lo, hi, 2), "pareto.csv latency_ratio_min/max cnn1d q2")
+    m.add("CNNCutPct", f"{round(100 * (1 - hi))}--{round(100 * (1 - lo))}", "1 - CNNRatio (percent)")
+    aer = [par.loc[(ds, "conv_ae", "q2"), f"latency_median_ms_s{k}"]
+           / par.loc[(ds, "conv_ae", "q0"), f"latency_median_ms_s{k}"] for ds in DS_TAG for k in (1, 2)]
+    check(min(aer) > 1, "INT8 does not lower the conv-AE median latency in any session")
+    m.add("AERatio", frange(min(aer), max(aer), 2), "pareto.csv conv_ae q2/q0 latency_median_ms per session")
+    ae = lat[lat.model.eq("conv_ae")]
+    m.add("AEvsCNN", frange(ae.latency_ratio_min.min(), ae.latency_ratio_max.max(), 1),
+          "pareto.csv latency_ratio_min/max conv_ae (vs CNN Q0)")
+    m.add("XGBvsCNN", frange(xgb.latency_ratio_min.min(), xgb.latency_ratio_max.max(), 1),
+          "pareto.csv latency_ratio_min/max xgb (vs CNN Q0)")
+    # recall axes
+    for mod, k, name in (("cnn1d", "q0", "StealthCNNQZero"), ("cnn1d", "q2", "StealthCNNQTwo")):
+        r = par.loc[("road", mod, k)]
+        m.add(name, fci(r.stealthy_recall_mean, r.stealthy_recall_ci_low, r.stealthy_recall_ci_high, 3),
+              f"pareto.csv stealthy_recall_mean/ci road {mod} {k}")
+    diff = (par.loc[("road", "cnn1d", "q0"), "stealthy_recall_mean"]
+            - par.loc[("road", "cnn1d", "q2"), "stealthy_recall_mean"])
+    m.add("StealthDiff", ffix(diff, 3), "pareto.csv stealthy_recall_mean road cnn1d q0 - q2")
+    for mod, k, name in (("conv_ae", "q0", "StealthAEQZero"), ("conv_ae", "q2", "StealthAEQTwo"),
+                         ("xgb", "native", "StealthXGB"), ("cnn1d", "q1", "StealthCNNQOne")):
+        m.add(name, ffix(par.loc[("road", mod, k), "stealthy_recall_mean"], 3),
+              f"pareto.csv stealthy_recall_mean road {mod} {k}")
+    m.add("PooledCHCNNQTwo", ffix(par.loc[("car_hacking", "cnn1d", "q2"), "pooled_recall_mean"], 4),
+          "pareto.csv pooled_recall_mean car_hacking cnn1d q2")
+    m.add("PooledCHXGB", ffix(par.loc[("car_hacking", "xgb", "native"), "pooled_recall_mean"], 3),
+          "pareto.csv pooled_recall_mean car_hacking xgb")
+
+    # robust fronts and budgets as stated in the text
+    def front(ds, col):
+        return {(i[1], i[2]) for i, v in par[col].items() if i[0] == ds and str(v) == "True"}
+
+    check(front("road", "robust_front_stealthy_recall_mean") == {("cnn1d", "q0"), ("cnn1d", "q2")},
+          "ROAD robust front = 1D-CNN Q0 and Q2")
+    check(front("car_hacking", "robust_front_pooled_recall_mean") == {("cnn1d", "q2"), ("xgb", "native")},
+          "Car-Hacking robust front = 1D-CNN Q2 and XGBoost")
+    check(("cnn1d", "q1") in front("road", "size_front_stealthy_recall_mean"), "Q1 is on the ROAD size-recall front")
+    check(lat.meets_window_budget.astype(float).eq(1).all(), "every candidate meets the window budget")
+    check(deep.meets_strict_budget.astype(float).eq(1).all(), "every deep model meets the strict budget")
+    check(par.loc[("road", "xgb", "native"), "meets_strict_budget"] == 0, "XGBoost misses the strict budget on ROAD")
+    check(par.loc[("car_hacking", "xgb", "native"), "meets_strict_budget"] == 1, "XGBoost meets it on Car-Hacking")
+    for ds, tag in DS_TAG.items():
+        r = par.loc[(ds, "xgb", "native")]
+        m.add(f"XGBSlow{tag}", ffix(max(r.latency_median_ms_s1, r.latency_median_ms_s2), 3),
+              f"pareto.csv xgb {ds} slower-session median latency")
+
+
+def rq3_macros(m: Macros, s: Sources) -> None:
+    """Supervised vs unsupervised (H4): pre-registered statistic, signed check, output-change measures."""
+    for stat, tag in (("mean_abs_diff_droc_auc", "AUC"), ("mean_abs_diff_drecall", "Rec")):
+        for q, qt in (("q1", "QOne"), ("q2", "QTwo")):
+            r = stat_row(s, "as3", statistic=stat, quantization=q)
+            src = f"{ST} as3 {stat} {q}"
+            if max(abs(r.estimate), abs(r.ci_low), abs(r.ci_high)) < 1e-3:
+                ci = f"{fsci(r.estimate)} [{fsci(r.ci_low)}, {fsci(r.ci_high)}]"
+            else:
+                ci = fci(r.estimate, r.ci_low, r.ci_high, 4)
+            m.add(f"Pre{tag}{qt}CI", ci, src)
+            m.add(f"Pre{tag}{qt}P", fp(r.p_value), f"{src} Wilcoxon p")
+            m.add(f"Pre{tag}{qt}PHolm", fp(r.p_holm), f"{src} p_holm")
+            m.add(f"Pre{tag}{qt}Delta", ffix(note_value(r.note, "Cliff's delta(|d_conv_ae| vs |d_cnn1d|)"), 2),
+                  f"{src} note: Cliff's delta of |d|")
+        r = stat_row(s, "as3", statistic=stat, quantization="q2")
+        check(r.ci_low > 0, f"pre-registered {tag} interval at INT8 is above 0")
+        n_family = len(s.d.stat("as3"))
+        m.add(f"Pre{tag}Units", int(r.n_units), f"{ST} as3 {stat} n_units")
+        m.add(f"Pre{tag}MinP", fsig(r.min_attainable_p, 3), f"{ST} as3 {stat} min_attainable_p")
+        m.add(f"Pre{tag}MinPHolm", fsig(r.min_attainable_p * n_family, 3),
+              f"{ST} as3 {stat} min_attainable_p x tests in the family (Holm)")
+    for stat, tag in (("mean_signed_diff_droc_auc", "AUC"), ("mean_signed_diff_drecall", "Rec")):
+        r = stat_row(s, "as3_signed_diff", statistic=stat, quantization="q2")
+        check(r.ci_low < 0 < r.ci_high, f"signed {tag} interval at INT8 contains 0")
+        m.add(f"Sgn{tag}QTwoCI", fci(r.estimate, r.ci_low, r.ci_high, 4), f"{ST} as3_signed_diff {stat} q2")
+    r = stat_row(s, "as3_signed_diff", statistic="mean_signed_diff_droc_auc", quantization="q1")
+    check(r.ci_high < 0 and abs(r.ci_low) < 1e-3, "signed Q1 AUC difference is below 0 and below 1e-3 in size")
+    m.add("SgnAUCQOneCI", f"{fsci(r.estimate)} [{fsci(r.ci_low)}, {fsci(r.ci_high)}]", f"{ST} as3_signed_diff auc q1")
+    for mod, mt in (("conv_ae", "AE"), ("cnn1d", "CNN")):
+        r = stat_row(s, "as3_signed", model=mod, statistic="mean_droc_auc", quantization="q2")
+        check(r.ci_low < 0 < r.ci_high, f"{mod} mean dAUC interval contains 0")
+        m.add(f"Mean{mt}AUC", fci(r.estimate, r.ci_low, r.ci_high, 4), f"{ST} as3_signed {mod} mean_droc_auc q2")
+    # seed variability example (ROAD correlated signal, dAUC at INT8)
+    for mod, mt, n in (("conv_ae", "AE", 2), ("cnn1d", "CNN", 1)):
+        r = stat_row(s, "per_type_delta", model=mod, dataset="road", quantization="q2", unit="correlated_signal",
+                     statistic="d_roc_auc")
+        m.add(f"SD{mt}Corr", fsig(FG.seeds(r.seed_values).std(ddof=1), n),
+              f"{ST} per_type_delta {mod} road correlated_signal d_roc_auc q2 (seed s.d.)")
+    # output change (descriptive, min-max over seeds)
+    ch = s.d.stat("as3_churn", quantization="q2")
+
+    def val(mod, ds, st):
+        return one(ch[ch.model.eq(mod) & ch.dataset.eq(ds) & ch.statistic.eq(st)], f"as3_churn {mod} {ds} {st}")
+
+    for ds, tag in DS_TAG.items():
+        for mod, mt in (("conv_ae", "AE"), ("cnn1d", "CNN")):
+            c, sp = val(mod, ds, "churn_attack"), val(mod, ds, "spearman_q0_qk")
+            src = f"{ST} as3_churn {mod} {ds} q2"
+            m.add(f"Churn{mt}{tag}", "0" if c.estimate == 0 else ffix(c.estimate, 4), f"{src} churn_attack")
+            m.add(f"Churn{mt}{tag}Range", frange(c.ci_low, c.ci_high, 4), f"{src} churn_attack min-max")
+            nd = 3 if (mt, ds) == ("AE", "road") else 4
+            m.add(f"Spear{mt}{tag}", ffix(sp.estimate, nd), f"{src} spearman_q0_qk")
+            m.add(f"Spear{mt}{tag}Range", frange(sp.ci_low, sp.ci_high, nd), f"{src} spearman_q0_qk min-max")
+    ratio = val("conv_ae", "road", "churn_attack").estimate / val("cnn1d", "road", "churn_attack").estimate
+    check(ratio > 1, "INT8 changes more attack-window decisions for the conv-AE on ROAD")
+    m.add("ChurnRatioROAD", ffix(ratio, 1), f"{ST} as3_churn churn_attack road conv_ae / cnn1d")
+
+
+def calib_macros(m: Macros, s: Sources) -> None:
+    """Calibration shift: the float32 threshold kept for the quantized model."""
+    c = s.calib
+    src = "calibration_shift.csv"
+
+    def sub(ds, mod, q):
+        return c[c.dataset.eq(ds) & c.model.eq(mod) & c.quantization.eq(q)]
+
+    r = sub("road", "conv_ae", "q2")
+    st = s.d.stat("calib_shift", model="conv_ae", dataset="road", quantization="q2")
+    for col, nd0, tag in (("fpr_val", 4, "Val"), ("fpr_test", 4, "Test"), ("pooled_recall", 3, "Rec")):
+        q0, qk = r[f"{col}_q0"], r[f"{col}_qk"]
+        check(abs(one(st[st.statistic.eq(f"{col}_qk")], col).estimate - qk.mean()) < 1e-6,
+              f"{col} of calibration_shift.csv agrees with stats.csv")
+        m.add(f"Cal{tag}QZero", ffix(q0.mean(), nd0), f"{src} road conv_ae q2 {col}_q0 (seed mean)")
+        m.add(f"Cal{tag}QTwo", ffix(qk.mean(), 3), f"{src} road conv_ae q2 {col}_qk (seed mean)")
+        m.add(f"Cal{tag}Range", frange(qk.min(), qk.max(), 3), f"{src} road conv_ae q2 {col}_qk (min-max over seeds)")
+    fold = r.fpr_val_qk / r.fpr_val_q0
+    m.add("CalFold", f"{round(fold.min())}--{round(fold.max())}",
+          f"{src} road conv_ae q2 fpr_val_qk / fpr_val_q0 per seed (min-max)")
+    m.add("CalTypeMin", fnum(r.type_d_recall_min.min(), 2), f"{src} road conv_ae q2 type_d_recall_min (min)")
+    rc = sub("car_hacking", "conv_ae", "q2")
+    m.add("CalCHValQZero", ffix(rc.fpr_val_q0.mean(), 4), f"{src} car_hacking conv_ae q2 fpr_val_q0 (seed mean)")
+    m.add("CalCHValQTwo", ffix(rc.fpr_val_qk.mean(), 4), f"{src} car_hacking conv_ae q2 fpr_val_qk (seed mean)")
+    g = c.groupby(["dataset", "model", "quantization"])[["fpr_val_q0", "fpr_val_qk", "fpr_test_q0", "fpr_test_qk"]].mean()
+    shift = pd.concat([(g.fpr_val_qk - g.fpr_val_q0).abs(), (g.fpr_test_qk - g.fpr_test_q0).abs()], axis=1).max(axis=1)
+    lv = shift.index.get_level_values
+    m.add("ShiftQOneMax", ffix(shift[lv("quantization") == "q1"].max(), 4),
+          f"{src} max |FPR_qk - FPR_q0| over val/test (seed means), q1")
+    m.add("ShiftCNNMax", ffix(shift[lv("model") == "cnn1d"].max(), 4),
+          f"{src} max |FPR_qk - FPR_q0| over val/test (seed means), cnn1d")
+
+
+# --------------------------------------------------------------------------------------------
 # Generated tables
 # --------------------------------------------------------------------------------------------
 
@@ -618,6 +973,71 @@ def dataset_table(s: Sources) -> str:
     return FG.latex_table(header, rows, "@{}llrrrrrrl@{}", cap, "tab:dataset")
 
 
+def compact(latex: str, sep: str = "3pt") -> str:
+    """Narrower column gaps so that a P7 table fits the IEEE text width."""
+    if latex.count("\\footnotesize\n") != 1:
+        raise ValueError("unexpected table preamble")
+    return latex.replace("\\footnotesize\n", f"\\footnotesize\n\\setlength{{\\tabcolsep}}{{{sep}}}\n")
+
+
+def result_tables(s: Sources) -> dict[str, str]:
+    """Tables II (recall; F1 in the appendix) and III of the P7 generator; their captions carry no decision ids."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp)
+        FG.table2_main(s.d, out, [], "recall")
+        FG.table2_main(s.d, out, [], "f1")
+        FG.table3_resources(s.d, out, [])
+        return {name: compact((out / f"{stem}.tex").read_text(encoding="utf-8"))
+                for name, stem in (("table_recall.tex", "table_2_recall"), ("table_f1.tex", "table_2b_f1"),
+                                   ("table_resources.tex", "table_3_resources"))}
+
+
+PAPER_STAT_NAMES = {"(K-062)": "(pre-registered)", "(K-063)": "(corrected)"}
+
+
+def stats_table(s: Sources) -> str:
+    """Table IV for the paper: the rows of analysis.figures.table4_data with titles and caption without decision ids."""
+    df = FG.table4_data(s.d)
+    gm = s.d.stat("group_mwu")
+
+    def sizes(fam):
+        f = gm[gm.holm_family.eq(fam)]
+        hit = re.fullmatch(r"stealthy n=(\d+) vs coarse n=(\d+)", same(f.unit, "unit"))
+        return int(hit.group(1)), int(hit.group(2)), len(f), same(f.min_attainable_p.round(12), "min p")
+
+    n_s, n_c, n_tests, minp = sizes("group_road_drecall")
+    _, n_c2, _, _ = sizes("group_road+car_hacking_coarse_drecall")
+    b = df[df.block.eq("B")]
+    n_pairs = same([int(re.search(r"\((\d+) pairs\)", c).group(1)) for c in b.comparison], "pairs")
+    pair_p = same(b.min_attainable_p.round(12), "pair min p")
+    n_c_tests = len(df[df.block.eq("C") & df.p_holm.notna()])
+    titles = {
+        "A": f"A: coarse vs stealthy, group level, ROAD ({n_s} stealthy vs {n_c} coarse types; exact Mann–Whitney U, "
+             f"Holm over {n_tests} tests)",
+        "A'": f"A': sensitivity, Car-Hacking coarse types added ({n_s} vs {n_c2}; dataset and group confounded)",
+        "B": f"B: paired fabrication–masquerade units, 1D-CNN, ROAD ({n_pairs} pairs; exploratory, not tested)",
+        "C": f"C: supervised vs unsupervised, conv-AE vs 1D-CNN (Wilcoxon signed-rank, Holm over {n_c_tests} tests)"}
+    nboot = s.cfg["analysis"]["bootstrap"]["n_boot"]
+    cap = (f"Statistical comparisons (Δ = Q0 − Qk; positive = loss) with 95% hierarchical bootstrap intervals over "
+           f"seeds and test windows (moving blocks, B = {nboot:,}). min. p: smallest p-value the design can attain. "
+           f"In block A it is 2/{math.comb(n_s + n_c, n_s)} = {minp:.3f}, which the Holm correction raises to "
+           f"{minp * n_tests:.3f} > 0.05, so adjusted significance is unattainable whatever the data; block B is not "
+           f"tested (min. p {pair_p:.2f}). Block C: the pre-registered statistic, the mean over attack types of "
+           f"|ΔAE| − |ΔCNN|, is biased upward for the model whose Δ varies more across seeds; the corrected statistic "
+           f"is the signed difference ΔAE − ΔCNN. The final H4 verdict (partially supported) rests on both, read "
+           f"together with the output-change measures.")
+
+    def name(stat: str) -> str:
+        for k, v in PAPER_STAT_NAMES.items():
+            stat = stat.replace(k, v)
+        return stat
+
+    latex = compact(FG.table4_latex(df, titles, cap, name), "2.5pt")
+    if re.search(r"K-\d{3}", latex):
+        raise ValueError("decision id left in the paper version of Table IV")
+    return latex
+
+
 # --------------------------------------------------------------------------------------------
 # Driver
 # --------------------------------------------------------------------------------------------
@@ -627,9 +1047,10 @@ def build(s: Sources | None = None) -> dict[str, str]:
     s = s or Sources()
     m = Macros()
     for fn in (data_macros, feature_macros, model_macros, run_macros, quant_macros, bench_macros,
-               analysis_macros, signature_macros):
+               analysis_macros, signature_macros, rq1_macros, rq2_macros, rq3_macros, calib_macros):
         fn(m, s)
-    files = {"table_signatures.tex": signature_table(s), "table_dataset.tex": dataset_table(s)}
+    files = {"table_signatures.tex": signature_table(s), "table_dataset.tex": dataset_table(s),
+             **result_tables(s), "table_stats.tex": stats_table(s)}
     files = {"numbers.tex": m.render(s.inp.files), **files}
     return files
 

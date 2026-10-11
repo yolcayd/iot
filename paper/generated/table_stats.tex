@@ -1,0 +1,48 @@
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\caption{Statistical comparisons ($\Delta$ = Q0 $-$ Qk; positive = loss) with 95\% hierarchical bootstrap intervals over seeds and test windows (moving blocks, B = 10,000). min. p: smallest p-value the design can attain. In block A it is 2/126 = 0.016, which the Holm correction raises to 0.063 > 0.05, so adjusted significance is unattainable whatever the data; block B is not tested (min. p 0.25). Block C: the pre-registered statistic, the mean over attack types of $|\Delta$AE$|$ $-$ $|\Delta$CNN$|$, is biased upward for the model whose $\Delta$ varies more across seeds; the corrected statistic is the signed difference $\Delta$AE $-$ $\Delta$CNN. The final H4 verdict (partially supported) rests on both, read together with the output-change measures.}
+\label{tab:stats}
+\begin{tabular}{@{}lllrrrr@{}}
+\toprule
+Model & Level & Statistic & Estimate [95\% CI] & $p$ & $p_\mathrm{Holm}$ & min. $p$ \\
+\midrule
+\multicolumn{7}{l}{\textit{A: coarse vs stealthy, group level, ROAD (4 stealthy vs 5 coarse types; exact Mann--Whitney U, Holm over 4 tests)}} \\
+1D-CNN & Q1 & Cliff's $\delta$ of $\Delta$Recall & 0.65 [0.00, 0.75] & 0.135 & 0.444 & 0.0159 \\
+1D-CNN & Q2 & Cliff's $\delta$ of $\Delta$Recall & 0.70 [$-$0.30, 0.90] & 0.111 & 0.444 & 0.0159 \\
+conv-AE & Q1 & Cliff's $\delta$ of $\Delta$Recall & 0.20 [$-$0.20, 0.50] & 0.683 & 1 & 0.0159 \\
+conv-AE & Q2 & Cliff's $\delta$ of $\Delta$Recall & $-$0.10 [$-$0.50, 0.50] & 0.905 & 1 & 0.0159 \\
+1D-CNN & Q1 & Cliff's $\delta$ of $\Delta$F1 & 0.45 [0.00, 0.75] & 0.302 & 1 & 0.0159 \\
+1D-CNN & Q2 & Cliff's $\delta$ of $\Delta$F1 & 0.10 [$-$0.30, 0.70] & 0.905 & 1 & 0.0159 \\
+conv-AE & Q1 & Cliff's $\delta$ of $\Delta$F1 & 0.20 [$-$0.40, 0.50] & 0.683 & 1 & 0.0159 \\
+conv-AE & Q2 & Cliff's $\delta$ of $\Delta$F1 & $-$0.10 [$-$0.50, 0.50] & 0.905 & 1 & 0.0159 \\
+\midrule
+\multicolumn{7}{l}{\textit{A': sensitivity, Car-Hacking coarse types added (4 vs 9; dataset and group confounded)}} \\
+1D-CNN & Q1 & Cliff's $\delta$ of $\Delta$Recall & 0.69 [0.00, 0.75] & 0.0182 & 0.0615 & 0.0028 \\
+1D-CNN & Q2 & Cliff's $\delta$ of $\Delta$Recall & 0.83 [$-$0.06, 0.94] & 0.0154 & 0.0615 & 0.0028 \\
+conv-AE & Q1 & Cliff's $\delta$ of $\Delta$Recall & 0.17 [$-$0.22, 0.50] & 0.716 & 1 & 0.0028 \\
+conv-AE & Q2 & Cliff's $\delta$ of $\Delta$Recall & $-$0.11 [$-$0.50, 0.44] & 0.796 & 1 & 0.0028 \\
+1D-CNN & Q1 & Cliff's $\delta$ of $\Delta$F1 & 0.47 [$-$0.44, 0.69] & 0.199 & 0.794 & 0.0028 \\
+1D-CNN & Q2 & Cliff's $\delta$ of $\Delta$F1 & 0.50 [0.19, 0.83] & 0.199 & 0.794 & 0.0028 \\
+conv-AE & Q1 & Cliff's $\delta$ of $\Delta$F1 & 0.28 [$-$0.42, 0.50] & 0.449 & 0.898 & 0.0028 \\
+conv-AE & Q2 & Cliff's $\delta$ of $\Delta$F1 & $-$0.11 [$-$0.56, 0.47] & 0.796 & 0.898 & 0.0028 \\
+\midrule
+\multicolumn{7}{l}{\textit{B: paired fabrication--masquerade units, 1D-CNN, ROAD (3 pairs; exploratory, not tested)}} \\
+1D-CNN & Q1 & mean D ($\Delta$Recall) & 0.0010 [0.0000, 0.0029] & -- & -- & 0.25 \\
+1D-CNN & Q2 & mean D ($\Delta$Recall) & 0.0006 [$-$0.0035, 0.0057] & -- & -- & 0.25 \\
+1D-CNN & Q1 & mean D ($\Delta$F1) & 0.0010 [0.0000, 0.0030] & -- & -- & 0.25 \\
+1D-CNN & Q2 & mean D ($\Delta$F1) & $-$0.0002 [$-$0.0033, 0.0035] & -- & -- & 0.25 \\
+\midrule
+\multicolumn{7}{l}{\textit{C: supervised vs unsupervised, conv-AE vs 1D-CNN (Wilcoxon signed-rank, Holm over 4 tests)}} \\
+conv-AE vs 1D-CNN & Q1 & $|\Delta$AE$|$ $-$ $|\Delta$CNN$|$, ROC-AUC (pre-registered) & $8.4\times10^{-6}$ [$1.9\times10^{-6}$, $1.2\times10^{-4}$] & 0.893 & 1 & 0.000244 \\
+conv-AE vs 1D-CNN & Q2 & $|\Delta$AE$|$ $-$ $|\Delta$CNN$|$, ROC-AUC (pre-registered) & 0.0062 [0.0048, 0.0272] & 0.000732 & 0.00293 & 0.000244 \\
+conv-AE vs 1D-CNN & Q1 & $|\Delta$AE$|$ $-$ $|\Delta$CNN$|$, recall (pre-registered) & 0.0009 [$-$0.0003, 0.0048] & 0.5 & 1 & 0.0312 \\
+conv-AE vs 1D-CNN & Q2 & $|\Delta$AE$|$ $-$ $|\Delta$CNN$|$, recall (pre-registered) & 0.0062 [0.0033, 0.0265] & 0.25 & 0.75 & 0.0312 \\
+conv-AE vs 1D-CNN & Q1 & $\Delta$AE $-$ $\Delta$CNN, ROC-AUC (corrected) & $-7.8\times10^{-5}$ [$-1.6\times10^{-4}$, $-2.4\times10^{-7}$] & -- & -- & -- \\
+conv-AE vs 1D-CNN & Q2 & $\Delta$AE $-$ $\Delta$CNN, ROC-AUC (corrected) & 0.0025 [$-$0.0041, 0.0088] & -- & -- & -- \\
+conv-AE vs 1D-CNN & Q1 & $\Delta$AE $-$ $\Delta$CNN, recall (corrected) & $-$0.0008 [$-$0.0048, 0.0004] & -- & -- & -- \\
+conv-AE vs 1D-CNN & Q2 & $\Delta$AE $-$ $\Delta$CNN, recall (corrected) & $-$0.0002 [$-$0.0176, 0.0172] & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table*}

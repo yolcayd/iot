@@ -228,14 +228,14 @@ python -m analysis.figures --draft --only fig3 --figures-dir <dir>   # inspectio
 - Provenance goes to the `figures` entry of `results/tables/analysis_manifest.json`, and the git commit goes
   into the PDF/PNG metadata. Outputs are byte-identical on a rerun.
 
-### Paper (P8)
+### Paper (P8, P9)
 
 The paper is an IEEEtran conference project in `paper/` (`main.tex`, `sections/`, `refs.bib`). Sections III
-(threat model), IV (method) and V (setup) are written; the others are skeletons with `% TODO` notes. Decisions:
-`docs/DECISIONS.md` K-066.
+(threat model), IV (method), V (setup) and VI (results, with the appendix figures and tables) are written; the
+others are skeletons with `% TODO` notes. Decisions: `docs/DECISIONS.md` K-066, K-069.
 
 ```powershell
-python -m analysis.paper_numbers        # paper/generated/: numbers.tex (macros) + two generated tables
+python -m analysis.paper_numbers        # paper/generated/: numbers.tex (macros) + the paper tables
 python scripts/sync_figures.py          # results/figures/fig*.pdf -> paper/figures/ (--check: report only)
 python scripts/build_paper.py           # both steps + pdflatex/bibtex -> paper/build/main.pdf, log check
 ```
@@ -243,7 +243,8 @@ python scripts/build_paper.py           # both steps + pdflatex/bibtex -> paper/
 - No number is typed into the section text: every number is a macro of `paper/generated/numbers.tex`, generated
   from `configs/`, `results/tables/` and the run files (`run_config.json`, `quant_meta.json`, benchmark JSON),
   with its source in a comment. `tests/test_paper.py` rejects numeric literals in the written sections and a stale
-  `numbers.tex`.
+  `numbers.tex`. Qualitative statements of the Results text (e.g. which candidates form the Pareto front, which
+  intervals contain zero) are checked by the generator, which stops if one no longer holds.
 - `refs.bib` holds only the five references of the project proposal; places that need a citation are marked
   `% TODO-CITE` in the sections.
 - LaTeX: any TeX distribution with `IEEEtran` and `cite`. The build script looks for `pdflatex` in `$PDFLATEX`, on

@@ -12,7 +12,7 @@ from scripts import sync_figures
 
 ROOT = Path(__file__).resolve().parents[1]
 PAPER = ROOT / "paper"
-WRITTEN = ("threat_model", "method", "setup", "appendix")   # sections whose text is written (others: skeleton)
+WRITTEN = ("threat_model", "method", "setup", "results", "appendix")   # sections whose text is written (others: skeleton)
 PROPOSAL_KEYS = {"hanselmann2020canet", "oualil2026cantempo", "rajapaksha2023odtl", "song2020dcnn", "verma2024road"}
 
 # Name fragments that contain digits but are not numbers taken from the experiments.
@@ -47,6 +47,17 @@ def test_written_sections_contain_no_numeric_literals(section):
     text = _strip((PAPER / "sections" / f"{section}.tex").read_text(encoding="utf-8"))
     hits = [m.group(0) for m in re.finditer(r"\S*\d\S*", text)]
     assert not hits, f"{section}.tex: numbers must come from generated/numbers.tex macros: {hits}"
+
+
+def test_generated_tables_carry_no_decision_ids(generated):
+    for name, text in generated.items():
+        if name.startswith("table_"):
+            assert not re.search(r"K-\d{3}", text), f"paper/generated/{name} contains an internal decision id"
+
+
+def test_results_claims_stop_the_generator_when_they_fail():
+    with pytest.raises(ValueError):
+        PN.check(False, "a claim")
 
 
 def test_strip_catches_a_typed_number():

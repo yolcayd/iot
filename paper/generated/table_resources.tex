@@ -1,0 +1,32 @@
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Resources on the host CPU (4 threads, batch 1, seed-0 models). Latency is the range over two measurement sessions; p95 is reported but not interpreted, absolute latencies are orders of magnitude only. Q1 has no CPU latency (no fp16 kernel in the CPU provider). A model meets a budget if the slower session's median is below it.}
+\label{tab:resources}
+\begin{tabular}{@{}llrrrrrrcc@{}}
+\toprule
+& & \multicolumn{2}{c}{File} & \multicolumn{2}{c}{Latency (ms), 2 sessions} & Ratio vs & Peak RSS & \multicolumn{2}{c}{Meets budget} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){9-10}
+Model & Level & MB & /Q0 & median & p95 & CNN Q0 & (MB) & 1 msg & window \\
+\midrule
+\multicolumn{10}{l}{\textit{Car-Hacking (budgets: 1 message 0.526 ms, window 52.6 ms)}} \\
+1D-CNN & Q0 (fp32) & 0.103 & 1.00 & 0.040--0.042 & 0.054--0.055 & 1.00--1.00 & 65.2--65.4 & yes & yes \\
+1D-CNN & Q1 (fp16) & 0.054 & 0.52 & -- & -- & -- & -- & -- & -- \\
+1D-CNN & Q2 (INT8) & 0.039 & 0.38 & 0.029--0.030 & 0.034--0.039 & 0.70--0.74 & 65.6--65.7 & yes & yes \\
+conv-AE & Q0 (fp32) & 0.111 & 1.00 & 0.102--0.110 & 0.110--0.192 & 2.42--2.73 & 64.6--64.7 & yes & yes \\
+conv-AE & Q1 (fp16) & 0.058 & 0.52 & -- & -- & -- & -- & -- & -- \\
+conv-AE & Q2 (INT8) & 0.042 & 0.38 & 0.110--0.116 & 0.161--0.163 & 2.61--2.88 & 65.3--65.4 & yes & yes \\
+XGBoost & native & 0.205 & -- & 0.489--0.518 & 0.952--1.274 & 12.13--12.30 & 269.1--269.2 & yes & yes \\
+\midrule
+\multicolumn{10}{l}{\textit{ROAD (budgets: 1 message 0.419 ms, window 41.9 ms)}} \\
+1D-CNN & Q0 (fp32) & 0.103 & 1.00 & 0.040--0.046 & 0.045--0.058 & 1.00--1.00 & 65.0--65.2 & yes & yes \\
+1D-CNN & Q1 (fp16) & 0.054 & 0.52 & -- & -- & -- & -- & -- & -- \\
+1D-CNN & Q2 (INT8) & 0.039 & 0.38 & 0.030--0.030 & 0.033--0.034 & 0.64--0.75 & 65.5--65.8 & yes & yes \\
+conv-AE & Q0 (fp32) & 0.111 & 1.00 & 0.102--0.107 & 0.110--0.126 & 2.30--2.57 & 64.7--64.8 & yes & yes \\
+conv-AE & Q1 (fp16) & 0.058 & 0.52 & -- & -- & -- & -- & -- & -- \\
+conv-AE & Q2 (INT8) & 0.042 & 0.38 & 0.107--0.108 & 0.113--0.172 & 2.32--2.69 & 64.9--65.0 & yes & yes \\
+XGBoost & native & 0.274 & -- & 0.484--0.500 & 0.937--1.238 & 10.40--12.57 & 269.6--269.8 & no & yes \\
+\bottomrule
+\end{tabular}
+\end{table*}
