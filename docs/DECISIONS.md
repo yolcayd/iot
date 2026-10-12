@@ -1166,3 +1166,27 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
 - **Etkisi:** `paper/sections/results.tex`, `appendix.tex`; `numbers.tex`'e 171 yeni makro (toplam 358);
   `tests/test_paper.py` Sonuçlar bölümünü de sayı literali ve tanımsız makro için denetliyor ve üretilmiş
   tablolarda K-0xx olmadığını sınıyor. Derlenmiş taslak 13 sayfa (P8'de 7); kısaltma P10'da (P8 açık sorunu 3).
+
+## K-070 — Kaynakçanın genişletilmesi: web üzerinden doğrulanmış girdiler
+
+- **Faz / tarih:** P9 · 2026-10-12
+- **Durum:** Geçerli (kullanıcı talimatı). K-066 madde 6'nın "`refs.bib` yalnızca öneri formundaki 5 kaynağı içerir;
+  yeni kaynakları yalnızca yazarlar ekler" hükmünü geçersiz kılar: yazar (kullanıcı) aday listesini verdi ve
+  eklenmesini istedi. K-066'nın "formda olmayan DOI ya da sayfa eklenmez; uydurma atıf yapılmaz" ilkesi, aşağıdaki
+  doğrulama kuralıyla korunur.
+- **Karar:**
+  1. Her aday web üzerinden doğrulanır; BibTeX doğrudan kaynaktan alınır, hafızadan künye yazılmaz. Kaynak sırası:
+     DOI varsa Crossref (doi.org içerik anlaşması), yoksa yayıncının sayfası, sonra arXiv. Standart ve yönetmelikler
+     için resmi sayfadan `@misc` girdisi oluşturulur.
+  2. Her girdinin hemen üstünde `% Source: <URL> (…)` yorumu bulunur; yapılan her değişiklik orada adlandırılır.
+     İzin verilen değişiklikler: alıntı anahtarı (proje biçimi `yazaryılkelime`), ay alanının BibTeX makrosuna
+     (`jan` … `dec`) çevrilmesi, pdflatex'in dizemediği karakterlerin ASCII karşılığı (ör. U+2032 → '), düzen.
+     Alan değerleri başka türlü değiştirilmez.
+  3. Doğrulanamayan aday eklenmez; listelenir. Aday bilgisi ile doğrulanan kayıt arasında fark varsa (ör. dergi adı)
+     doğrulanan kayıt eklenir ve fark P9 günlüğünde belirtilir.
+  4. Bu adımda metne atıf eklenmez (`\cite` yok); her kaynağın kullanılacağı `TODO-CITE` yeri P9 günlüğünde tabloyla
+     not edilir. Bütün girdilerin dizilebildiği `\nocite{*}` ile ayrı bir derlemede denetlenir.
+  5. `tests/test_paper.py`: öneri formundaki 5 anahtar korunur, anahtarlar tekildir, eklenen her girdinin üstünde
+     kaynak yorumu vardır, metindeki her atıf kaynakçadadır.
+- **Gerekçe:** CLAUDE.md "sonuç uydurma" yasağının kaynakçadaki karşılığı: künye bilgisi yalnızca doğrulanabilir bir
+  kaynaktan gelir ve kaynağı izlenebilir kalır.

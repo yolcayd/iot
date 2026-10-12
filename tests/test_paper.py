@@ -1,5 +1,5 @@
 """Paper sources (P8, docs/DECISIONS.md K-066): generated numbers up to date, no hand-written numbers in the written
-sections, every macro defined, bibliography limited to the proposal's references, figures in sync."""
+sections, every macro defined, bibliography = proposal references + sourced additions (K-070), figures in sync."""
 
 import re
 from pathlib import Path
@@ -106,9 +106,23 @@ def test_formatters():
         PN.Macros().add("Bad1", 1, "src")
 
 
-def test_bibliography_holds_exactly_the_proposal_references():
-    bib = (PAPER / "refs.bib").read_text(encoding="utf-8")
-    assert set(re.findall(r"@\w+\{([^,]+),", bib)) == PROPOSAL_KEYS
+def _bib_keys() -> list[str]:
+    return re.findall(r"^@\w+\{([^,]+),", (PAPER / "refs.bib").read_text(encoding="utf-8"), re.M)
+
+
+def test_bibliography_keeps_the_proposal_references_and_has_unique_keys():
+    keys = _bib_keys()
+    assert PROPOSAL_KEYS <= set(keys)
+    assert len(keys) == len(set(keys))
+
+
+def test_every_added_reference_names_its_source():
+    """K-070: every entry beyond the proposal's five is preceded by a '% Source:' comment (verified on the web)."""
+    lines = (PAPER / "refs.bib").read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines):
+        m = re.match(r"@\w+\{([^,]+),", line)
+        if m and m.group(1) not in PROPOSAL_KEYS:
+            assert i > 0 and lines[i - 1].startswith("% Source: http"), f"{m.group(1)} has no source comment"
 
 
 def test_every_citation_is_in_the_bibliography():
@@ -117,7 +131,7 @@ def test_every_citation_is_in_the_bibliography():
         text = re.sub(r"(?<!\\)%.*", "", p.read_text(encoding="utf-8"))
         for group in re.findall(r"\\cite\{([^}]*)\}", text):
             cited |= {k.strip() for k in group.split(",")}
-    assert cited <= PROPOSAL_KEYS
+    assert cited <= set(_bib_keys())
 
 
 def test_paper_figures_are_in_sync_with_results():
