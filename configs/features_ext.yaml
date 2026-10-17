@@ -1,0 +1,47 @@
+# Extended per-frame features for the advisor-requested ablation (P10). Decisions: docs/DECISIONS.md K-073 ... K-075.
+# Fixed before any model with these features was trained. Kept out of configs/data.yaml on purpose: the
+# `features` block there enters the hash of the 10-feature reference set S0, whose runs must stay unchanged.
+#
+# Every column lies in [0, 1], is computed inside one split segment and is causal (it looks only at the
+# current and earlier frames of the segment). The only fitted parameter (the per-ID reference rate of
+# id_rate) comes from benign training frames only (src/data/features_ext.py: fit_ext).
+
+groups:                     # in the fixed order in which the ablation adds them
+  bit_flips:                # G1: Hamming distance to the previous frame with the same ID / 64
+    columns: [bit_flips]
+  payload_delta:            # G2: |byte_i - byte_i of the previous frame with the same ID| / 255
+    columns: [dbyte_0, dbyte_1, dbyte_2, dbyte_3, dbyte_4, dbyte_5, dbyte_6, dbyte_7]
+  id_rate:                  # G3: frames of the same ID in the trailing window_s seconds / reference count
+    columns: [id_rate]
+  id_window:                # G4: ID distribution of the trailing `frames` frames
+    columns: [id_share_w, id_entropy_w]
+
+sets:                       # cumulative: S_k = S_(k-1) + one group; s0 = the 10 reference features
+  s0: []
+  s1: [bit_flips]
+  s2: [bit_flips, payload_delta]
+  s3: [bit_flips, payload_delta, id_rate]
+  s4: [bit_flips, payload_delta, id_rate, id_window]
+
+id_rate:
+  window_s: 1.0             # trailing time window (t - window_s, t]
+  log2_clip: 3.0            # feature = (clip(log2(count / c_ref), -clip, clip) + clip) / (2 clip)
+  neutral: 0.5              # value in the first window_s seconds of a segment (window not yet full)
+  unreferenced: 1.0         # value for an ID without reference rate (outside the vocabulary or no clean frame)
+  reference:                # c_ref(ID) = median trailing count over these frames
+    split: train
+    label: 0                # benign frames only
+    margin_s: 5.0           # no injected frame of the capture within +/- margin_s (as normal_subset, K-022)
+    exclude_masquerade: true
+
+id_window:
+  frames: 100               # = model window size; share = count / frames (fixed denominator), entropy / log2(frames)
+
+# INT8 input quantization (K-024/K-025 principle): "grid" columns take values k/n and must keep every value on its
+# own level under the asymmetric 1/255 input quantizer; "continuous" columns are allowed to lose resolution.
+column_kind:
+  bit_flips: {kind: grid, n: 64}
+  dbyte: {kind: grid, n: 255}
+  id_rate: {kind: continuous}
+  id_share_w: {kind: grid, n: 100}
+  id_entropy_w: {kind: continuous}

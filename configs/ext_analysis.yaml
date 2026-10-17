@@ -1,0 +1,28 @@
+# Analysis settings of the P10 extension (advisor feedback 1). Fixed before any extended-feature model was trained.
+# Decisions: docs/DECISIONS.md K-074 (ablation), K-075 (selection), K-076 (diagnosis), K-077 (quantization).
+
+selection:                    # K-075: per model, VALIDATION metrics only (analysis/ext_select.py)
+  reference_set: s0
+  candidate_order: [s1, s2, s3, s4]     # smallest first; = configs/features_ext.yaml order
+  metric: roc_auc
+  road_target_group: stealthy           # configs/attack_groups.yaml; types without validation windows drop out
+  expected_road_targets:                # checked: the rule must see exactly these four types
+    - correlated_signal_masquerade
+    - max_speedometer_masquerade
+    - reverse_light_off_masquerade
+    - reverse_light_on_masquerade
+  min_gain: 0.01                        # G* below this -> s0 is kept ("no meaningful validation gain")
+  near_best_tolerance: 0.005            # smallest admissible set with G >= G* - tolerance
+  ch_guard:                             # every Car-Hacking type, 3-seed mean, vs s0
+    roc_auc: 0.005                      # AUC(S) >= AUC(s0) - 0.005
+    recall: 0.01                        # calibrated recall(S) >= recall(s0) - 0.01
+
+bootstrap:                    # K-074: selected set - s0 contrast; method of K-058 (seed x window, moving block)
+  n_boot: 10000
+  seed: 20261017
+  level: 0.95
+  block_length: cube_root
+
+diagnosis:                    # K-076
+  roc_fpr: 0.01               # descriptive operating point of K-040
+  score_quantiles: [0.5, 0.9, 0.99, 0.999]

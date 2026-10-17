@@ -1,0 +1,7 @@
+dataset,split,n_frames,n_dlc_lt8,n_dlc_lt8_benign,n_dlc_lt8_injected,share_dlc_lt8
+car_hacking,test,2785127,32660,32660,0,0.0117266
+car_hacking,train,9269396,163945,163945,0,0.0176867
+car_hacking,val,2607204,30966,30966,0,0.0118771
+road,test,5962708,0,0,0,0
+road,train,15575902,0,0,0,0
+road,val,5877373,0,0,0,0

@@ -20,6 +20,11 @@ Usage:
     python -m src.run_grid --stage full --table      # grid_quant.csv, grid_classical.csv, grid_k041_units.csv
     python -m src.run_grid --stage baseline ae_feasibility [--threads N]     # P3 stages (in-process)
     python -m src.run_grid --ae-check     # autoencoder protocol on validation ROC-AUC (K-030, K-033)
+
+P10 extension stages (K-074, K-075; job mode like ``full``): ``ext_ablation`` trains the extended feature sets and
+evaluates validation only; ``ext_test`` (same run ids) adds the test evaluation and ``ext_quant`` quantizes the
+selected set of every model. Both refuse to run until results/tables/ext_selection.json (analysis/ext_select.py,
+validation metrics only) is committed and unchanged.
 """
 
 from __future__ import annotations
@@ -58,6 +63,7 @@ DATASETS = ("car_hacking", "road")
 STEPS = ("train", "evaluate", "quantize", "quant_eval")
 TAIL_LINES = 40          # lines of a failed job's output repeated in the failure summary
 K041_FLOOR = 0.10        # K-041: a unit leaves the primary AS-1 test if the mean Q0 recall of either side is below
+SELECTION = TABLES / "ext_selection.json"   # K-075: feature set chosen per model on validation metrics only
 
 
 def log(msg: str) -> None:
@@ -68,6 +74,32 @@ def load_grid() -> dict:
     return yaml.safe_load(GRID.read_text(encoding="utf-8"))
 
 
+def load_selection(path: Path = SELECTION) -> dict:
+    sel = _read_json(path)
+    if sel is None:
+        raise SystemExit(f"missing {path}: run `python -m analysis.ext_select` first (K-075)")
+    return sel
+
+
+def check_selection_committed(path: Path = SELECTION) -> None:
+    """Test evaluation of the extension only after the validation-only selection is committed unchanged (K-074)."""
+    load_selection(path)
+    rel = path.relative_to(S.PROJECT_ROOT).as_posix()
+    tracked = subprocess.run(["git", "ls-files", "--error-unmatch", rel], cwd=S.PROJECT_ROOT, capture_output=True)
+    if tracked.returncode != 0:
+        raise SystemExit(f"{rel} is not committed; commit the selection before any test evaluation (K-074)")
+    if T._git("status", "--porcelain", "--", rel):
+        raise SystemExit(f"{rel} has uncommitted changes; the committed selection is the one that counts (K-074)")
+
+
+def stage_feature_sets(g: dict, model: str) -> list[str]:
+    fs = g.get("feature_sets", ["s0"])
+    if fs == "from_selection":
+        chosen = load_selection()["selected"][model]["feature_set"]
+        return [] if chosen == "s0" else [chosen]     # s0 = the existing full-stage runs, nothing new (K-077)
+    return list(fs)
+
+
 def stage_runs(stage: str) -> list[dict]:
     g = load_grid()[stage]
     mcfg = T.load_models_config()
@@ -76,13 +108,14 @@ def stage_runs(stage: str) -> list[dict]:
     out = []
     for d in g["datasets"]:
         for e in entries:
-            for s in g["seeds"]:
-                ov = T.resolve_overrides(e.get("overrides"), mcfg)
-                out.append({"stage": stage, "model": e["model"], "dataset": d, "seed": s, "overrides": ov,
-                            "overrides_ref": e.get("overrides") or "",
-                            "run_id": T.planned_run_id(e["model"], d, s, ov),
-                            "evaluate_splits": g.get("evaluate_splits", ["val", "test"]),
-                            "quantize": e["model"] in quant})
+            for fs in stage_feature_sets(g, e["model"]):
+                for s in g["seeds"]:
+                    ov = T.resolve_overrides(e.get("overrides"), mcfg)
+                    out.append({"stage": stage, "model": e["model"], "dataset": d, "seed": s, "overrides": ov,
+                                "overrides_ref": e.get("overrides") or "", "feature_set": fs,
+                                "run_id": T.planned_run_id(e["model"], d, s, ov, fs),
+                                "evaluate_splits": g.get("evaluate_splits", ["val", "test"]),
+                                "quantize": e["model"] in quant})
     return out
 
 
@@ -138,7 +171,8 @@ def status(stages: list[str]) -> pd.DataFrame:
         for r in stage_runs(st):
             d = T.RAW_DIR / r["run_id"]
             job = _read_json(d / JOB_FILE) or {}
-            rows.append({"stage": st, "model": r["model"], "overrides": r["overrides_ref"], "dataset": r["dataset"],
+            rows.append({"stage": st, "model": r["model"], "overrides": r["overrides_ref"],
+                         "feature_set": r["feature_set"], "dataset": r["dataset"],
                          "seed": r["seed"], "state": job_state(r), "pending": ",".join(pending_steps(r)),
                          "run": r["run_id"],
                          "evaluated": ",".join(s for s in r["evaluate_splits"] if (d / f"metrics_{s}.csv").exists()),
@@ -174,7 +208,7 @@ def run_job(r: dict, threads: int, allow_dirty: bool = False, log=log) -> Path:
 
     def train():
         d = T.train(r["model"], r["dataset"], r["seed"], threads=threads, overrides=r["overrides"],
-                    allow_dirty=allow_dirty, log=log)
+                    allow_dirty=allow_dirty, log=log, feature_set=r.get("feature_set", "s0"))
         if d.name != r["run_id"]:
             raise RuntimeError(f"run id mismatch: planned {r['run_id']}, trained {d.name}")
 
@@ -195,6 +229,7 @@ def run_job(r: dict, threads: int, allow_dirty: bool = False, log=log) -> Path:
         raise RuntimeError(f"job {r['run_id']} finished with missing outputs: {left}")
     finished = datetime.now(timezone.utc)
     job = {"run_id": r["run_id"], "stage": r["stage"], "model": r["model"], "dataset": r["dataset"],
+           "feature_set": r.get("feature_set", "s0"),
            "seed": r["seed"], "steps_run": list(steps), "step_s": steps,
            "wall_s": round(time.perf_counter() - t0, 1), "started_utc": started.isoformat(timespec="seconds"),
            "finished_utc": finished.isoformat(timespec="seconds"), "threads": threads, "git": git,
@@ -239,6 +274,18 @@ def reference_durations(runs: list[dict], raw: Path = T.RAW_DIR) -> dict[tuple[s
     return out
 
 
+def reference_durations_with_s0(runs: list[dict], raw: Path = T.RAW_DIR) -> dict[tuple[str, str], tuple[float, str]]:
+    """As ``reference_durations``; pairs without any record of their own (extended feature sets, P10) fall back
+    to the measured full-stage (s0) jobs of the same model and dataset: a lower bound, since s0 has fewer input
+    channels and no feature-cache build."""
+    out = reference_durations(runs, raw)
+    missing = {(r["model"], r["dataset"]) for r in runs} - set(out)
+    if missing and any(r.get("feature_set", "s0") != "s0" for r in runs):
+        s0 = reference_durations([r for r in stage_runs("full") if (r["model"], r["dataset"]) in missing], raw)
+        out.update({k: (v[0], f"s0 full stage: {v[1]}; lower bound") for k, v in s0.items()})
+    return out
+
+
 def makespan(durations: list[float], workers: int) -> float:
     """Longest-processing-time-first schedule length on ``workers`` identical workers."""
     loads = [0.0] * max(1, workers)
@@ -255,7 +302,7 @@ def _fmt(sec: float | None) -> str:
 
 
 def plan_table(runs: list[dict], workers: int) -> tuple[pd.DataFrame, float | None, list[str]]:
-    ref = reference_durations(runs)
+    ref = reference_durations_with_s0(runs)
     rows, todo_est, unknown = [], [], []
     for r in runs:
         steps = pending_steps(r)
@@ -402,14 +449,14 @@ def preflight(runs: list[dict]) -> None:
 
     if not torch.cuda.is_available():
         raise SystemExit("CUDA is not available (deep models, XGBoost and the Q1 fp16 simulation use the GPU, K-031/K-043)")
-    ae = [r for r in runs if r["model"] in T.AUTOENCODERS and r["seed"] == 0]
+    ae = [r for r in runs if r["model"] in T.AUTOENCODERS and r["seed"] == 0 and r.get("feature_set", "s0") == "s0"]
     if ae:
         sel = E.selected_autoencoders()
         for r in ae:
             if sel.get(r["dataset"]) != r["run_id"]:
                 raise SystemExit(f"{r['dataset']}: the K-033 protocol selected {sel.get(r['dataset'])}, "
                                  f"the grid plans {r['run_id']} (K-039)")
-    for d in {r["dataset"] for r in runs if r.get("quantize")}:
+    for d in {r["dataset"] for r in runs if r.get("quantize") and r.get("feature_set", "s0") == "s0"}:
         if not (BENCH_DIR / f"{d}.npy").exists():   # written once in P4; parallel jobs must not race on it
             raise SystemExit(f"missing benchmark inputs {BENCH_DIR / f'{d}.npy'} (python -m src.quantize --pilot)")
 
@@ -421,6 +468,8 @@ def run_full(stage: str, workers: int, threads: int, only: list[str] | None, all
         if unknown:
             raise SystemExit(f"not in stage {stage}: {sorted(unknown)}")
         runs = [r for r in runs if r["run_id"] in only]
+    if load_grid()[stage].get("requires_selection"):
+        check_selection_committed()
     glog = GridLog(LOG_DIR / f"grid_{datetime.now():%Y-%m-%d}.log")
     acquire_lock()
     try:
@@ -437,7 +486,7 @@ def run_full(stage: str, workers: int, threads: int, only: list[str] | None, all
                 glog(f"queued {r['run_id']} ({job_state(r)}; steps {','.join(steps)})")
             else:
                 glog(f"skip {r['run_id']} (done)")
-        ref = reference_durations(stage_runs(stage))
+        ref = reference_durations_with_s0(stage_runs(stage))
         est = {r["run_id"]: ref.get((r["model"], r["dataset"]), (None, ""))[0] for r in todo}
         known = [v for v in est.values() if v is not None]
         glog(f"{len(todo)} jobs to run; estimated {_fmt(makespan(known, workers))}"
@@ -631,6 +680,8 @@ def main(argv: list[str] | None = None) -> int:
         r = next((r for r in stage_runs(stage) if r["run_id"] == a.job), None)
         if r is None:
             raise SystemExit(f"{a.job} is not a run of stage {stage}")
+        if load_grid()[stage].get("requires_selection"):
+            check_selection_committed()
         try:
             run_job(r, threads, a.allow_dirty)
         except Exception:
@@ -658,7 +709,7 @@ def main(argv: list[str] | None = None) -> int:
                   f"if started now (est_source: see table)")
         print(f"log: {LOG_DIR / f'grid_{datetime.now():%Y-%m-%d}.log'}")
         return 0
-    if a.stage == ["full"] or load_grid()[a.stage[0]].get("quantize"):
+    if a.stage == ["full"] or load_grid()[a.stage[0]].get("quantize") or load_grid()[a.stage[0]].get("jobs"):
         (stage,) = a.stage
         return run_full(stage, a.workers, threads, a.only, a.allow_dirty)
     return run_stages_inprocess(a.stage, a.threads)

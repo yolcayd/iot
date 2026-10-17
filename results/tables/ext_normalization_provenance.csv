@@ -1,0 +1,5 @@
+dataset,parameters,n_fitted_segments,n_expected_segments,equal_to_expected,splits_of_fitted_segments
+car_hacking,"id_vocab_and_iat (K-024, K-025)",6,6,True,train
+car_hacking,id_rate reference (K-073),6,6,True,train
+road,"id_vocab_and_iat (K-024, K-025)",14,14,True,train
+road,id_rate reference (K-073),10,10,True,train

@@ -120,7 +120,7 @@ def load_trained(run_dir: Path) -> tuple[dict, ScoreModel]:
     rc = json.loads((run_dir / "run_config.json").read_text(encoding="utf-8"))
     if rc["model"] not in T.DEEP:
         raise ValueError(f"{rc['run_id']}: {rc['model']} is not a deep model; classical models are not quantized")
-    net = T.build_deep(rc["model"], rc["hparams"])
+    net = T.build_deep(rc["model"], rc["hparams"], T.run_n_features(rc))
     net.load_state_dict(torch.load(run_dir / "model.pt", map_location="cpu", weights_only=True))
     return rc, ScoreModel(net, rc["model"] in T.AUTOENCODERS).eval()
 
@@ -415,21 +415,32 @@ def quantize_values(x: np.ndarray, iq: dict) -> np.ndarray:
     return np.clip(np.rint(np.asarray(x, np.float64) / iq["scale"]) + iq["zero_point"], info.min, info.max)
 
 
-def input_level_report(iq: dict, calib: np.ndarray, n_ids: int | None) -> dict:
+def input_level_report(iq: dict, calib: np.ndarray, n_ids: int | None, names: list[str] | None = None) -> dict:
     """Distinct values vs distinct INT8 levels per input column (calibration windows), plus the full value grids
-    of the payload bytes (k/255) and of the ID codes (k/K)."""
+    of the payload bytes (k/255), of the ID codes (k/K) and of the extended grid columns (k/n; P10, K-073)."""
+    from src.data import features_ext as FX
     from src.data.features import FEATURE_NAMES
 
+    names = list(names or FEATURE_NAMES)
+    if len(names) != calib.shape[-1]:
+        raise ValueError(f"{len(names)} feature names for {calib.shape[-1]} input columns")
+    ecfg = FX.load_ext_config() if len(names) > len(FEATURE_NAMES) else None
     flat = calib.reshape(-1, calib.shape[-1])
     cols = []
-    for j, name in enumerate(FEATURE_NAMES):
+    for j, name in enumerate(names):
         v = np.unique(flat[:, j])
         lv = np.unique(quantize_values(v, iq))
-        cols.append({"feature": name, "min": float(v.min()), "max": float(v.max()), "n_values": int(len(v)),
+        cols.append({"feature": name, "kind": FX.column_kind(name, ecfg) if ecfg else
+                     ("continuous" if name == "iat" else "grid"),
+                     "min": float(v.min()), "max": float(v.max()), "n_values": int(len(v)),
                      "n_levels": int(len(lv)), "lossless": bool(len(v) == len(lv))})
     grids = {"bytes": np.arange(256, dtype=np.float32) / np.float32(255)}
     if n_ids:
         grids["id_codes"] = np.arange(n_ids + 1, dtype=np.float32) / np.float32(n_ids)
+    if ecfg:
+        for key, k in ecfg["column_kind"].items():
+            if k["kind"] == "grid" and any(n == key or n.startswith(f"{key}_") for n in names):
+                grids[key] = np.arange(k["n"] + 1, dtype=np.float32) / np.float32(k["n"])
     grid = {k: {"n_values": int(len(g)), "n_levels": int(len(np.unique(quantize_values(g, iq))))}
             for k, g in grids.items()}
     return {"columns": cols, "grids": grid,
@@ -439,7 +450,8 @@ def input_level_report(iq: dict, calib: np.ndarray, n_ids: int | None) -> dict:
 def verify_input_quantization(iq: dict, report: dict) -> None:
     if iq["scheme"] != "asymmetric":
         raise InputQuantizationError(f"input quantizer is {iq['scheme']} ({iq}); payload bytes would fall to 128 levels")
-    bad = [c["feature"] for c in report["columns"] if c["feature"] != "iat" and not c["lossless"]]
+    bad = [c["feature"] for c in report["columns"] if c.get("kind", "continuous" if c["feature"] == "iat" else "grid")
+           == "grid" and not c["lossless"]]
     bad += [k for k, g in report["grids"].items() if g["n_levels"] != g["n_values"]]
     if bad:
         raise InputQuantizationError(f"distinct input values merged by the INT8 input quantizer: {bad}")
@@ -460,11 +472,12 @@ def quantize_run(run_dir: Path, qcfg: dict, threads: int, log=print) -> dict:
     qdir = run_dir / QUANT_DIR
     qdir.mkdir(exist_ok=True)
     cfg = S.load_config()
-    size, n_feat = rc["window_size"], F.N_FEATURES
+    size, n_feat = rc["window_size"], T.run_n_features(rc)
+    fset = rc.get("feature_set", "s0")
     paths = {q: qdir / f for q, f in FILES.items()}
 
     # calibration windows: training split only (rule 4); they also serve as the Q0 equivalence sample
-    store = D.FeatureStore.build(rc["dataset"], ("train",), cfg, log=log)
+    store = D.FeatureStore.build(rc["dataset"], ("train",), cfg, log=log, feature_set=fset)
     if store.params_hash != rc["data_hash"]:
         raise RuntimeError(f"{rc['run_id']}: features changed since training ({store.params_hash} != {rc['data_hash']})")
     win = D.load_window_index()
@@ -504,7 +517,7 @@ def quantize_run(run_dir: Path, qcfg: dict, threads: int, log=print) -> dict:
     exe = int8_execution(paths["q2"], calib, threads, c2["op_types"])
     iq = input_quantization(paths["q2"])
     n_ids = F.load_params()["datasets"][rc["dataset"]]["n_ids"]
-    levels = input_level_report(iq, calib, n_ids)
+    levels = input_level_report(iq, calib, n_ids, rc.get("feature_names"))
     verify_input_quantization(iq, levels)
     q2 = {**file_info(paths["q2"]), "precision": "int8", "backend": "onnxruntime-cpu",
           "scheme": {k: c2[k] for k in ("format", "activation_type", "activation_symmetric", "weight_type",
@@ -538,7 +551,8 @@ def write_bench_inputs(dataset: str, store, val: pd.DataFrame, size: int, qcfg: 
     from src.data import dataset as D
 
     b = qcfg["benchmark"]
-    path = BENCH_DIR / f"{dataset}.npy"
+    fset = getattr(store, "feature_set", "s0")
+    path = BENCH_DIR / (f"{dataset}.npy" if fset == "s0" else f"{dataset}_{fset}.npy")
     if path.exists() and not force:
         return path
     if b["input_split"] != "val":
@@ -576,7 +590,9 @@ def evaluate_run(run_dir: Path, qcfg: dict, threads: int, log=print) -> pd.DataF
     size, ds, batch = rc["window_size"], rc["dataset"], qcfg["evaluation"]["batch_size"]
     target_fpr = rc["decision_config"]["target_fpr"]
 
-    store = D.FeatureStore.build(ds, ("val", "test"), cfg, log=log)
+    store = D.FeatureStore.build(ds, ("val", "test"), cfg, log=log, feature_set=rc.get("feature_set", "s0"))
+    if store.params_hash != rc["data_hash"]:
+        raise RuntimeError(f"{rc['run_id']}: features changed since training ({store.params_hash} != {rc['data_hash']})")
     win = D.load_window_index()
     wins = {s: D.eval_windows(win, ds, s) for s in ("val", "test")}
     cal = D.calibration_windows(win, ds, store.segments, cfg)       # clean validation normals (K-038)

@@ -6,6 +6,10 @@ segments of a dataset are concatenated into one array; a window is addressed by 
 first frame and gathered on the fly (on the GPU for the deep models), so overlapping training windows
 are never copied.
 
+Feature sets (P10, docs/DECISIONS.md K-073): ``s0`` is the 10-feature reference (cache, hash and run ids unchanged);
+``s1`` ... ``s4`` append the extended columns of ``src.data.features_ext``. Their per-segment cache holds every
+extended column once (all sets are prefixes of the largest), keyed by the base and the extension hash.
+
 Window selectors (each checks the split it may draw from):
 
     supervised_train  training windows, minus the label-0 windows of masquerade captures, which duplicate
@@ -28,6 +32,7 @@ import numpy as np
 import pandas as pd
 
 from src.data import features as F
+from src.data import features_ext as FX
 from src.data import loaders as L
 from src.data import sources as S
 from src.data import splits as SP
@@ -72,29 +77,81 @@ def segment_matrix(seg: SP.Segment, params: dict) -> np.ndarray:
     return x
 
 
+def _ext_cache_path(seg: SP.Segment, ext_h: str):
+    key = hashlib.sha256(f"{seg.id}|ext|{ext_h}".encode()).hexdigest()[:16]
+    return FEATURE_CACHE / seg.dataset / f"ext_{key}.npy"
+
+
+def segment_ext_matrix(seg: SP.Segment, ext_params: dict, ecfg: dict) -> np.ndarray:
+    """(n_frames, n_ext) extended columns of one segment, cached like ``segment_matrix``."""
+    path = _ext_cache_path(seg, ext_params["ext_sha256_16"])
+    n_ext = len(FX.all_ext_columns(ecfg))
+    if path.exists():
+        x = np.load(path, mmap_mode=None)
+        if x.shape == (seg.n_frames, n_ext):
+            return x
+    x = FX.segment_ext_features(seg, ext_params, ecfg)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp.npy")
+    np.save(tmp, x.astype(np.float32))
+    try:
+        os.replace(tmp, path)
+    except PermissionError:
+        tmp.unlink(missing_ok=True)
+        if not path.exists():
+            raise
+    return x
+
+
+def feature_set_hash(feature_set: str, params: dict | None = None) -> str:
+    """Data hash of a feature set without building the store (enters the run id, K-031)."""
+    params = params or F.load_params()
+    if feature_set == FX.REFERENCE_SET:
+        return params["config_sha256_16"]
+    ecfg = FX.load_ext_config()
+    FX.set_columns(feature_set, ecfg)
+    ext = FX.load_ext_params()
+    FX.check_ext_params_current(ext, params, ecfg)
+    return FX.set_hash(params["config_sha256_16"], feature_set, ext["ext_sha256_16"])
+
+
 @dataclass
 class FeatureStore:
     """All frames of the requested splits of one dataset, concatenated."""
     dataset: str
-    frames: np.ndarray                    # (n_frames, 10) float32
+    frames: np.ndarray                    # (n_frames, n_features) float32
     offsets: dict[str, tuple[int, int]]   # segment id -> (offset in frames, segment start row)
     segments: dict[str, SP.Segment]
     params_hash: str
+    feature_set: str = FX.REFERENCE_SET
+    feature_names: tuple = tuple(F.FEATURE_NAMES)
 
     @classmethod
     def build(cls, dataset: str, splits=SP.SPLITS, cfg: dict | None = None, params: dict | None = None,
-              log=print) -> "FeatureStore":
+              log=print, feature_set: str = FX.REFERENCE_SET) -> "FeatureStore":
         cfg = cfg or S.load_config()
         params = params or F.load_params()
         check_params_current(params, cfg)
         segs = [s for s in SP.segments(cfg) if s.dataset == dataset and s.split in splits]
+        names, ext, ecfg, n_ext = list(F.FEATURE_NAMES), None, None, 0
+        if feature_set != FX.REFERENCE_SET:
+            ecfg = FX.load_ext_config()
+            names = FX.feature_names(feature_set, ecfg)
+            n_ext = len(names) - F.N_FEATURES
+            ext = FX.load_ext_params()
+            FX.check_ext_params_current(ext, params, ecfg)
         mats, offsets, off = [], {}, 0
         for s in segs:
-            mats.append(segment_matrix(s, params))
+            x = segment_matrix(s, params)
+            if ext is not None:
+                x = np.concatenate([x, segment_ext_matrix(s, ext, ecfg)[:, :n_ext]], axis=1)
+            mats.append(x)
             offsets[s.id] = (off, s.start)
             off += s.n_frames
-        log(f"{dataset}: {off:,} frames in {len(segs)} segments ({', '.join(splits)})")
-        return cls(dataset, np.concatenate(mats), offsets, {s.id: s for s in segs}, params["config_sha256_16"])
+        log(f"{dataset}: {off:,} frames in {len(segs)} segments ({', '.join(splits)}); feature set {feature_set} "
+            f"({len(names)} features)")
+        h = feature_set_hash(feature_set, params)
+        return cls(dataset, np.concatenate(mats), offsets, {s.id: s for s in segs}, h, feature_set, tuple(names))
 
     def global_starts(self, win: pd.DataFrame) -> np.ndarray:
         off = win["segment"].astype(str).map(lambda s: self.offsets[s][0]).to_numpy(np.int64)

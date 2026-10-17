@@ -146,7 +146,7 @@ def evaluate_run(run_dir: Path, split: str = "test", log=print) -> pd.DataFrame:
     meta = json.loads((run_dir / "meta.json").read_text(encoding="utf-8"))
     cfg = S.load_config()
     groups = yaml.safe_load(SP.GROUPS_PATH.read_text(encoding="utf-8"))
-    store = D.FeatureStore.build(rc["dataset"], (split,), cfg, log=log)
+    store = D.FeatureStore.build(rc["dataset"], (split,), cfg, log=log, feature_set=rc.get("feature_set", "s0"))
     win = D.eval_windows(D.load_window_index(), rc["dataset"], split)
     score = score_windows(run_dir, store, win)
     pred = C.predict(score, meta["decision"])     # threshold calibrated on validation normals (K-035)

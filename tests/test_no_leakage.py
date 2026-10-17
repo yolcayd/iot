@@ -14,6 +14,8 @@ Plan F1 tests 1-4 plus the checks required by docs/DECISIONS.md K-015...K-022:
 7. the shared Car-Hacking tail is one recording, cut from every attack file and used once
 8. excluded (accelerator) captures are in no split
 9. the LSTM autoencoder subset holds training windows only, far from every injected frame
+10. frames of every split segment are in recording (time) order: timestamps never decrease, so windows and
+    per-ID features see the messages in the order they were sent (P10, K-072)
 
 Tests run against data/processed and are skipped when the data has not been converted.
 """
@@ -159,6 +161,16 @@ def test_segments_of_one_parquet_do_not_overlap(segs):
         ss = sorted(ss, key=lambda s: s.start)
         for a, b in zip(ss, ss[1:]):
             assert a.stop <= b.start, f"{f}: {a.id} overlaps {b.id}"
+
+
+def test_timestamps_monotonic_within_segments(segs):
+    bad = []
+    for s in segs:
+        ts = s.read(["timestamp"])["timestamp"].to_numpy()
+        d = np.diff(ts)
+        if (d < 0).any():
+            bad.append((s.id, int((d < 0).sum()), float(d.min())))
+    assert not bad, f"segments with decreasing timestamps (id, count, most negative step): {bad}"
 
 
 # 2 ---------------------------------------------------------------------------------------------

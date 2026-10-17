@@ -1190,3 +1190,172 @@ Girdi biçimi: **Numara — Başlık**, faz, tarih, durum, bağlam, karar, gerek
      kaynak yorumu vardır, metindeki her atıf kaynakçadadır.
 - **Gerekçe:** CLAUDE.md "sonuç uydurma" yasağının kaynakçadaki karşılığı: künye bilgisi yalnızca doğrulanabilir bir
   kaynaktan gelir ve kaynağı izlenebilir kalır.
+
+## K-071 — Danışman geri bildirimi 1: P10 genişletme fazı ve statüsü
+
+- **Faz / tarih:** P10 · 2026-10-17
+- **Durum:** Geçerli (kullanıcı talimatı; plan kullanıcı tarafından onaylandı). Bu girdi ve K-072 … K-077,
+  genişletilmiş öznitelikli hiçbir model eğitilmeden yazıldı ve commit'lendi.
+- **Bağlam:** Danışman 1. hafta raporuna geri bildirim verdi (`docs/reports/advisor_feedback_01.md`):
+  - ön işlemenin doğrulanması;
+  - öznitelik setinin genişletilmesi ve aşamalı ablasyon (1D-CNN, conv-AE; özellikle ROAD);
+  - conv-AE'nin ROAD'daki düşük recall'unun nedeninin ayrıştırılması;
+  - seçilen setle FP32/FP16/INT8 karşılaştırması (eski ve yeniden kalibre eşik).
+- **Karar:**
+  1. İstekler P10 adlı ayrı bir **genişletme** fazında yürütülür. Makale kısaltması (P9 açık sorunu 1) bu fazdan sonraya kalır.
+  2. Mevcut H1–H4 hükümleri (K-062, K-064), `docs/FINDINGS.md`, P6/P7 tabloları, şekilleri ve makale metni **değişmez**. Genişletmenin sonuçları ayrı dosyalara yazılır:
+     - `results/tables/ext_*`, `results/figures/ext_*`;
+     - `docs/reports/advisor_ext_status.md`, `docs/reports/literature_preprocessing.md`, `docs/reports/advisor_ext_01.md`.
+  3. Genişletme sonuçlarının makaleye girip girmeyeceği ayrı bir kullanıcı kararıdır.
+  4. Referans set S0 (mevcut 10 öznitelik), P5 tam ızgarasının CNN ve conv-AE koşularıdır (2 veri seti × 3 tohum). Bu koşular yeniden eğitilmez. Yeni yapılandırma bu yüzden `configs/data.yaml → features` bloğuna değil ayrı dosyalara yazılır (`configs/features_ext.yaml`, `configs/ext_analysis.yaml`). O blok S0'ın veri özetine ve run_id'lerine girer.
+  5. Tek yan etki: girdi dosyalarının (`configs/grid.yaml`, `tests/test_no_leakage.py`) sha256 özetleri değiştiği için `paper/generated/numbers.tex` yeniden üretildi. Yalnızca başlıktaki kaynak özetleri değişti, hiçbir sayı değişmedi.
+- **Gerekçe:** Ek analizlerin, sonuçlar görüldükten sonra kesinleşmiş hükümleri sessizce değiştirmesi önlenir. Önceden kayıtlı ve sonradan eklenmiş analizlerin ayrımı (K-062 … K-064) korunur.
+- **Etkisi:** `python -m src.run_grid --stage full --dry-run` mevcut 18 koşunun hepsini "done" gösteriyor. S0 run_id'lerinin değişmediği test ediliyor (`tests/test_features_ext.py`).
+
+## K-072 — Ek ön işleme doğrulamaları ve global varış süresi notu
+
+- **Faz / tarih:** P10 · 2026-10-17
+- **Durum:** Geçerli
+- **Karar:**
+  1. **Zaman sırası:** `tests/test_no_leakage.py::test_timestamps_monotonic_within_segments`. Her split segmentinde zaman damgaları azalmamalı. Pencereler ve ID bazındaki öznitelikler çerçeveleri kayıt sırasıyla görür. Test başarısız olursa veri düzeltilmez; bulgu olarak raporlanır.
+  2. **DLC profili** (`analysis/ext_preproc_checks.py`):
+     - veri seti ve split başına DLC < 8 çerçeve payı;
+     - train normal çerçevelerinde ID başına DLC sabit mi?
+
+     DLC'si değişen ve 8'den küçük değer alan ID'ler "dolgu belirsiz" diye işaretlenir. Bu ID'lerde sıfır dolgu gerçek 0x00 baytından ayırt edilemez. DLC özniteliği bu fazda eklenmez; sonuç raporlanır.
+  3. **Normalizasyon kökeni:** 10 özniteliğin parametreleri ve G3 referansı, uyduruldukları segment listesiyle karşılaştırılır. Liste config'teki train segmentleriyle aynı olmalıdır.
+  4. **Global varış süresi:** danışmanın "mesajlar arası zaman farkı" dediği özniteliğin, ID'den bağımsız olan sürümü (art arda iki çerçeve arası süre) temsilde yoktur. Bizdeki IAT ID bazındadır (K-021, K-025). Bu özniteliği ablasyona eklemek kullanıcının P10 listesinde yok; raporda not edilir.
+- **Gerekçe:** Danışmanın "ön işlemeyi doğrula" isteğinin, mevcut testlerin (K-023, K-024, K-025, K-002) karşılamadığı iki maddesi bunlardır (zaman sırası, dolgu belirsizliği).
+- **Etkisi:** İlk koşu (2026-10-17):
+  - Zaman sırası testi geçti.
+  - ROAD'da DLC < 8 çerçeve yok.
+  - Car-Hacking'de çerçevelerin %1.2–1.8'i DLC < 8 ve hepsi normal çerçeve (enjekte çerçevelerin hepsi DLC 8).
+  - Train normal çerçevelerinde DLC < 8 alan 4 ID var. DLC'si değişen tek ID 0x105: 4 çerçeve, DLC 6 ve 8; Fuzzy dosyasının tanı yanıtı kimliklerinden (K-026).
+  - Normalizasyon kökeni beklenenle aynı.
+
+## K-073 — Genişletilmiş öznitelik grupları G1–G4
+
+- **Faz / tarih:** P10 · 2026-10-17
+- **Durum:** Geçerli (plan kullanıcı tarafından onaylandı; hiçbir model eğitilmeden)
+- **Karar** (`configs/features_ext.yaml`, `src/data/features_ext.py`). Bütün sütunlar [0, 1] aralığında, segment içinde ve **nedensel** (yalnızca o çerçeve ve öncekiler). Bir ID'nin "önceki çerçevesi", aynı segmentteki aynı ID'li son çerçevedir.
+  - **G1 `bit_flips`:** 64 bitlik yükün önceki aynı ID'li yükten Hamming uzaklığı / 64. Önceki çerçeve yoksa 0 (bu çerçeve zaten IAT = 1.0 ile işaretli).
+  - **G2 `dbyte_0..7`:** |bayt_i − önceki aynı ID'li çerçevenin bayt_i| / 255. Önceki çerçeve yoksa 0. İşaret bilgisi bilinçli olarak atılır (ızgara kayıpsız kalsın diye).
+  - **G3 `id_rate`:**
+    - r = (t − 1 s, t] aralığındaki aynı ID'li çerçeve sayısı / c_ref(ID); değer (clip(log2 r, −3, 3) + 3) / 6;
+    - segmentin ilk 1 saniyesinde 0.5 (nötr; pencere dolmamış);
+    - c_ref'i olmayan ID'de 1.0;
+    - c_ref(ID) = aynı sayımın şu çerçeveler üzerindeki medyanı: train, label 0, masquerade kaydı değil, kaydın enjekte çerçevelerine ±5 s'den uzak (K-022 ile aynı pay), segmentin ilk 1 saniyesi hariç.
+  - **G4 `id_share_w`, `id_entropy_w`:**
+    - pencere = segment içindeki son W = 100 çerçeve (model pencere boyu; segment başında daha kısa);
+    - pay = bu ID'nin sayısı / 100 (sabit payda);
+    - entropi = ham ID histogramının Shannon entropisi / log2(100).
+  - **Setler** (sıra önceden sabit, kümülatif):
+
+    | Set | Tanım | Öznitelik sayısı |
+    |---|---|---|
+    | S0 | mevcut 10 öznitelik | 10 |
+    | S1 | S0 + G1 | 11 |
+    | S2 | S1 + G2 | 19 |
+    | S3 | S2 + G3 | 20 |
+    | S4 | S3 + G4 | 22 |
+  - **INT8 tasarımı** (K-024/K-025 ilkesi): ızgara sütunları (`bit_flips` k/64, `dbyte` k/255, `id_share_w` k/100) asimetrik 1/255 girdi nicemleyicisinde her değeri ayrı bir seviyede tutar. `verify_input_quantization` bunu kalibrasyon pencerelerinde ve tam ızgarada denetler. `id_rate` ve `id_entropy_w`, IAT gibi sürekli sütunlardır ve kayıplı olabilir. `id_rate`'te bir ikiye katlanma ≈ 42 seviyeye karşılık gelir.
+  - **Önbellek:** 12 genişletilmiş sütun segment başına bir kez hesaplanır. Önbellek anahtarı, temel parametre özeti ile genişletme yapılandırmasının özetinden oluşur. S0'ın önbelleği ve veri özeti değişmez.
+- **Gerekçe:**
+  - Sıra: masquerade imzası yalnızca yükte (K-011). Önce yük alanı eklenir: bit düzeyi (1 sütun), bayt düzeyinden (8 sütun) önce gelir. Ardından fabrication imzasını taşıyan zamanlama/ID alanı gelir (G3, G4; ID bazındaki IAT ile kısmen örtüşür).
+  - Nedensellik ve segment içi hesap, bir özniteliğin gelecek çerçeveye ya da başka bir kümeye bakmasını önler.
+  - Tek uydurulan parametre (c_ref) yalnızca train normal trafiğinden gelir (CLAUDE.md kural 3).
+- **Etkisi:**
+  - `results/tables/normalization_params_ext.json`:
+    - Car-Hacking c_ref: 27 ID, 1.48 M çerçeve. Sözlükteki 11 ID'nin referansı yok; bunlar Fuzzy dosyasında görülen tanı/yanıt kimlikleri, K-026. Bu ID'lerde `id_rate` 1.0 alır.
+    - ROAD c_ref: 106 ID, 14.77 M çerçeve.
+  - Testler (`tests/test_features_ext.py`): elle hesap, kaba kuvvet, nedensellik, segment başında sıfırlanma, train dışını reddetme, INT8 ızgarası.
+
+## K-074 — Ablasyon tasarımı ve iki aşamalı yürütme
+
+- **Faz / tarih:** P10 · 2026-10-17
+- **Durum:** Geçerli (plan kullanıcı tarafından onaylandı; hiçbir model eğitilmeden)
+- **Karar:**
+  1. **Koşular:** {cnn1d, conv_ae} × {Car-Hacking, ROAD} × {S1, S2, S3, S4} × tohum {0, 1, 2} = 48 yeni koşu. S0 = mevcut koşular (K-071).
+  2. **Değişmeyenler:**
+     - ayrımlar ve pencereler;
+     - hiperparametreler (`configs/models.yaml`);
+     - erken durdurma (CNN val AP, K-034; conv-AE val kaybı, K-030);
+     - eşik kuralı (temiz val normallerinde FPR %1, K-035/K-038);
+     - değerlendirme tanımları (K-029, K-040).
+
+     Değişen tek şey modelin girdi (ve conv-AE'de çıktı) kanal sayısıdır. conv-AE'nin skoru, yeni kanallar dahil bütün kanalların MSE ortalamasıdır.
+  3. **Kapsam dışı:** XGBoost/RF yeni özniteliklerle eğitilmez (danışman isteği iki derin model). Genişletilmiş setlerde gecikme ölçülmez.
+  4. **İki aşamalı yürütme** (K-033 düzeni):
+     - `ext_ablation` aşaması yalnızca **val**'i değerlendirir.
+     - Seçim (K-075) yalnızca `metrics_val.csv` dosyalarından yapılır, `results/tables/ext_selection.json`'a yazılır ve commit'lenir.
+     - `ext_test` (aynı run_id'ler) ve `ext_quant` aşamaları, seçim dosyası commit'lenmemişse ya da commit'ten sonra değişmişse çalışmayı reddeder (`src/run_grid.py: check_selection_committed`).
+     - `analysis/ext_select.py`, yeni koşulardan herhangi birinde test çıktısı varsa çalışmayı reddeder.
+  5. **Raporlanan metrikler:** saldırı türü bazında kalibre recall, F1, ROC-AUC, AP, test FPR %1'deki TPR (betimleyici, K-040), saldırısız ve tür içi FPR; val ve test için. Ortalama ± std (3 tohum) ve S0'a göre tohum bazında farklar verilir. Toplam (havuz) metrikleri yalnızca ikincildir.
+  6. **Birincil karşıtlık** (her model için, seçilen set − S0):
+     - ROAD gizli türlerin ortalaması ve her tür;
+     - kalibre recall, F1 ve ROC-AUC için K-058 yöntemiyle %95 hiyerarşik bootstrap (tohum × pencere, hareketli blok; B = 10.000; `configs/ext_analysis.yaml`; `analysis/stats.py` yardımcıları). İki set farklı eğitilmiş modeller olduğundan tohum çekilişleri set başına bağımsızdır. Pencere ağırlıkları iki sette ortaktır (aynı test pencereleri);
+     - TPR@1% için yalnızca tohum bazında fark (ort ± std) verilir; bootstrap yok (betimleyici ölçü, K-040).
+
+     Hipotez testi yapılmaz; sonuçlar keşifseldir. Seçim S0 olursa karşıtlık tanımsızdır ve raporda böyle belirtilir.
+- **Gerekçe:**
+  - Danışman "aynı veri bölünmeleri üzerinde" yeniden eğitim istedi. Ablasyonun yalnızca öznitelik etkisini ölçmesi için diğer her şey sabit tutulur.
+  - İki aşamalı yürütme, "test setinde model seçimi" yasağını yapısal olarak uygular.
+- **Etkisi:** `configs/grid.yaml → ext_ablation, ext_test, ext_quant`. Kümülatif sıra, grupların tek tek katkısını ayırmaz (sırayla etkileşim karışır). Bu bir sınırlılık olarak yazılır.
+
+## K-075 — Seçim kuralı: model başına, yalnızca val
+
+- **Faz / tarih:** P10 · 2026-10-17
+- **Durum:** Geçerli (kullanıcı kararı: set model başına seçilir; hiçbir model eğitilmeden)
+- **Karar** (`configs/ext_analysis.yaml → selection`, `analysis/ext_select.py`). Her model için ayrı uygulanır:
+  1. **Kazanç G(S):** ROAD val'deki 4 gizli türün (correlated_signal, max_speedometer, reverse_light_off, reverse_light_on masquerade'leri; coolant masquerade'in val penceresi yok, K-019) 3 tohum ortalamalı val ROC-AUC ortalaması − S0'ınki.
+  2. **Car-Hacking kayıpsızlık şartı:** CH'nin 4 türünün her birinde, 3 tohum ortalaması olarak:
+     - val ROC-AUC(S) ≥ S0 − 0.005;
+     - val kalibre recall(S) ≥ S0 − 0.01.
+  3. Şartı sağlayan setler arasında G\* = max G.
+     - G\* < 0.01 ise ya da şartı sağlayan set yoksa **S0 korunur**.
+     - Değilse seçilen set, sırada (S1 → S4) G(S) ≥ G\* − 0.005 olan **ilk (en küçük) set**tir.
+  4. Bütün girdiler (sha256 ile) ve ara değerler `ext_selection.json`'a yazılır.
+- **Gerekçe:**
+  - "En çok artıran" ve "en küçük" koşulları çatışabilir. Tolerans (0.005 AUC), gürültü düzeyindeki farkla büyük set seçilmesini önler.
+  - En küçük kazanç sınırı (0.01 AUC), anlamsız bir artışla referansın terk edilmesini önler.
+  - AUC eşikten bağımsızdır; CH tavanda olduğu için recall şartı da eklendi.
+  - Sayılar sonuç görülmeden sabitlendi.
+- **Etkisi:**
+  - Seçim bir model için S0 ise `ext_quant` o modelde yeni koşu yapmaz (K-077).
+  - Seçimin test sonuçları, seçimin kendisi değil, raporlanan sonuçtur.
+  - Kural birim testlerle sınanıyor: `tests/test_ext_select.py`.
+
+## K-076 — conv-AE düşük recall teşhis protokolü
+
+- **Faz / tarih:** P10 · 2026-10-17
+- **Durum:** Geçerli (protokol, yeni koşulardan önce yazıldı). **Dürüstlük notu:** S0 değerleri P5/P6'da görülmüştü (ROAD conv-AE testte kalibre recall 0.055, saldırısız FPR 0.001, TPR@1% 0.246, AUC 0.882; CNN: AUC 0.892, TPR@1% 0.463). S0 için bu ayrıştırma önceden kayıtlı sayılmaz.
+- **Karar:** Betimleyici bir ayrıştırma yapılır; nedensellik iddiası ve hipotez testi yoktur (`analysis/ext_diagnosis.py`, `results/tables/ext_diag_*.csv`). ROAD'da, her set ve her tohum için:
+  - **(a) Eşik:**
+    - val kalibrasyon FPR'ı ile test saldırısız FPR'ı (aktarım);
+    - kalibre recall ile test FPR %1'deki TPR. "Eşik açığı" = TPR@1% − kalibre recall;
+    - val temiz normal ve test saldırısız normal skor kantilleri; val eşiğinin test normal dağılımındaki kantil konumu.
+  - **(b) Öznitelik:** conv-AE'de S0 → S4 boyunca test ROC-AUC ve TPR@1% değişimi.
+  - **(c) Mimari / paradigma:** aynı sette CNN − conv-AE farkı (ROC-AUC, TPR@1%). Bu fark denetimli ve denetimsiz öğrenme farkını da içerir; saf mimari etkisi olarak yorumlanmaz.
+  - **(d) Skor bileşimi** (yalnızca val): kanal başına yeniden oluşturma hatasının skordaki payı, temiz val normal ve val saldırı pencerelerinde. Soru: ID ya da IAT kanalının normal trafikteki hatası, yük kanallarındaki sapmayı bastırıyor mu?
+  - **Sunum:** her bileşen kendi ölçüsüyle verilir. "Toplam açığın şu kadarı eşikten" türünden bir paylaştırma yalnızca betimleyici olarak ve eşik açığı + sıralama açığı (TPR@1%'de CNN − conv-AE) biçiminde yazılır.
+- **Gerekçe:** Danışmanın sorusu (öznitelik mi, mimari mi, eşik mi?) üç bileşenin ayrı ölçülmesini gerektirir. TPR@1% test etiketlerini kullandığından yalnızca açıklayıcıdır (K-040); hiçbir seçimde kullanılmaz.
+
+## K-077 — Seçilen setle nicemleme ve eşik karşılaştırması
+
+- **Faz / tarih:** P10 · 2026-10-17
+- **Durum:** Geçerli (hiçbir model eğitilmeden)
+- **Karar:**
+  1. **`ext_quant`:** her model için `ext_selection.json`'daki set, × 2 veri seti × 3 tohum. Mevcut nicemleme hattı değişmeden kullanılır:
+     - Q0 / Q1 (fp16 benzetimi, K-043) / Q2 (INT8 QDQ, K-042/K-044);
+     - INT8 kalibrasyonu modelin kendi train seçiminden (kural 4);
+     - iki eşik kipi: `recalibrated` (K-036 a) ve `q0_threshold` = eski float32 eşiği (K-036 b).
+  2. **Rapor** (`results/tables/ext_quant.csv`), **test** kümesinde:
+     - saldırısız ve tür içi FPR;
+     - tür bazında recall;
+     - iki eşik kipinde, S0'ın aynı tablosunun yanında.
+
+     ΔRecall ve FPR kayması Q0 − Qk olarak verilir.
+  3. Seçim S0 ise o model için yeni koşu yapılmaz; S0'ın mevcut sonuçları (P5) raporlanır ve bu belirtilir.
+  4. Girdi nicemlemesi: ızgara sütunları kayıpsız olmalıdır (K-073); denetim başarısız olursa iş durur.
+- **Gerekçe:** Danışman, INT8'de eski ve yeniden kalibre eşikle FPR ile recall'un nasıl değiştiğini bağımsız test verisinde görmek istedi. Bu, K-036'nın iki kipinin seçilen sette tekrarıdır.
+- **Etkisi:** Genişletilmiş setlerde gecikme ölçülmez (K-074 madde 3). Benchmark girdileri ayrı dosyaya yazılır (`data/processed/bench/<veri seti>_<set>.npy`); S0'ın girdileri değişmez.

@@ -23,3 +23,32 @@ full:               # P5 (plan F4), K-053: the full grid. Seed-0 runs have the r
   evaluate_splits: [val, test]
   quantize: [cnn1d, conv_ae]      # Q0/Q1/Q2 + K-036 evaluation (src/quantize.py); xgb is not quantized (K-042)
   latency: reuse_seed0            # K-052: no per-seed latency; the seed-0 host measurements of P4 (K-049/K-050)
+
+# P10 (advisor extension, K-074 ... K-077): extended feature sets of configs/features_ext.yaml; s0 = the full-stage
+# runs above (reused, never retrained). Job mode like `full` (subprocess per run, resumable). Only cnn1d and conv_ae.
+ext_ablation:       # step 1: train s1..s4, evaluate VALIDATION only (the feature-set choice must not see test, K-075)
+  jobs: true
+  models: [cnn1d, conv_ae]
+  datasets: [car_hacking, road]
+  seeds: [0, 1, 2]
+  feature_sets: [s1, s2, s3, s4]
+  evaluate_splits: [val]
+
+ext_test:           # step 2: same run ids + test; refused until results/tables/ext_selection.json is committed
+  jobs: true
+  requires_selection: true
+  models: [cnn1d, conv_ae]
+  datasets: [car_hacking, road]
+  seeds: [0, 1, 2]
+  feature_sets: [s1, s2, s3, s4]
+  evaluate_splits: [val, test]
+
+ext_quant:          # step 3: Q0/Q1/Q2 + K-036 evaluation of the set selected per model (K-077); s0 selected = nothing new
+  jobs: true
+  requires_selection: true
+  models: [cnn1d, conv_ae]
+  datasets: [car_hacking, road]
+  seeds: [0, 1, 2]
+  feature_sets: from_selection
+  evaluate_splits: [val, test]
+  quantize: [cnn1d, conv_ae]

@@ -8,8 +8,12 @@ Artifacts: run_config.json, history.csv, training_curve.png, model weights (git-
 (decision rule; autoencoder threshold fitted on training scores only), checkpoint.pt (deep models,
 every epoch, so an interrupted run resumes) and a DONE marker.
 
+Feature sets (P10, K-073): ``--feature-set s0`` (default) is the 10-feature reference and leaves the run id as it
+was; ``s1`` ... ``s4`` (deep models only) change the data hash and therefore the run id. The set, the number of
+input channels and the feature names are written to run_config.json.
+
 Usage:
-    python -m src.train --model cnn1d --dataset road --seed 0 [--threads 4] [--smoke --out DIR]
+    python -m src.train --model cnn1d --dataset road --seed 0 [--feature-set s0] [--threads 4] [--smoke --out DIR]
 """
 
 from __future__ import annotations
@@ -73,12 +77,11 @@ def resolve_overrides(ref: str | dict | None, mcfg: dict) -> dict:
     return dict(node)
 
 
-def planned_run_id(model: str, dataset: str, seed: int, overrides: dict | None = None) -> str:
+def planned_run_id(model: str, dataset: str, seed: int, overrides: dict | None = None,
+                   feature_set: str = "s0") -> str:
     """Run id that ``train`` will use for this configuration (without building the feature store)."""
-    from src.data import features as F
-
     hp = model_config(model, load_models_config(), overrides)
-    return run_id(model, dataset, seed, hp, F.load_params()["config_sha256_16"], S.load_config()["windows"]["size"])
+    return run_id(model, dataset, seed, hp, D.feature_set_hash(feature_set), S.load_config()["windows"]["size"])
 
 
 def run_id(model: str, dataset: str, seed: int, hparams: dict, data_hash: str, window_size: int) -> str:
@@ -119,6 +122,9 @@ GENERATED_OUTPUTS = (
     # analysis/figures.py (P7)
     "results/figures/fig*",
     "results/tables/table_*",
+    # P10 extension (analysis/ext_*.py); ext_selection.json is checked separately before test evaluation (K-074)
+    "results/tables/ext_*",
+    "results/figures/ext_*",
 )
 
 
@@ -191,14 +197,19 @@ def _subsample(w, n: int, seed: int):
 # --------------------------------------------------------------------------------------------
 
 
-def build_deep(model: str, hp: dict):
+def build_deep(model: str, hp: dict, n_features: int = 10):
     if model == "cnn1d":
         from src.models import cnn1d as M
     elif model == "lstm_ae":
         from src.models import lstm_autoencoder as M
     else:
         from src.models import conv_autoencoder as M
-    return M.build(hp)
+    return M.build(hp, n_features)
+
+
+def run_n_features(rc: dict) -> int:
+    """Input channels of a run (run_config.json of runs before P10 has no such field: 10 features)."""
+    return int(rc.get("n_features", 10))
 
 
 class GpuWindows:
@@ -260,7 +271,7 @@ def train_deep(model: str, hp: dict, seed: int, store: D.FeatureStore, tr, va, s
         def loss_fn(x, y, net):
             return bce(net(x), y)
 
-    net = build_deep(model, hp).to(device)
+    net = build_deep(model, hp, store.frames.shape[1]).to(device)
     opt = torch.optim.Adam(net.parameters(), lr=hp["lr"], weight_decay=hp["weight_decay"])
     gen = torch.Generator().manual_seed(seed)
     state = {"epoch": 0, "best_val": float("inf"), "best_epoch": -1, "bad": 0, "history": [], "best_state": None}
@@ -395,10 +406,13 @@ def score_windows(run_dir: Path, store: D.FeatureStore, w, device: str | None = 
     rc = json.loads((run_dir / "run_config.json").read_text(encoding="utf-8"))
     model, hp, size = rc["model"], rc["hparams"], rc["window_size"]
     device = device or rc["environment"]["device"]
+    if store.params_hash != rc["data_hash"]:
+        raise RuntimeError(f"{rc['run_id']}: feature store {store.feature_set} ({store.params_hash}) does not match "
+                           f"the run's data hash {rc['data_hash']}")
     if model in DEEP:
         import torch
 
-        net = build_deep(model, hp)
+        net = build_deep(model, hp, run_n_features(rc))
         net.load_state_dict(torch.load(run_dir / "model.pt", map_location="cpu", weights_only=True))
         net.to(device)
         return score_deep(net, model, GpuWindows(store, size, device), store.global_starts(w), hp["eval_batch_size"])
@@ -449,8 +463,10 @@ def plot_history(history: list[dict], path: Path, title: str) -> None:
 
 def train(model: str, dataset: str, seed: int, threads: int | None = None, device: str | None = None,
           out_root: Path = RAW_DIR, smoke: bool = False, allow_dirty: bool = False, force: bool = False,
-          overrides: dict | None = None, log=print) -> Path:
+          overrides: dict | None = None, log=print, feature_set: str = "s0") -> Path:
     mcfg = load_models_config()
+    if feature_set != "s0" and model not in DEEP:
+        raise ValueError(f"feature set {feature_set!r}: the extended features are used by the deep models only (K-074)")
     threads = threads or mcfg["runtime"]["threads"]
     device = device or mcfg["runtime"]["device"]
     set_threads(threads)
@@ -470,7 +486,7 @@ def train(model: str, dataset: str, seed: int, threads: int | None = None, devic
     if smoke:
         hp.update({k: v for k, v in (("max_epochs", SMOKE["max_epochs"]), ("n_estimators", SMOKE["n_estimators"]))
                    if k in hp})
-    store = D.FeatureStore.build(dataset, ("train", "val"), cfg, log=log)
+    store = D.FeatureStore.build(dataset, ("train", "val"), cfg, log=log, feature_set=feature_set)
     rid = run_id(model, dataset, seed, hp, store.params_hash, size) + ("_smoke" if smoke else "")
     out = out_root / rid
     if (out / "DONE").exists() and not force:
@@ -486,6 +502,8 @@ def train(model: str, dataset: str, seed: int, threads: int | None = None, devic
     rc = {"run_id": rid, "model": model, "dataset": dataset, "seed": seed, "smoke": smoke, "hparams": hp,
           "overrides": overrides or {}, "decision_config": mcfg["decision"],
           "window_size": size, "data_hash": store.params_hash,
+          **({} if feature_set == "s0" else {"feature_set": feature_set, "n_features": len(store.feature_names),
+                                             "feature_names": list(store.feature_names)}),
           "train_windows": {**D.describe(tr), "digest": D.selection_digest(tr)},
           "val_windows": {**D.describe(va), "digest": D.selection_digest(va)},
           "git": git, "environment": environment(device, threads),
@@ -543,9 +561,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--allow-dirty", action="store_true")
     ap.add_argument("--force", action="store_true", help="retrain even if the run is marked DONE")
     ap.add_argument("--overrides", help="dotted path into configs/models.yaml, e.g. ae_feasibility.retry")
+    ap.add_argument("--feature-set", default="s0", help="s0 (10 reference features) or s1..s4 (configs/features_ext.yaml)")
     a = ap.parse_args(argv)
     ov = resolve_overrides(a.overrides, load_models_config())
-    train(a.model, a.dataset, a.seed, a.threads, a.device, a.out, a.smoke, a.allow_dirty, a.force, overrides=ov)
+    train(a.model, a.dataset, a.seed, a.threads, a.device, a.out, a.smoke, a.allow_dirty, a.force, overrides=ov,
+          feature_set=a.feature_set)
     return 0
 
 
