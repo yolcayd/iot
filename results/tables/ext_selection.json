@@ -1,0 +1,802 @@
+{
+  "created_utc": "2026-10-17T13:44:41+00:00",
+  "decision": "K-075",
+  "rule": {
+    "reference_set": "s0",
+    "candidate_order": [
+      "s1",
+      "s2",
+      "s3",
+      "s4"
+    ],
+    "metric": "roc_auc",
+    "road_target_group": "stealthy",
+    "expected_road_targets": [
+      "correlated_signal_masquerade",
+      "max_speedometer_masquerade",
+      "reverse_light_off_masquerade",
+      "reverse_light_on_masquerade"
+    ],
+    "min_gain": 0.01,
+    "near_best_tolerance": 0.005,
+    "ch_guard": {
+      "roc_auc": 0.005,
+      "recall": 0.01
+    }
+  },
+  "road_targets": [
+    "correlated_signal_masquerade",
+    "max_speedometer_masquerade",
+    "reverse_light_off_masquerade",
+    "reverse_light_on_masquerade"
+  ],
+  "git": {
+    "commit": "c23cb02293aa55a8ab169543dd8c26ef930866d5",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json",
+      "results/tables/grid_*.csv",
+      "results/tables/all_results.csv",
+      "results/tables/delta_f1.csv",
+      "results/tables/missing_cells.csv",
+      "results/tables/analysis_manifest.json",
+      "results/tables/stats.csv",
+      "results/tables/as1_pairs.csv",
+      "results/tables/per_type_delta.csv",
+      "results/tables/pareto.csv",
+      "results/tables/calibration_shift.csv",
+      "results/tables/decision_churn.csv",
+      "results/figures/fig*",
+      "results/tables/table_*",
+      "results/tables/ext_*",
+      "results/figures/ext_*"
+    ]
+  },
+  "selected": {
+    "cnn1d": {
+      "feature_set": "s3",
+      "reason": "smallest admissible set with G >= G* - 0.005 (G* = 0.0222)",
+      "road_target_mean_reference": 0.9487732699112839,
+      "g_star": 0.022228920940494334,
+      "candidates": [
+        {
+          "feature_set": "s1",
+          "road_target_mean": 0.9397820976370213,
+          "gain": -0.008991172274262604,
+          "ch_guard_passed": true,
+          "ch_delta_roc_auc": {
+            "dos": -1.5395264163498013e-07,
+            "fuzzy": 5.059845794574969e-06,
+            "gear_spoofing": 2.8562600352888268e-05,
+            "rpm_spoofing": -4.266568677024907e-06
+          },
+          "ch_delta_recall": {
+            "dos": 0.0,
+            "fuzzy": 0.0,
+            "gear_spoofing": 0.0002656748140276166,
+            "rpm_spoofing": -7.682261657837586e-05
+          }
+        },
+        {
+          "feature_set": "s2",
+          "road_target_mean": 0.9441406157210961,
+          "gain": -0.004632654190187768,
+          "ch_guard_passed": true,
+          "ch_delta_roc_auc": {
+            "dos": 1.1289860391006101e-06,
+            "fuzzy": 4.310239010263395e-06,
+            "gear_spoofing": 6.820919488115251e-07,
+            "rpm_spoofing": 1.926051002687501e-06
+          },
+          "ch_delta_recall": {
+            "dos": 0.0,
+            "fuzzy": 0.0,
+            "gear_spoofing": 0.00017711654268504073,
+            "rpm_spoofing": 0.0
+          }
+        },
+        {
+          "feature_set": "s3",
+          "road_target_mean": 0.9710021908517782,
+          "gain": 0.022228920940494334,
+          "ch_guard_passed": true,
+          "ch_delta_roc_auc": {
+            "dos": 4.10540377870916e-06,
+            "fuzzy": 5.1847802585713865e-06,
+            "gear_spoofing": 4.189181385072516e-05,
+            "rpm_spoofing": 1.706627470676736e-06
+          },
+          "ch_delta_recall": {
+            "dos": 0.00015903307888043283,
+            "fuzzy": 0.0,
+            "gear_spoofing": 0.0003542330853701925,
+            "rpm_spoofing": 0.0
+          }
+        },
+        {
+          "feature_set": "s4",
+          "road_target_mean": 0.9675039867080784,
+          "gain": 0.0187307167967945,
+          "ch_guard_passed": true,
+          "ch_delta_roc_auc": {
+            "dos": 4.15672132592082e-06,
+            "fuzzy": 5.434649186786267e-06,
+            "gear_spoofing": 5.7579928671391833e-05,
+            "rpm_spoofing": 1.8772902178332274e-06
+          },
+          "ch_delta_recall": {
+            "dos": 0.00015903307888043283,
+            "fuzzy": 0.0,
+            "gear_spoofing": 0.00044279135671265735,
+            "rpm_spoofing": 0.0
+          }
+        }
+      ],
+      "ch_reference": {
+        "dos": {
+          "roc_auc": 0.9999958432786741,
+          "recall": 0.9998409669211196
+        },
+        "fuzzy": {
+          "roc_auc": 0.9999945653508132,
+          "recall": 1.0
+        },
+        "gear_spoofing": {
+          "roc_auc": 0.9999400895905038,
+          "recall": 0.9995572086432873
+        },
+        "rpm_spoofing": {
+          "roc_auc": 0.9999979520470351,
+          "recall": 1.0
+        }
+      }
+    },
+    "conv_ae": {
+      "feature_set": "s0",
+      "reason": "G* = -0.0004 < min_gain 0.01: no meaningful validation gain, reference kept",
+      "road_target_mean_reference": 0.8186127134308991,
+      "g_star": -0.00043168512287106164,
+      "candidates": [
+        {
+          "feature_set": "s1",
+          "road_target_mean": 0.8181810283080281,
+          "gain": -0.00043168512287106164,
+          "ch_guard_passed": true,
+          "ch_delta_roc_auc": {
+            "dos": 7.220378895933521e-05,
+            "fuzzy": 0.00025599071686965846,
+            "gear_spoofing": 0.0005787265979935174,
+            "rpm_spoofing": 3.549785139267403e-05
+          },
+          "ch_delta_recall": {
+            "dos": 0.0023854961832061594,
+            "fuzzy": 0.0009673050880247835,
+            "gear_spoofing": 0.08032235210768679,
+            "rpm_spoofing": 0.000998694015518109
+          }
+        },
+        {
+          "feature_set": "s2",
+          "road_target_mean": 0.7904049193463342,
+          "gain": -0.028207794084564974,
+          "ch_guard_passed": false,
+          "ch_delta_roc_auc": {
+            "dos": -0.0009835007927532224,
+            "fuzzy": 0.0001375528449359953,
+            "gear_spoofing": -0.0004634814791572017,
+            "rpm_spoofing": 1.7870827658361677e-05
+          },
+          "ch_delta_recall": {
+            "dos": -0.017334605597964403,
+            "fuzzy": 0.0011607661056298735,
+            "gear_spoofing": -0.40347148423662765,
+            "rpm_spoofing": -0.0013828070984097662
+          }
+        },
+        {
+          "feature_set": "s3",
+          "road_target_mean": 0.8069275873981098,
+          "gain": -0.011685126032789372,
+          "ch_guard_passed": true,
+          "ch_delta_roc_auc": {
+            "dos": -0.0043918070098947215,
+            "fuzzy": -0.0002606132920398574,
+            "gear_spoofing": -0.003186136753978941,
+            "rpm_spoofing": 6.0853459530219034e-05
+          },
+          "ch_delta_recall": {
+            "dos": 0.010655216284987334,
+            "fuzzy": 0.0017411491584446992,
+            "gear_spoofing": 0.05446333687566429,
+            "rpm_spoofing": 0.0003841130828915462
+          }
+        },
+        {
+          "feature_set": "s4",
+          "road_target_mean": 0.7837582890336121,
+          "gain": -0.03485442439728703,
+          "ch_guard_passed": true,
+          "ch_delta_roc_auc": {
+            "dos": -0.0012472216679928483,
+            "fuzzy": -0.00020089461821670707,
+            "gear_spoofing": -0.0004623162387449309,
+            "rpm_spoofing": 2.199111398071274e-05
+          },
+          "ch_delta_recall": {
+            "dos": 0.011291348600509066,
+            "fuzzy": 0.0017411491584446992,
+            "gear_spoofing": 0.0819164009918526,
+            "rpm_spoofing": 0.0006914035492049386
+          }
+        }
+      ],
+      "ch_reference": {
+        "dos": {
+          "roc_auc": 0.999332512663118,
+          "recall": 0.9782124681933843
+        },
+        "fuzzy": {
+          "roc_auc": 0.9994336720743924,
+          "recall": 0.9953569355774811
+        },
+        "gear_spoofing": {
+          "roc_auc": 0.9982264472513286,
+          "recall": 0.9012575274530641
+        },
+        "rpm_spoofing": {
+          "roc_auc": 0.9998413567863932,
+          "recall": 0.9952369977721441
+        }
+      }
+    }
+  },
+  "inputs": [
+    {
+      "run_id": "cnn1d_car_hacking_s0_47c82757",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s0",
+      "file": "results/raw/cnn1d_car_hacking_s0_47c82757/metrics_val.csv",
+      "sha256": "9e30bb51fb6570cf22f93dcf12303f560a6d533a19f09dad07ee9458208c4f8e"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s1_8a7ac6d1",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s0",
+      "file": "results/raw/cnn1d_car_hacking_s1_8a7ac6d1/metrics_val.csv",
+      "sha256": "0325c98e9daade5a652829a516d2678df8056bd540ca047535bdf32d50588e15"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s2_e80ae939",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s0",
+      "file": "results/raw/cnn1d_car_hacking_s2_e80ae939/metrics_val.csv",
+      "sha256": "44e79165e9253ddcc1a220b67cdff9bab139308180ae3ee4f9020e1439c94820"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s0_580cfd1d",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s0",
+      "file": "results/raw/conv_ae_car_hacking_s0_580cfd1d/metrics_val.csv",
+      "sha256": "f5961044407d02ba0479230fd3a1b38dbe7069f895a1a2717946393deef8fcc8"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s1_4dcc2377",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s0",
+      "file": "results/raw/conv_ae_car_hacking_s1_4dcc2377/metrics_val.csv",
+      "sha256": "cf97fdd4c7feb69fe62a1d854199c542a75a341ff3e71a0f335fe71107bcbba1"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s2_704dd9cc",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s0",
+      "file": "results/raw/conv_ae_car_hacking_s2_704dd9cc/metrics_val.csv",
+      "sha256": "4af2bba300f87a860d0d6e9b07cfd267db9b35f260b333c12df333bc32c466e6"
+    },
+    {
+      "run_id": "cnn1d_road_s0_6f18f03c",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s0",
+      "file": "results/raw/cnn1d_road_s0_6f18f03c/metrics_val.csv",
+      "sha256": "9548e90bc01bcfd5740eea95c58711df8a88ada4007252eb5b9f91aea1db816a"
+    },
+    {
+      "run_id": "cnn1d_road_s1_6e720ed8",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s0",
+      "file": "results/raw/cnn1d_road_s1_6e720ed8/metrics_val.csv",
+      "sha256": "9eed9274b5d47fc7581834be25164d6315fcf77dc367f3389fb15c27f4451695"
+    },
+    {
+      "run_id": "cnn1d_road_s2_644d9c19",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s0",
+      "file": "results/raw/cnn1d_road_s2_644d9c19/metrics_val.csv",
+      "sha256": "331559a93b46f16c8bd672aba13e4db1e2164c4f520ed2572138f5058ea1bd83"
+    },
+    {
+      "run_id": "conv_ae_road_s0_6dae8bb6",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s0",
+      "file": "results/raw/conv_ae_road_s0_6dae8bb6/metrics_val.csv",
+      "sha256": "720c8f32462309d755d71271b11b75019fd29a13da5e65c23be3406ec5be3c71"
+    },
+    {
+      "run_id": "conv_ae_road_s1_eca7a142",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s0",
+      "file": "results/raw/conv_ae_road_s1_eca7a142/metrics_val.csv",
+      "sha256": "59717864abe7dee49f16e9da1e3c43d99026bd32fa50cb89711015f31ec9052e"
+    },
+    {
+      "run_id": "conv_ae_road_s2_806bf4c3",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s0",
+      "file": "results/raw/conv_ae_road_s2_806bf4c3/metrics_val.csv",
+      "sha256": "bf7abd7ac4868b1348311c28ff51a498ab997c06ce94d096b9cca18ed8fecad9"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s0_3023d6ea",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s1",
+      "file": "results/raw/cnn1d_car_hacking_s0_3023d6ea/metrics_val.csv",
+      "sha256": "5b07633c8a465c351b92336b4e066735d4694c0e26461d3bf481b0641a7e12a2"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s1_474c71bf",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s1",
+      "file": "results/raw/cnn1d_car_hacking_s1_474c71bf/metrics_val.csv",
+      "sha256": "0906b74bca0955cb6bfe327bb979e31a2d17abc3cdbbb0d534beb2958bbc786f"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s2_386ff39e",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s1",
+      "file": "results/raw/cnn1d_car_hacking_s2_386ff39e/metrics_val.csv",
+      "sha256": "d92ec763f46088f424155f1a43a9b40bb245592d0b595ede0f2d86599355e825"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s0_aa00a4d4",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s2",
+      "file": "results/raw/cnn1d_car_hacking_s0_aa00a4d4/metrics_val.csv",
+      "sha256": "197f9f18622a09309e737596859fac5595cac4f6378c6dc28c07889a23a71c86"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s1_4d90adae",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s2",
+      "file": "results/raw/cnn1d_car_hacking_s1_4d90adae/metrics_val.csv",
+      "sha256": "64a6bfc0f9131b19f28af393aee3f634341a1db667134a6febb11bace0a6f97e"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s2_e4b422f1",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s2",
+      "file": "results/raw/cnn1d_car_hacking_s2_e4b422f1/metrics_val.csv",
+      "sha256": "c7013b5c3b59f517215e9f44b08841c83a1ad96e596f14576eeb972d853ee4e7"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s0_2a65e219",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s3",
+      "file": "results/raw/cnn1d_car_hacking_s0_2a65e219/metrics_val.csv",
+      "sha256": "f1d8c8f1fbb2e3eeed71ee3cdaeb75ecb8779a50e3526e625590786fa12cdd47"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s1_03ff853c",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s3",
+      "file": "results/raw/cnn1d_car_hacking_s1_03ff853c/metrics_val.csv",
+      "sha256": "fcc790121855bb0df7b9ac3f01df9d1e07fc1d0c4d8aeffc05ab2083d5166e41"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s2_105114ce",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s3",
+      "file": "results/raw/cnn1d_car_hacking_s2_105114ce/metrics_val.csv",
+      "sha256": "b10a875109b1c76de810b71a1e8fbe763ee82c91f0a31594e4c2b574a35afb72"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s0_6607a39a",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s4",
+      "file": "results/raw/cnn1d_car_hacking_s0_6607a39a/metrics_val.csv",
+      "sha256": "6231fdf42c6c9b8bc30274257ee0e0e3260f2b7d4be5228efe655e38fc066cfb"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s1_2b8adba4",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s4",
+      "file": "results/raw/cnn1d_car_hacking_s1_2b8adba4/metrics_val.csv",
+      "sha256": "35da1cf72efa3f0fe72f436f2231062c019b0df73d1a28baf239f496c64a9624"
+    },
+    {
+      "run_id": "cnn1d_car_hacking_s2_68b72642",
+      "model": "cnn1d",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s4",
+      "file": "results/raw/cnn1d_car_hacking_s2_68b72642/metrics_val.csv",
+      "sha256": "d1d9dfe28e41f6ab199b23dcff39fd1e1f127c8d55948c5eebbe14cb57637368"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s0_1893cf57",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s1",
+      "file": "results/raw/conv_ae_car_hacking_s0_1893cf57/metrics_val.csv",
+      "sha256": "b6e6fa984982b4dd6939ad30b3fe4c7bf507240d9237fbf146aa2aa3ba03632f"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s1_e22c888f",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s1",
+      "file": "results/raw/conv_ae_car_hacking_s1_e22c888f/metrics_val.csv",
+      "sha256": "ca4978e030bf877f63b9b156c1562e0a696420885c00ed3299bf22b5f8736216"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s2_9576f484",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s1",
+      "file": "results/raw/conv_ae_car_hacking_s2_9576f484/metrics_val.csv",
+      "sha256": "68b2768db8ae4202c2c9d55bdf827cf1b56a976f9a0b2b17adc96031339d6652"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s0_e3fcc65a",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s2",
+      "file": "results/raw/conv_ae_car_hacking_s0_e3fcc65a/metrics_val.csv",
+      "sha256": "5ce2410ac37c0ed90276d727133177e5c87fd8197ea55cffc18a71052a3f1d8e"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s1_3c04ae5b",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s2",
+      "file": "results/raw/conv_ae_car_hacking_s1_3c04ae5b/metrics_val.csv",
+      "sha256": "11b0e0ce7dd95d7ca7fd5d26301ea491aa7e1f0bd1c2105666d866a4d395e07b"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s2_38232f81",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s2",
+      "file": "results/raw/conv_ae_car_hacking_s2_38232f81/metrics_val.csv",
+      "sha256": "1ed17305a959494db26d78457c26ea2cf4294256c8bb0127ff779197eaf47c16"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s0_16deb505",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s3",
+      "file": "results/raw/conv_ae_car_hacking_s0_16deb505/metrics_val.csv",
+      "sha256": "f6d81624613c06bfb0daadb584e35abfadc43186ff4648e5cc1110877a181b2f"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s1_2dc7c377",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s3",
+      "file": "results/raw/conv_ae_car_hacking_s1_2dc7c377/metrics_val.csv",
+      "sha256": "62bfd69542776a8b3770bd1d35d390296f2fdef92625e6c06260cd17746af338"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s2_0bf524a4",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s3",
+      "file": "results/raw/conv_ae_car_hacking_s2_0bf524a4/metrics_val.csv",
+      "sha256": "4fcbc4e13717717f8c341664612b89efd1326b5aff10c193b005df126c4ee8ea"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s0_bb4fe29d",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 0,
+      "feature_set": "s4",
+      "file": "results/raw/conv_ae_car_hacking_s0_bb4fe29d/metrics_val.csv",
+      "sha256": "ad660669b21aeae33a56fdbacfc0dcadecc158efaff2dfbcafeaafa4cd15ec41"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s1_ccb0985d",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 1,
+      "feature_set": "s4",
+      "file": "results/raw/conv_ae_car_hacking_s1_ccb0985d/metrics_val.csv",
+      "sha256": "6dfd57be0c0fcb090b7886e6a4dc68047aeb0e1ce8e3cf9046eed45c709f8ab3"
+    },
+    {
+      "run_id": "conv_ae_car_hacking_s2_fc9fcee5",
+      "model": "conv_ae",
+      "dataset": "car_hacking",
+      "seed": 2,
+      "feature_set": "s4",
+      "file": "results/raw/conv_ae_car_hacking_s2_fc9fcee5/metrics_val.csv",
+      "sha256": "feb788006ebf6470999d7bb802771c73a4d0e38b84f9dcb65a8e2bee6ff1182d"
+    },
+    {
+      "run_id": "cnn1d_road_s0_03c72a76",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s1",
+      "file": "results/raw/cnn1d_road_s0_03c72a76/metrics_val.csv",
+      "sha256": "0e5574f29eb611b4f9008c91a358681965a8c89057367ac41ee2cca2298e0566"
+    },
+    {
+      "run_id": "cnn1d_road_s1_c7dcdaa8",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s1",
+      "file": "results/raw/cnn1d_road_s1_c7dcdaa8/metrics_val.csv",
+      "sha256": "6fff450cdb341c719c807452d8e79935c7c44cc575a90b688158b40edf5961b9"
+    },
+    {
+      "run_id": "cnn1d_road_s2_07ae4f4f",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s1",
+      "file": "results/raw/cnn1d_road_s2_07ae4f4f/metrics_val.csv",
+      "sha256": "a128cfa8a6d25efa1601511e2bfd5c4c2a9088ebf8fff32d6670023ac29ac49e"
+    },
+    {
+      "run_id": "cnn1d_road_s0_45852eaa",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s2",
+      "file": "results/raw/cnn1d_road_s0_45852eaa/metrics_val.csv",
+      "sha256": "bdcb5df7a51814b28f50830ded905ff5abf8132c5ffdbb3365cc713afbcedf57"
+    },
+    {
+      "run_id": "cnn1d_road_s1_8a1be91d",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s2",
+      "file": "results/raw/cnn1d_road_s1_8a1be91d/metrics_val.csv",
+      "sha256": "3d8adcc7ebcfd47f6c351cd9d81963ade0633013125b8e652b46d3b1c7296de7"
+    },
+    {
+      "run_id": "cnn1d_road_s2_d099e35d",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s2",
+      "file": "results/raw/cnn1d_road_s2_d099e35d/metrics_val.csv",
+      "sha256": "baa3fbc87718469e78ca0925c18ef8668a07596d0d0990cfd33c498e1ce1f722"
+    },
+    {
+      "run_id": "cnn1d_road_s0_49ec11fa",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s3",
+      "file": "results/raw/cnn1d_road_s0_49ec11fa/metrics_val.csv",
+      "sha256": "5096f086b63f792254f1ecb8a085fcf9a2d3cd17c00ce07f9fbf72252f7df300"
+    },
+    {
+      "run_id": "cnn1d_road_s1_a9a5d0a1",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s3",
+      "file": "results/raw/cnn1d_road_s1_a9a5d0a1/metrics_val.csv",
+      "sha256": "97e71f6556fab54b08a187d4c6b9d27e6a51be0e39fa1902d11679305cc6aeec"
+    },
+    {
+      "run_id": "cnn1d_road_s2_735768b9",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s3",
+      "file": "results/raw/cnn1d_road_s2_735768b9/metrics_val.csv",
+      "sha256": "4484c086513c9b301bcdd0e56a8453b7d23a427277c5bf7c83fa733c89a80951"
+    },
+    {
+      "run_id": "cnn1d_road_s0_e68b5463",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s4",
+      "file": "results/raw/cnn1d_road_s0_e68b5463/metrics_val.csv",
+      "sha256": "f95394c1c0ecaabf8b0928a083ea269e8bb0aa0852d4f2fdfab883a621ff190d"
+    },
+    {
+      "run_id": "cnn1d_road_s1_fadbaf2b",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s4",
+      "file": "results/raw/cnn1d_road_s1_fadbaf2b/metrics_val.csv",
+      "sha256": "d81e221ea23adc44aabfd66b353ffeb46e871974b4d0f4e529cd7d9619bf12cf"
+    },
+    {
+      "run_id": "cnn1d_road_s2_ec18096f",
+      "model": "cnn1d",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s4",
+      "file": "results/raw/cnn1d_road_s2_ec18096f/metrics_val.csv",
+      "sha256": "c84c55c98e4fbedbdc9b0e8609b7eafe39a749059774dcc06798f30ba9f7610f"
+    },
+    {
+      "run_id": "conv_ae_road_s0_a3cd24ed",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s1",
+      "file": "results/raw/conv_ae_road_s0_a3cd24ed/metrics_val.csv",
+      "sha256": "3c4b95570a6d574e7cc92fce3bceda09ba791eec23050d796c7e6a1de6996128"
+    },
+    {
+      "run_id": "conv_ae_road_s1_63c0c7d3",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s1",
+      "file": "results/raw/conv_ae_road_s1_63c0c7d3/metrics_val.csv",
+      "sha256": "1e8d218426e78984284ec2d0856643eebb62f7e5f4e637fe0ad3db7a673f0d23"
+    },
+    {
+      "run_id": "conv_ae_road_s2_c81d5890",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s1",
+      "file": "results/raw/conv_ae_road_s2_c81d5890/metrics_val.csv",
+      "sha256": "81da3ac529ea34e64f6d8598396919e166f146fc360e858d2958a799fd932dee"
+    },
+    {
+      "run_id": "conv_ae_road_s0_87b218e7",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s2",
+      "file": "results/raw/conv_ae_road_s0_87b218e7/metrics_val.csv",
+      "sha256": "fb14e64e18d9646b02743472282fdd983e301c72ba93aa7fedc771d6e8049fb9"
+    },
+    {
+      "run_id": "conv_ae_road_s1_9f46f21a",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s2",
+      "file": "results/raw/conv_ae_road_s1_9f46f21a/metrics_val.csv",
+      "sha256": "5aa3d4e1368992e3cac9dc5d8e4274337afbe4a6330eeef91828b5a8b5efabc5"
+    },
+    {
+      "run_id": "conv_ae_road_s2_13bee427",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s2",
+      "file": "results/raw/conv_ae_road_s2_13bee427/metrics_val.csv",
+      "sha256": "135211f8ff4bf306ea803a2a527abcc3d6ac1a7c332f54081e417856c8a4ed74"
+    },
+    {
+      "run_id": "conv_ae_road_s0_e2bd952a",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s3",
+      "file": "results/raw/conv_ae_road_s0_e2bd952a/metrics_val.csv",
+      "sha256": "b31dfb4634e203c63e83bf51c943850437c2df0694ebb85ebcf4b464ef9ec827"
+    },
+    {
+      "run_id": "conv_ae_road_s1_eebcb25b",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s3",
+      "file": "results/raw/conv_ae_road_s1_eebcb25b/metrics_val.csv",
+      "sha256": "61b65e757f29fa6bbc1248496840f98645bfb643b266c2c64ca6be28839a0840"
+    },
+    {
+      "run_id": "conv_ae_road_s2_57715c2b",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s3",
+      "file": "results/raw/conv_ae_road_s2_57715c2b/metrics_val.csv",
+      "sha256": "91fa8cdba215a5a084ba46b9347698f5b25add73ead584521ed4d619d3b3388b"
+    },
+    {
+      "run_id": "conv_ae_road_s0_fce3192f",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 0,
+      "feature_set": "s4",
+      "file": "results/raw/conv_ae_road_s0_fce3192f/metrics_val.csv",
+      "sha256": "32e36b3fd68b96332d7f6a5ddfeaa5ee087d7d827b03a844baa497094896bc6c"
+    },
+    {
+      "run_id": "conv_ae_road_s1_4ca28ca3",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 1,
+      "feature_set": "s4",
+      "file": "results/raw/conv_ae_road_s1_4ca28ca3/metrics_val.csv",
+      "sha256": "fe4cb18f2d11515413c673fb2dd89ab3563f25c5a4767b7a2d8051662e56e179"
+    },
+    {
+      "run_id": "conv_ae_road_s2_06bd6c05",
+      "model": "conv_ae",
+      "dataset": "road",
+      "seed": 2,
+      "feature_set": "s4",
+      "file": "results/raw/conv_ae_road_s2_06bd6c05/metrics_val.csv",
+      "sha256": "b2206a75e8da72baa9f926ef9a33db6f8939073493b0a5992e628c544b9bde4c"
+    }
+  ]
+}

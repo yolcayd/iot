@@ -1,0 +1,50 @@
+{
+  "run_id": "conv_ae_road_s1_4ca28ca3",
+  "stage": "ext_ablation",
+  "model": "conv_ae",
+  "dataset": "road",
+  "feature_set": "s4",
+  "seed": 1,
+  "steps_run": [
+    "train",
+    "evaluate"
+  ],
+  "step_s": {
+    "train": 289.4,
+    "evaluate": 2.8
+  },
+  "wall_s": 292.3,
+  "started_utc": "2026-10-17T10:08:27+00:00",
+  "finished_utc": "2026-10-17T10:13:19+00:00",
+  "threads": 4,
+  "git": {
+    "commit": "c23cb02293aa55a8ab169543dd8c26ef930866d5",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json",
+      "results/tables/grid_*.csv",
+      "results/tables/all_results.csv",
+      "results/tables/delta_f1.csv",
+      "results/tables/missing_cells.csv",
+      "results/tables/analysis_manifest.json",
+      "results/tables/stats.csv",
+      "results/tables/as1_pairs.csv",
+      "results/tables/per_type_delta.csv",
+      "results/tables/pareto.csv",
+      "results/tables/calibration_shift.csv",
+      "results/tables/decision_churn.csv",
+      "results/figures/fig*",
+      "results/tables/table_*",
+      "results/tables/ext_*",
+      "results/figures/ext_*"
+    ]
+  },
+  "pid": 16204
+}

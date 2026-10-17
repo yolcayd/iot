@@ -1,0 +1,24 @@
+{
+  "best_epoch": 30,
+  "early_stopping": "val_loss",
+  "best_monitor_value": 0.007437840104103088,
+  "epochs_run": 30,
+  "stopped_early": false,
+  "resumed_at_epochs": [],
+  "train_score_quantiles": {
+    "0.5": 0.00460728257894516,
+    "0.9": 0.008576631546020508,
+    "0.99": 0.011047106236219406,
+    "0.999": 0.01275012455880642
+  },
+  "decision": {
+    "rule": "score > threshold",
+    "method": "val_normal_fpr",
+    "threshold": 0.011305613443255424,
+    "target_fpr": 0.01,
+    "realized_val_fpr": 0.009501187648456057,
+    "n_val_normal": 1684,
+    "fitted_on_split": "val",
+    "calibration_windows_digest": "99ad2568e341f351"
+  }
+}

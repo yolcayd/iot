@@ -1,0 +1,19 @@
+{
+  "best_epoch": 11,
+  "early_stopping": "val_average_precision",
+  "best_monitor_value": 0.9999997610319931,
+  "epochs_run": 16,
+  "stopped_early": true,
+  "resumed_at_epochs": [],
+  "pos_weight": 1.3632921558878648,
+  "decision": {
+    "rule": "score > threshold",
+    "method": "val_normal_fpr",
+    "threshold": -10.006081581115723,
+    "target_fpr": 0.01,
+    "realized_val_fpr": 0.009501187648456057,
+    "n_val_normal": 1684,
+    "fitted_on_split": "val",
+    "calibration_windows_digest": "99ad2568e341f351"
+  }
+}

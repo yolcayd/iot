@@ -1,0 +1,50 @@
+{
+  "run_id": "cnn1d_car_hacking_s2_e4b422f1",
+  "stage": "ext_ablation",
+  "model": "cnn1d",
+  "dataset": "car_hacking",
+  "feature_set": "s2",
+  "seed": 2,
+  "steps_run": [
+    "train",
+    "evaluate"
+  ],
+  "step_s": {
+    "train": 28.8,
+    "evaluate": 0.6
+  },
+  "wall_s": 29.5,
+  "started_utc": "2026-10-17T10:24:23+00:00",
+  "finished_utc": "2026-10-17T10:24:52+00:00",
+  "threads": 4,
+  "git": {
+    "commit": "c23cb02293aa55a8ab169543dd8c26ef930866d5",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json",
+      "results/tables/grid_*.csv",
+      "results/tables/all_results.csv",
+      "results/tables/delta_f1.csv",
+      "results/tables/missing_cells.csv",
+      "results/tables/analysis_manifest.json",
+      "results/tables/stats.csv",
+      "results/tables/as1_pairs.csv",
+      "results/tables/per_type_delta.csv",
+      "results/tables/pareto.csv",
+      "results/tables/calibration_shift.csv",
+      "results/tables/decision_churn.csv",
+      "results/figures/fig*",
+      "results/tables/table_*",
+      "results/tables/ext_*",
+      "results/figures/ext_*"
+    ]
+  },
+  "pid": 6864
+}

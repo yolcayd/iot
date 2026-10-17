@@ -1,0 +1,12 @@
+run_id,model,dataset,seed,split,level,name,group,role,captures,n_attack,n_normal,tp,fp,fn,tn,precision,recall,f1,fpr,roc_auc,average_precision,roc_tpr_at_fpr_0.01,attack_types
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,attack_type,dos,coarse,primary,car_hacking/DoS_dataset,2096,3099,2096,14,0,3085,0.9933649289099526,1.0,0.9966714217784118,0.00451758631816715,1.0,1.0,1.0,
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,attack_type,fuzzy,coarse,primary,car_hacking/Fuzzy_dataset,1723,3097,1723,31,0,3066,0.9823261117445838,1.0,0.9910842680471671,0.010009686793671296,1.0,1.0,1.0,
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,attack_type,gear_spoofing,coarse,primary,car_hacking/gear_dataset,3764,3116,3764,195,0,2921,0.9507451376610255,1.0,0.974750744529328,0.06258023106546855,0.9999988063390898,0.9999990142113567,1.0,
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,attack_type,rpm_spoofing,coarse,primary,car_hacking/RPM_dataset,4339,3151,4339,14,0,3137,0.9967838272455778,1.0,0.9983893235158766,0.004443033957473818,1.0,1.0,1.0,
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,attack_free,ambient,,fpr_only,car_hacking/normal_run_data,0,1684,0,16,0,1668,0.0,,,0.009501187648456057,,,,
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,attack_free_capture,car_hacking/normal_run_data,,fpr_only,car_hacking/normal_run_data,0,1684,0,16,0,1668,0.0,,,0.009501187648456057,,,,
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,capture,car_hacking/DoS_dataset,,primary,,2096,3099,2096,14,0,3085,0.9933649289099526,1.0,0.9966714217784118,0.00451758631816715,1.0,1.0,1.0,dos
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,capture,car_hacking/Fuzzy_dataset,,primary,,1723,3097,1723,31,0,3066,0.9823261117445838,1.0,0.9910842680471671,0.010009686793671296,1.0,1.0,1.0,fuzzy
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,capture,car_hacking/RPM_dataset,,primary,,4339,3151,4339,14,0,3137,0.9967838272455778,1.0,0.9983893235158766,0.004443033957473818,1.0,1.0,1.0,rpm_spoofing
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,capture,car_hacking/gear_dataset,,primary,,3764,3116,3764,195,0,2921,0.9507451376610255,1.0,0.974750744529328,0.06258023106546855,0.9999988063390898,0.9999990142113567,1.0,gear_spoofing
+cnn1d_car_hacking_s2_68b72642,cnn1d,car_hacking,2,val,pooled,primary_pool,,secondary,,11922,14147,11922,270,0,13877,0.9778543307086615,1.0,0.9888031848718587,0.019085318442072525,0.9999997984116427,0.9999997610319931,1.0,

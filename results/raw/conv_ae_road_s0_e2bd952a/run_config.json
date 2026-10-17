@@ -1,0 +1,144 @@
+{
+  "run_id": "conv_ae_road_s0_e2bd952a",
+  "model": "conv_ae",
+  "dataset": "road",
+  "seed": 0,
+  "smoke": false,
+  "hparams": {
+    "batch_size": 256,
+    "lr": 0.001,
+    "weight_decay": 0.0,
+    "max_epochs": 30,
+    "patience": 5,
+    "eval_batch_size": 2048,
+    "family": "autoencoder",
+    "channels": [
+      32,
+      64
+    ],
+    "latent_channels": 16
+  },
+  "overrides": {},
+  "decision_config": {
+    "rule": "val_normal_fpr",
+    "target_fpr": 0.01
+  },
+  "window_size": 100,
+  "data_hash": "5ae816f3e78d547f",
+  "feature_set": "s3",
+  "n_features": 20,
+  "feature_names": [
+    "can_id",
+    "byte_0",
+    "byte_1",
+    "byte_2",
+    "byte_3",
+    "byte_4",
+    "byte_5",
+    "byte_6",
+    "byte_7",
+    "iat",
+    "bit_flips",
+    "dbyte_0",
+    "dbyte_1",
+    "dbyte_2",
+    "dbyte_3",
+    "dbyte_4",
+    "dbyte_5",
+    "dbyte_6",
+    "dbyte_7",
+    "id_rate"
+  ],
+  "train_windows": {
+    "n_windows": 295689,
+    "n_attack": 0,
+    "n_normal": 295689,
+    "n_captures": 10,
+    "digest": "8faf52dbfa53568d"
+  },
+  "val_windows": {
+    "n_windows": 50337,
+    "n_attack": 0,
+    "n_normal": 50337,
+    "n_captures": 7,
+    "digest": "76d609a0864ddb4d"
+  },
+  "git": {
+    "commit": "c23cb02293aa55a8ab169543dd8c26ef930866d5",
+    "dirty": false,
+    "dirty_files": [],
+    "excluded_from_dirty_check": [
+      "results/raw",
+      "results/tables/baseline_*.csv",
+      "results/tables/ae_feasibility.csv",
+      "results/tables/road_cnn_gap_*.csv",
+      "results/tables/quant_*.csv",
+      "results/tables/benchmark_*.csv",
+      "results/tables/benchmark_manifest.json",
+      "results/tables/grid_*.csv",
+      "results/tables/all_results.csv",
+      "results/tables/delta_f1.csv",
+      "results/tables/missing_cells.csv",
+      "results/tables/analysis_manifest.json",
+      "results/tables/stats.csv",
+      "results/tables/as1_pairs.csv",
+      "results/tables/per_type_delta.csv",
+      "results/tables/pareto.csv",
+      "results/tables/calibration_shift.csv",
+      "results/tables/decision_churn.csv",
+      "results/figures/fig*",
+      "results/tables/table_*",
+      "results/tables/ext_*",
+      "results/figures/ext_*"
+    ]
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "cpu_count": 16,
+    "threads": 4,
+    "device": "cuda",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "versions": {
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "pyarrow": "25.0.1",
+      "scikit-learn": "1.9.1",
+      "xgboost": "3.4.1",
+      "torch": "2.14.1+cu130",
+      "onnx": "1.23.1",
+      "onnxruntime": "1.30.0",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "started_utc": "2026-10-17T09:58:56+00:00",
+  "finished_utc": "2026-10-17T10:03:29+00:00",
+  "duration_s": 273.1,
+  "meta": {
+    "best_epoch": 29,
+    "early_stopping": "val_loss",
+    "best_monitor_value": 0.009900358313036341,
+    "epochs_run": 30,
+    "stopped_early": false,
+    "resumed_at_epochs": [],
+    "train_score_quantiles": {
+      "0.5": 0.009327494539320469,
+      "0.9": 0.012457950040698051,
+      "0.99": 0.015332391485571861,
+      "0.999": 0.018130773678421974
+    },
+    "decision": {
+      "rule": "score > threshold",
+      "method": "val_normal_fpr",
+      "threshold": 0.01533212698996067,
+      "target_fpr": 0.01,
+      "realized_val_fpr": 0.009992649542086339,
+      "n_val_normal": 50337,
+      "fitted_on_split": "val",
+      "calibration_windows_digest": "76d609a0864ddb4d"
+    }
+  }
+}
