@@ -1,24 +1,22 @@
 {
   "run_id": "conv_ae_road_s2_c81d5890",
-  "stage": "ext_ablation",
+  "stage": "ext_test",
   "model": "conv_ae",
   "dataset": "road",
   "feature_set": "s1",
   "seed": 2,
   "steps_run": [
-    "train",
     "evaluate"
   ],
   "step_s": {
-    "train": 278.0,
-    "evaluate": 2.6
+    "evaluate": 3.6
   },
-  "wall_s": 280.7,
-  "started_utc": "2026-10-17T09:49:14+00:00",
-  "finished_utc": "2026-10-17T09:53:55+00:00",
+  "wall_s": 3.6,
+  "started_utc": "2026-10-17T13:47:25+00:00",
+  "finished_utc": "2026-10-17T13:47:29+00:00",
   "threads": 4,
   "git": {
-    "commit": "c23cb02293aa55a8ab169543dd8c26ef930866d5",
+    "commit": "b3cac3f6f1eff1c862e66d3dfbce260dd954102a",
     "dirty": false,
     "dirty_files": [],
     "excluded_from_dirty_check": [
@@ -46,5 +44,5 @@
       "results/figures/ext_*"
     ]
   },
-  "pid": 23532
+  "pid": 18796
 }

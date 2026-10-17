@@ -251,3 +251,27 @@ python scripts/build_paper.py           # both steps + pdflatex/bibtex -> paper/
   the PATH, or in a user-level TinyTeX (`%APPDATA%\TinyTeX`; `tlmgr install ieeetran cite`). For Overleaf, upload
   the `paper/` folder (with `generated/` and `figures/`).
 
+
+### Advisor extension: extended features, ablation, conv-AE diagnosis (P10)
+
+Requested by the advisor after the first weekly report (`docs/reports/advisor_feedback_01.md`); kept separate
+from the H1-H4 verdicts and the paper (`docs/DECISIONS.md` K-071 ... K-077). Reports:
+`docs/reports/advisor_ext_status.md`, `literature_preprocessing.md`, `advisor_ext_01.md`.
+
+```powershell
+python -m analysis.ext_preproc_checks                              # DLC profile, normalisation provenance
+python -m src.data.features_ext --fit                              # id_rate reference (benign training frames)
+python -m src.data.features_ext --build-cache                      # extended feature cache (all segments)
+python -m src.run_grid --stage ext_ablation --workers 2            # s1..s4, cnn1d + conv_ae, 3 seeds, VALIDATION only
+python -m analysis.ext_select                                      # K-075 selection; commit results/tables/ext_selection.json
+python -m src.run_grid --stage ext_test --workers 2                # test evaluation (refused until the selection is committed)
+python -m src.run_grid --stage ext_quant --workers 2               # Q0/Q1/Q2 of the selected set per model
+python -m analysis.ext_aggregate                                   # ext_ablation*.csv, ext_quant.csv (bootstrap contrast)
+python -m analysis.ext_diagnosis                                   # ext_diag_*.csv
+python -m analysis.ext_figures                                     # results/figures/ext_ablation_road.{pdf,png}
+```
+
+- Feature sets (`configs/features_ext.yaml`): s0 = the 10 reference features (runs, cache and run ids unchanged);
+  s1 +bit flips, s2 +byte deltas, s3 +ID rate, s4 +trailing-window ID share and entropy. Every column is causal,
+  computed inside one segment, in [0, 1] and, where discrete, lossless under the INT8 input quantizer.
+- Selection (K-075): per model, validation only. 1D-CNN -> s3, conv-AE -> s0 (no validation gain).

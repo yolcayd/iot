@@ -1,24 +1,24 @@
 {
   "run_id": "cnn1d_car_hacking_s2_105114ce",
-  "stage": "ext_ablation",
+  "stage": "ext_quant",
   "model": "cnn1d",
   "dataset": "car_hacking",
   "feature_set": "s3",
   "seed": 2,
   "steps_run": [
-    "train",
-    "evaluate"
+    "quantize",
+    "quant_eval"
   ],
   "step_s": {
-    "train": 33.1,
-    "evaluate": 0.6
+    "quantize": 2.8,
+    "quant_eval": 7.8
   },
-  "wall_s": 33.8,
-  "started_utc": "2026-10-17T10:25:13+00:00",
-  "finished_utc": "2026-10-17T10:25:46+00:00",
+  "wall_s": 10.7,
+  "started_utc": "2026-10-17T13:53:47+00:00",
+  "finished_utc": "2026-10-17T13:53:58+00:00",
   "threads": 4,
   "git": {
-    "commit": "c23cb02293aa55a8ab169543dd8c26ef930866d5",
+    "commit": "b3cac3f6f1eff1c862e66d3dfbce260dd954102a",
     "dirty": false,
     "dirty_files": [],
     "excluded_from_dirty_check": [
@@ -46,5 +46,5 @@
       "results/figures/ext_*"
     ]
   },
-  "pid": 1296
+  "pid": 26760
 }

@@ -1,24 +1,24 @@
 {
   "run_id": "cnn1d_road_s0_49ec11fa",
-  "stage": "ext_ablation",
+  "stage": "ext_quant",
   "model": "cnn1d",
   "dataset": "road",
   "feature_set": "s3",
   "seed": 0,
   "steps_run": [
-    "train",
-    "evaluate"
+    "quantize",
+    "quant_eval"
   ],
   "step_s": {
-    "train": 34.6,
-    "evaluate": 1.4
+    "quantize": 7.9,
+    "quant_eval": 16.3
   },
-  "wall_s": 36.1,
-  "started_utc": "2026-10-17T10:16:39+00:00",
-  "finished_utc": "2026-10-17T10:17:15+00:00",
+  "wall_s": 24.3,
+  "started_utc": "2026-10-17T13:52:54+00:00",
+  "finished_utc": "2026-10-17T13:53:19+00:00",
   "threads": 4,
   "git": {
-    "commit": "c23cb02293aa55a8ab169543dd8c26ef930866d5",
+    "commit": "b3cac3f6f1eff1c862e66d3dfbce260dd954102a",
     "dirty": false,
     "dirty_files": [],
     "excluded_from_dirty_check": [
@@ -46,5 +46,5 @@
       "results/figures/ext_*"
     ]
   },
-  "pid": 636
+  "pid": 26916
 }
